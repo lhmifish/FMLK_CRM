@@ -5,383 +5,358 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta name="renderer" content="webkit" />
-<meta http-equiv="X-UA-COMPATIBLE" content="IE=edge,chrome=1" />
-<meta name="viewport"
-	content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black" />
-<meta name="format-detection" content="telephone=no" />
 <meta http-equiv="pragma" content="no-cache" />
 <meta http-equiv="cache-control" content="no-cache" />
 <title>编辑合同信息</title>
-
-
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/css.css?v=2000" />
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/css/select4.css?v=1997" />
-<link rel="stylesheet"
-	href="${pageContext.request.contextPath}/css/style4.css?v=1984" />
+	href="${pageContext.request.contextPath}/css/select4.css?v=1999" />
 <link rel="stylesheet" type="text/css"
 	href="${pageContext.request.contextPath}/css/calendar.css" />
 <link href='http://fonts.googleapis.com/css?family=Roboto'
 	rel='stylesheet' type='text/css'>
-<style type="text/css">
-a {
-	text-decoration: none;
-}
-
-ul, ol, li {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-}
-
-#demo {
-	width: 300px;
-	margin: 150px auto;
-}
-
-p {
-	margin: 0;
-}
-
-#dt {
-	margin: 30px auto;
-	height: 28px;
-	padding: 0 6px;
-	border: 1px solid #ccc;
-	outline: none;
-}
-</style>
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/bootstrap-switch.css" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/highlight.css" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/main2.css" />
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
+<script type="text/javascript"
+	src="${pageContext.request.contextPath}/js/bootstrap-switch.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
-
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/validation.js"></script>
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/calendar.js"></script>
 <script type="text/javascript"
+	src="${pageContext.request.contextPath}/js/bootstrap.js"></script>
+<script type="text/javascript"
+	src="${pageContext.request.contextPath}/js/highlight.js"></script>
+<script type="text/javascript"
+	src="${pageContext.request.contextPath}/js/main.js"></script>
+<script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery.jqprint-0.3.js"></script>
 <script src="http://www.jq22.com/jquery/jquery-migrate-1.2.1.min.js"></script>
+<script src="${pageContext.request.contextPath}/js/checkPermission.js"></script>
+<script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
+<script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
+<script src="${pageContext.request.contextPath}/js/getObjectList.js"></script>
+
+<style type="text/css">
+a:hover {
+	color: #FF00FF
+} /* 鼠标移动到链接上 */
+</style>
 
 <script type="text/javascript">
-	var id;//标书id
-    var user;
-	var uDept;
-	var createUser;
-	var tenderResult;
-	var tenderIntent;
-	var tenderState;
+	var id;//合同id
+	var sId;//sessionId
+	var host;
+	var salesId;
+	var isPermissionEdit;
+	var collectionArr;//收款
+	var deliveryArr;//交货
+	var collectionNum;
+	var deliveryNum;
 
 	$(document).ready(function() {
 		id = "${mId}";//合同id
-
-
-		/* getSaleUserList();
-		getCompanyList();
-		getContractInfo(id);
-		$("#clientName").select2({
-			tags : true
-		});
-		$("#saleUser").select2({
-			tags : true
-		}); */
-		
+		sId = "${sessionId}";
+		host = "${pageContext.request.contextPath}";
+		checkEditPremission(43, 0);
 	});
-	
-	function getSaleUserList() {
-		$.ajax({
-			url : "${pageContext.request.contextPath}/userList",
-			type : 'GET',
-			data : {
-				"dpartId" : 2,
-				"date" : getDateStr(new Date()),
-				"name" : "",
-				"nickName" : "",
-				"jobId" : "",
-				"isHide":true
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var str = '<option value="top">请选择...</option>';
-				var data2 = eval("(" + returndata + ")").userlist;
-				for ( var i in data2) {
-					str += '<option value="'+data2[i].name+'">' + data2[i].name
-							+ '</option>';
-				}
-				str += '<option value="梁孔泰">梁孔泰</option>';
-				$("#saleUser").empty();
-				$("#saleUser").append(str);
 
+	function initialPage() {
+		initDate();
+		getContractInfo(id);
+
+		matchEdit("合同");
+		$("#companyId").select2({});
+		$("#salesId").select2({});
+		$("#projectId").select2({});
+		if (isPermissionEdit) {
+			$("#divEdit").show();
+		}
+	}
+
+	function initDate() {
+		$('#dd_dateForStartContract').calendar(
+				{
+					trigger : '#dateForStartContract',
+					zIndex : 999,
+					format : 'yyyy/mm/dd',
+					onSelected : function(view, date, data) {
+					},
+					onClose : function(view, date, data) {
+						$('#dateForStartContract').val(
+								formatDate(date).substring(0, 10));
+					}
+				});
+
+		$('#dd_dateForEndContract').calendar(
+				{
+					trigger : '#dateForEndContract',
+					zIndex : 999,
+					format : 'yyyy/mm/dd',
+					onSelected : function(view, date, data) {
+					},
+					onClose : function(view, date, data) {
+						$('#dateForEndContract').val(
+								formatDate(date).substring(0, 10));
+					}
+				});
+		$('#dd0_1_0').calendar({
+			trigger : '#collectionTime1',
+			zIndex : 999,
+			format : 'yyyy/mm/dd',
+			onSelected : function(view, date, data) {
 			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
+			onClose : function(view, date, data) {
+				$('#collectionTime1').val(formatDate(date).substring(0, 10));
 			}
 		});
 
-	}
+		$('#dd0_1_1').calendar(
+				{
+					trigger : '#actCollectionTime1',
+					zIndex : 999,
+					format : 'yyyy/mm/dd',
+					onSelected : function(view, date, data) {
+					},
+					onClose : function(view, date, data) {
+						$('#actCollectionTime1').val(
+								formatDate(date).substring(0, 10));
+					}
+				});
 
-	function getCompanyList() {
-		$.ajax({
-			url : "${pageContext.request.contextPath}/companyList",
-			type : 'GET',
-			data : {
-				"companyName" : "",
-				"salesId" : 0,
+		$('#dd1_1_0').calendar({
+			trigger : '#deliveryTime1',
+			zIndex : 999,
+			format : 'yyyy/mm/dd',
+			onSelected : function(view, date, data) {
 			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var str = '<option value="top">请选择...</option>';
-				var data2 = eval("(" + returndata + ")").companylist;
-				for ( var i in data2) {
-					str += '<option value="'+data2[i].companyName+'">'
-							+ data2[i].companyName + '</option>';
-				}
-				$("#clientName").empty();
-				$("#clientName").append(str);
-
+			onClose : function(view, date, data) {
+				$('#deliveryTime1').val(formatDate(date).substring(0, 10));
+			}
+		});
+		$('#dd1_1_1').calendar({
+			trigger : '#actDeliveryTime1',
+			zIndex : 999,
+			format : 'yyyy/mm/dd',
+			onSelected : function(view, date, data) {
 			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
+			onClose : function(view, date, data) {
+				$('#actDeliveryTime1').val(formatDate(date).substring(0, 10));
 			}
 		});
 	}
-	
+
 	function getContractInfo(tid) {
+		$.ajax({
+			url : host + "/getContractById",
+			type : 'GET',
+			cache : false,
+			async : false,
+			data : {
+				"id" : tid
+			},
+			success : function(returndata) {
+				var data = eval("(" + returndata + ")").contract;
+				$("#contractNum").val(data[0].contractNum);
+				getCompanyList("", 0, data[0].companyId, 1);
+				getProjectList(data[0].companyId, data[0].projectId);
+				getSalesList(data[0].saleUser);
+				$('#dateForStartContract').val(
+						data[0].dateForContract.split("-")[0]);
+				$('#dateForEndContract').val(
+						data[0].dateForContract.split("-")[1]);
+				salesId = data[0].saleUser;
+
+				$("#contractAmount").val(data[0].contractAmount);
+				$("#taxrate").val(data[0].taxRate);
+				$("#serviceDetails").val(data[0].serviceDetails);
+
+				getContractPaymentInfo(data[0].contractNum);
+
+			},
+			error : function(XMLHttpRequest, textStatus, errorThrown) {
+			}
+		});
+	}
+
+	function getContractPaymentInfo(tContractNum) {
 		$
 				.ajax({
-					url : "${pageContext.request.contextPath}/getContract",
+					url : host + "/getContractPaymentInfoList",
 					type : 'GET',
 					cache : false,
 					async : false,
 					data : {
-						"id" : tid
+						"contractNum" : tContractNum
 					},
 					success : function(returndata) {
-						var data = eval("(" + returndata + ")").contract;
+						var data = eval("(" + returndata + ")").paymentInfolist;
+						collectionArr = new Array();//收款
+						deliveryArr = new Array();//交货
+
+						if (data.length > 0) {
+							for (var i = 0; i < data.length; i++) {
+								var type = data[i].split("#")[3];
+								if (type == 1) {
+									//收款
+									collectionArr.push(data[i]);
+								} else {
+									// 交货
+									deliveryArr.push(data[i]);
+								}
+							}
+						}
+						collectionNum = collectionArr.length;
+						deliveryNum = deliveryArr.length;
 						
-						$("#contractNum").val(data[0].contractNum);
-						$("#projectName").val(data[0].projectName);
-						$('#dateForStartContract').val(data[0].dateForStartContract);
-						$('#dateForEndContract').val(data[0].dateForEndContract);
-						$('#saleUser').val(data[0].saleUser);
-						$('#clientName').val(data[0].clientName);
-						$("#serviceDetails").val(data[0].serviceDetails);
-						$('#collectionDetails').val(data[0].collectionDetails);
-						$('#deliveryDetails').val(data[0].deliveryDetails);
-						$('#contractAmount').val(data[0].contractAmount);
+						var isFinished;
+						if (collectionArr.length >= 1) {
+							$("#collectionTime1").val(
+									collectionArr[0].split("#")[0]);
+							$("#actCollectionTime1").val(
+									collectionArr[0].split("#")[1]);
+							$("#collectionDesc1").val(
+									collectionArr[0].split("#")[2]);
+							isFinished = collectionArr[0].split("#")[4] == 1 ? true
+									: false;
+							$('#switch0_1').bootstrapSwitch('state',
+									isFinished, false);
 
-						var taxRate = data[0].taxRate
+							for (var j = 2; j <= collectionArr.length; j++) {
+								var str = '<div class="bbD" id="mDiv0_'
+										+ (j - 1)
+										+ '_1" style="height: 32px">'
+										+ '<label style="margin-left: 132px; float: left;">合同收款时间：</label>'
+										+ '<input class="input3" type="text" id="collectionTime'+j+'" style="width: 150px; float: left;" /><span id="dd0_'+j+'_0"></span>'
+										+ '<label style="margin-left: 15px; float: left;">实际收款时间：</label>'
+										+ '<input class="input3" type="text" id="actCollectionTime'+j+'" style="width: 150px; float: left;" /><span id="dd0_'+j+'_1"></span>'
+										+ '<label style="margin-left: 15px"></label><input id="switch0_'+j+'" type="checkbox" data-size="mini"  data-on-text="已收款" data-off-text="未收款" data-label-text="收款状态" />'
+										+ '</div>';
+								$("#collectionInfo").append(str);
+								str = '<div class="bbD" id="mDiv0_'
+										+ (j - 1)
+										+ '_2" style="height: 32px">'
+										+ '<label style="margin-left: 160px; float: left;">收款说明：</label>'
+										+ '<input class="input3" id="collectionDesc'+j+'" style="width: 500px; height: 20px; float: left;"></input>'
+										+ '</div>';
+								$("#collectionInfo").append(str);
 
-						$("input[name='field01'][value=" + taxRate + "]")
-								.attr("checked", true);
-						
-						
+								$("#collectionTime" + j).val(
+										collectionArr[j - 1].split("#")[0]);
+								$("#actCollectionTime" + j).val(
+										collectionArr[j - 1].split("#")[1]);
+								$("#collectionDesc" + j).val(
+										collectionArr[j - 1].split("#")[2]);
+								isFinished = collectionArr[j-1].split("#")[4] == 1 ? true
+										: false;
+								$('#switch0_'+j).bootstrapSwitch('state',
+										isFinished, false);
+								
+								$('#dd0_' + j + '_0').calendar(
+										{
+											trigger : '#collectionTime' + j,
+											zIndex : 999,
+											format : 'yyyy/mm/dd',
+											onSelected : function(view, date, data) {
+											},
+											onClose : function(view, date, data) {
+												$('#collectionTime' + j).val(
+														formatDate(date).substring(0, 10));
+											}
+										});
 
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
-	}
+								$('#dd0_' + j + '_1').calendar(
+										{
+											trigger : '#actCollectionTime' + j,
+											zIndex : 999,
+											format : 'yyyy/mm/dd',
+											onSelected : function(view, date, data) {
+											},
+											onClose : function(view, date, data) {
+												$('#actCollectionTime' + j).val(
+														formatDate(date).substring(0, 10));
+											}
+										});
+							}
+						}
+						if (deliveryArr.length >= 1) {
+							$("#deliveryTime1").val(
+									deliveryArr[0].split("#")[0]);
+							$("#actDeliveryTime1").val(
+									deliveryArr[0].split("#")[1]);
+							$("#deliveryDesc1").val(
+									deliveryArr[0].split("#")[2]);
+							isFinished = deliveryArr[0].split("#")[4] == 1 ? true
+									: false;
+							$('#switch1_1').bootstrapSwitch('state',
+									isFinished, false);
+							
+							for (var j = 2; j <= deliveryArr.length; j++) {
+								var str = '<div class="bbD" id="mDiv1_'
+									+ (j - 1)
+									+ '_1" style="height: 32px">'
+									+ '<label style="margin-left: 132px; float: left;">合同交货时间：</label>'
+									+ '<input class="input3" type="text" id="deliveryTime'+j+'" style="width: 150px; float: left;" /><span id="dd1_'+j+'_0"></span>'
+									+ '<label style="margin-left: 15px; float: left;">实际交货时间：</label>'
+									+ '<input class="input3" type="text" id="actDeliveryTime'+j+'" style="width: 150px; float: left;" /><span id="dd1_'+j+'_1"></span>'
+									+ '<label style="margin-left: 15px"></label><input id="switch1_'+j+'" type="checkbox" data-size="mini"  data-on-text="已交货" data-off-text="未交货" data-label-text="交货状态" />'
+									+ '</div>';
+							$("#deliveryInfo").append(str);
+							str = '<div class="bbD" id="mDiv1_'
+									+ (j - 1)
+									+ '_2" style="height: 32px">'
+									+ '<label style="margin-left: 160px; float: left;">交货说明：</label>'
+									+ '<input class="input3" id="deliveryDesc'+j+'" style="width: 500px; height: 20px; float: left;"></input>'
+									+ '</div>';
+							$("#deliveryInfo").append(str);
+							
+							$("#deliveryTime" + j).val(
+									deliveryArr[j - 1].split("#")[0]);
+							$("#actDeliveryTime" + j).val(
+									deliveryArr[j - 1].split("#")[1]);
+							$("#deliveryDesc" + j).val(
+									deliveryArr[j - 1].split("#")[2]);
+							isFinished = deliveryArr[j-1].split("#")[4] == 1 ? true
+									: false;
+							$('#switch1_'+j).bootstrapSwitch('state',
+									isFinished, false);
+							}
+							
+							$('#dd1_' + j + '_0').calendar(
+									{
+										trigger : '#deliveryTime' + j,
+										zIndex : 999,
+										format : 'yyyy/mm/dd',
+										onSelected : function(view, date, data) {
+										},
+										onClose : function(view, date, data) {
+											$('#deliveryTime' + j).val(
+													formatDate(date).substring(0, 10));
+										}
+									});
 
-	
-/* 
-	function checkTenderResult(i) {
-		tenderResult = i;
-		var isCheck = document.getElementsByName('field01');
-		if (isCheck[2].checked == true) {
-			//中标
-			$("#serviceExpense").removeAttr("disabled");
-			$("#serviceExpense").css('background-color', 'transparent');
-			$("#star2").css('visibility', 'visible');
-		} else {
-			//其他
-			$("#serviceExpense").attr("disabled", "disabled");
-			$("#serviceExpense").css('background-color', '#eee');
-			$("#serviceExpense").val("");
-			$("#star2").css('visibility', 'hidden');
-		}
-	} */
-
-	function getDateStr(date) {
-		var y = date.getFullYear();
-		var m = date.getMonth() < 10 ? ("0" + (date.getMonth() + 1)) : (date
-				.getMonth() + 1);
-		var d = date.getDate() < 10 ? ("0" + date.getDate()) : date.getDate();
-		var str = y + "/" + m + "/" + d;
-		return str;
-	}
-
-	function initDate() {
-		$('#dd').calendar({
-			trigger : '#dateForBuy',
-			zIndex : 999,
-			format : 'yyyy/mm/dd',
-			onSelected : function(view, date, data) {
-			},
-			onClose : function(view, date, data) {
-				$('#dateForBuy').val(getDateStr(date));
-			}
-		});
-
-		$('#dd2').calendar({
-			trigger : '#dateForSubmit',
-			zIndex : 999,
-			format : 'yyyy/mm/dd',
-			onSelected : function(view, date, data) {
-			},
-			onClose : function(view, date, data) {
-				$('#dateForSubmit').val(getDateStr(date));
-			}
-		});
-	}
-
-	
-
-	function back() {
-		history.back();
-	}
-
-	function printTender() {
-		$("#div1").jqprint();
-	}
-	
-	
-	function editTender() {
-		if (tenderState == 1) {
-			alert("拒绝的标书不能编辑");
-			return;
-		}else if(user != createUser){
-			alert("他人的标书你不能编辑");
-			return;
-		}
-		
-		var tenderNum = $("#tenderNum").val();
-		var tenderCompany = $("#tenderCompany option:selected").text();
-		var tenderAgency = $("#tenderAgency option:selected").text();
-		var projectName = $("#projectName").val();
-		var dateForBuy = $("#dateForStartContract").val();
-		var dateForSubmit = $("#dateForSubmit").val();
-
-		var tenderStyle1 = $("#tenderStyle1 option:selected").text();
-		var tenderStyle2 = $("#tenderStyle2 option:selected").text();
-		var saleUser = $("#saleUser option:selected").text();
-		var tenderExpense = $("#tenderExpense").val();
-		var serviceExpense = $("#serviceExpense").val();
-		var reasonForNoTender = $("#reasonForNoTender").val();
-
-		var productStyle = $("#productStyle option:selected").text();
-		var productBrand = $("#productBrand option:selected").text();
-
-		var enterpriseQualificationRequirment = $(
-				"#enterpriseQualificationRequirment").val();
-		var technicalRequirment = $("#technicalRequirment").val();
-		var remark = $("#remark").val();
-
-		if (tenderNum == "") {
-			alert("招标编号不能为空");
-			return;
-		}
-
-		if (tenderCompany == "请选择...") {
-			alert("请选择招标单位");
-			return;
-		}
-
-		if (tenderAgency == "请选择...") {
-			tenderAgency = "";
-		}
-
-		if (projectName == "") {
-			alert("项目名称不能为空");
-			return;
-		}
-
-		var d1 = new Date(dateForBuy);
-		var d2 = new Date(dateForSubmit);
-
-		if (d1 > d2) {
-			alert("错误：投标日期早于购标日期，请修改");
-			return;
-		} else if (d1 - d2 == 0) {
-			alert("错误：投标日期和购标日期同一天，请修改");
-			return;
-		}
-
-		if (tenderStyle1 == "请选择..." || tenderStyle2 == "请选择...") {
-			alert("请正确选择投标类型");
-			return;
-		}
-
-		if (saleUser == "请选择...") {
-			alert("请选择对影销售");
-			return;
-		}
-
-		var r = /^\+?(0|[1-9][0-9]*)$/;
-
-		if (tenderExpense == "") {
-			alert("购标费用不能为空");
-			return;
-		} else if (!r.test(tenderExpense)) {
-			alert("购标费用有误，请重新输入");
-			return;
-		}
-
-		if (serviceExpense == "" && tenderResult == 3) {
-			alert("中标服务费不能为空");
-			return;
-		} else if (!r.test(serviceExpense) && serviceExpense != "") {
-			alert("中标服务费有误，请重新输入");
-			return;
-		}
-
-		if (tenderIntent == 2 && reasonForNoTender == "") {
-			alert("不投原因不能为空");
-			return;
-		}
-
-		if (productStyle == "请选择...") {
-			productStyle = "";
-		}
-
-		if (productBrand == "请选择...") {
-			productBrand = "";
-		}
-
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/editTender",
-					type : 'POST',
-					cache : false,
-					data : {
-						"id" : id,
-						"tenderNum" : tenderNum,
-						"tenderCompany" : tenderCompany,
-						"tenderAgency" : tenderAgency,
-						"projectName" : projectName,
-						"dateForBuy" : dateForBuy,
-						"dateForSubmit" : dateForSubmit,
-						"tenderStyle" : tenderStyle1 + "#" + tenderStyle2,
-						"saleUser" : saleUser,
-						"tenderExpense" : tenderExpense,
-						"serviceExpense" : serviceExpense,
-						"reasonForNoTender" : reasonForNoTender,
-						"productStyle" : productStyle,
-						"productBrand" : productBrand,
-						"enterpriseQualificationRequirment" : enterpriseQualificationRequirment,
-						"technicalRequirment" : technicalRequirment,
-						"remark" : remark,
-						"tenderResult" : tenderResult,
-						"tenderIntent" : tenderIntent
-					},
-					success : function(returndata) {
-						var data = eval("(" + returndata + ")").errcode;
-						if (data == 0) {
-							alert("编辑标书成功");
-							window.location.reload();
-						} else {
-							alert("编辑失败");
+							$('#dd1_' + j + '_1').calendar(
+									{
+										trigger : '#actDeliveryTime' + j,
+										zIndex : 999,
+										format : 'yyyy/mm/dd',
+										onSelected : function(view, date, data) {
+										},
+										onClose : function(view, date, data) {
+											$('#actDeliveryTime' + j).val(
+													formatDate(date).substring(0, 10));
+										}
+									});
 						}
 
 					},
@@ -390,135 +365,386 @@ p {
 				});
 
 	}
+
+	function changeProject() {
+		// js方法结束后调用,此处留空
+	}
+
+	function checkTenderIntent(j) {
+		tenderIntent = j;
+	}
+
+	function addNewCollection() {
+		if (collectionNum > 2) {
+			alert("最多只能输入3条收款说明");
+			return;
+		}
+		collectionNum++;
+		var str = '<div class="bbD" id="mDiv0_'
+				+ (collectionNum - 1)
+				+ '_1" style="height: 32px">'
+				+ '<label style="margin-left: 132px; float: left;">合同收款时间：</label>'
+				+ '<input class="input3" type="text" id="collectionTime'+collectionNum+'" style="width: 150px; float: left;" /><span id="dd0_'+collectionNum+'_0"></span>'
+				+ '<label style="margin-left: 15px; float: left;">实际收款时间：</label>'
+				+ '<input class="input3" type="text" id="actCollectionTime'+collectionNum+'" style="width: 150px; float: left;" /><span id="dd0_'+collectionNum+'_1"></span>'
+				+ '<label style="margin-left: 15px"></label>'
+				+ '<input id="switch0_'+collectionNum+'" type="checkbox" data-size="mini"  data-on-text="已收款" data-off-text="未收款" data-label-text="收款状态"/>'
+				+ '</div>';
+		$("#collectionInfo").append(str);
+		$("#switch0_"+collectionNum).bootstrapSwitch('state',false, false);
+		
+		str = '<div class="bbD" id="mDiv0_'
+				+ (collectionNum - 1)
+				+ '_2" style="height: 32px">'
+				+ '<label style="margin-left: 160px; float: left;">收款说明：</label>'
+				+ '<input class="input3" id="collectionDesc'+collectionNum+'" style="width: 540px; height: 20px; float: left;"></input>'
+				+ '</div>';
+		$("#collectionInfo").append(str);
+		
+		$('#dd0_' + collectionNum + '_0').calendar(
+				{
+					trigger : '#collectionTime' + collectionNum,
+					zIndex : 999,
+					format : 'yyyy/mm/dd',
+					onSelected : function(view, date, data) {
+					},
+					onClose : function(view, date, data) {
+						$('#collectionTime' + collectionNum).val(
+								formatDate(date).substring(0, 10));
+					}
+				});
+
+		$('#dd0_' + collectionNum + '_1').calendar(
+				{
+					trigger : '#actCollectionTime' + collectionNum,
+					zIndex : 999,
+					format : 'yyyy/mm/dd',
+					onSelected : function(view, date, data) {
+					},
+					onClose : function(view, date, data) {
+						$('#actCollectionTime' + collectionNum).val(
+								formatDate(date).substring(0, 10));
+					}
+				});
+	}
+	
+	function addNewDelivery(){
+		if (deliveryNum > 2) {
+			alert("最多只能输入3条交货说明");
+			return;
+		}
+		deliveryNum++;
+		var str = '<div class="bbD" id="mDiv1_'
+				+ (deliveryNum - 1)
+				+ '_1" style="height: 32px">'
+				+ '<label style="margin-left: 132px; float: left;">合同收款时间：</label>'
+				+ '<input class="input3" type="text" id="deliveryTime'+deliveryNum+'" style="width: 150px; float: left;" /><span id="dd1_'+deliveryNum+'_0"></span>'
+				+ '<label style="margin-left: 15px; float: left;">实际收款时间：</label>'
+				+ '<input class="input3" type="text" id="actDeliveryTime'+deliveryNum+'" style="width: 150px; float: left;" /><span id="dd1_'+deliveryNum+'_1"></span>'
+				+ '<label style="margin-left: 15px"></label>'
+				+ '<input id="switch1_'+deliveryNum+'" type="checkbox" data-size="mini"  data-on-text="已收款" data-off-text="未收款" data-label-text="收款状态"/>'
+				+ '</div>';
+		$("#deliveryInfo").append(str);
+		$("#switch1_"+deliveryNum).bootstrapSwitch('state',false, false);
+		
+		str = '<div class="bbD" id="mDiv1_'
+				+ (deliveryNum - 1)
+				+ '_2" style="height: 32px">'
+				+ '<label style="margin-left: 160px; float: left;">收款说明：</label>'
+				+ '<input class="input3" id="deliveryDesc'+deliveryNum+'" style="width: 540px; height: 20px; float: left;"></input>'
+				+ '</div>';
+		$("#deliveryInfo").append(str);
+		
+		$('#dd1_' + deliveryNum + '_0').calendar(
+				{
+					trigger : '#deliveryTime' + deliveryNum,
+					zIndex : 999,
+					format : 'yyyy/mm/dd',
+					onSelected : function(view, date, data) {
+					},
+					onClose : function(view, date, data) {
+						$('#deliveryTime' + deliveryNum).val(
+								formatDate(date).substring(0, 10));
+					}
+				});
+
+		$('#dd1_' + deliveryNum + '_1').calendar(
+				{
+					trigger : '#actDeliveryTime' + deliveryNum,
+					zIndex : 999,
+					format : 'yyyy/mm/dd',
+					onSelected : function(view, date, data) {
+					},
+					onClose : function(view, date, data) {
+						$('#actDeliveryTime' + deliveryNum).val(
+								formatDate(date).substring(0, 10));
+					}
+				});
+	}
+	
+	function removeCollection(){
+		if (collectionNum == 1) {
+			alert("至少要输入1条收款说明");
+			return;
+		}
+		$("#mDiv0_" + (collectionNum-1) + "_1").remove();
+		$("#mDiv0_" + (collectionNum-1) + "_2").remove();
+		collectionNum--;
+	}
+	
+	function removeDelivery(){
+		if (deliveryNum == 1) {
+			alert("至少要输入1条交货说明");
+			return;
+		}
+		$("#mDiv1_" + (deliveryNum-1) + "_1").remove();
+		$("#mDiv1_" + (deliveryNum-1) + "_2").remove();
+		deliveryNum--;
+	}
+	
+	function editContract(){
+		//return alert($('#switch0_1').bootstrapSwitch('state'));		
+		var contractNum = $("#contractNum").val().trim();		
+		var companyId = $("#companyId").val();
+		var salesId = $("#saleUser").val();
+		var projectId = $("#projectName").val();
+		var dateForStartContract = $("#dateForStartContract").val().trim();
+		var dateForEndContract = $("#dateForEndContract").val().trim();
+		var contractAmount = $("#contractAmount").val().trim();
+		var taxRate = $("#taxrate").val().trim();
+		var serviceDetails = $("#serviceDetails").val().trim();		
+        var arrayPaymentInfo = new Array();
+        var isFinished;
+		for (var i = 1; i <= collectionNum; i++) {
+			var time = $("#collectionTime" + i).val();
+			var time2 = $("#actCollectionTime" + i).val();
+			var desc = $("#collectionDesc" + i).val().trim();
+			var isFinished = 0;
+			time = (time == "") ? "*" : time;
+			time2 = (time2 == "") ? "*" : time2;
+			desc = (desc == "") ? "*" : desc;
+			isFinished = $("#switch0_"+i).bootstrapSwitch('state')==true?1:0;
+			arrayPaymentInfo.push("1#" + time + "#" + time2 + "#" + desc + "#" + isFinished);
+		}
+		for (var j = 1; j <= deliveryNum; j++) {
+			var time3 = $("#deliveryTime" + j).val();
+			var time4 = $("#actDeliveryTime" + j).val();
+			var desc2 = $("#deliveryDesc" + j).val().trim();
+			time3 = (time3 == "") ? "*" : time3;
+			time4 = (time4 == "") ? "*" : time4;
+			desc2 = (desc2 == "") ? "*" : desc2;
+			isFinished = $("#switch1_"+i).bootstrapSwitch('state')==true?1:0;
+			arrayPaymentInfo.push("2#" + time3 + "#" + time4 + "#" + desc2 + "#" + isFinished);
+		} 
+		
+		if (contractNum == "") {
+			alert("合同编号不能为空");
+			return;
+		}
+
+		if (companyId == 0 || companyId == null) {
+			alert("请选择客户名称");
+			return;
+		}
+
+		if (salesId == 0 || salesId == null) {
+			alert("请选择销售人员");
+			return;
+		}
+
+		if (projectId == 0 || projectId == null) {
+			alert("请选择项目名称");
+			return;
+		}
+
+		var d1 = new Date(dateForStartContract);
+		var d2 = new Date(dateForEndContract);
+
+		if (d1 >= d2) {
+			alert("错误：合同实施开始日期不能晚于或等于结束日期，请修改");
+			return;
+		}
+
+		var r = /^(?!(0[0-9]{0,}$))[0-9]{1,}[.]{0,}[0-9]{0,}$/;
+
+		if (contractAmount == "") {
+			alert("合同金额不能为空");
+			return;
+		} else if (!r.test(contractAmount)) {
+			alert("合同金额有误，请重新输入");
+			return;
+		}
+
+		if (serviceDetails == "") {
+			alert("服务内容不能为空");
+			return;
+		}
+		
+		$.ajax({
+			url : "${pageContext.request.contextPath}/editContract",
+			type : 'POST',
+			cache : false,
+			dataType : "json",
+			data : {
+				"contractNum" : contractNum,
+				"companyId" : companyId,
+				"projectId" : projectId,
+				"saleUser" : salesId,
+				"dateForContract" : dateForStartContract + "-"
+						+ dateForEndContract,
+				"contractAmount" : contractAmount,
+				"taxRate" : taxRate,
+				"serviceDetails" : serviceDetails,
+				"paymentInfo" : arrayPaymentInfo,
+				"id":id,
+				"isUploadContract":false
+			},
+			traditional : true,
+			success : function(returndata) {
+				var data = returndata.errcode;
+				if (data == 0) {
+					alert("录入合同成功");
+					//parent.leftFrame.getContractNum();
+					setTimeout(function() {
+						location.reload();
+					}, 500);
+				} else {
+					alert("录入失败");
+				}
+			},
+			error : function(XMLHttpRequest, textStatus, errorThrown) {
+			}
+		});
+	}
 </script>
 
 </head>
 <body>
-   <div>
-		<form id="test" action="#" method="get">
-			<div style="float: left; width: 100%;">
-				<fieldset
-					style="width: 95.5%; height: 700px; margin: 5px 0 5px 5px;">
-					<legend>合同有关</legend>
-					<div class="form-row">
-						<div class="field-label" style="width: 130px">
-							<label><Strong style="color: red">★ </Strong><Strong>合同编号：</Strong></label>
-						</div>
-						<div class="field-widget">
-							<input id="contractNum" class="required" style="width: 510px;" />
-						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="field-label" style="width: 130px">
-							<label><Strong style="color: red">★ </Strong><Strong>项目名称：</Strong></label>
-						</div>
-						<div class="field-widget">
-							<input id="projectName" class="required" style="width: 510px;" />
-						</div>
-					</div>
-
-					<div class="form-row" style="width: 100%; height: auto">
-						<div class="field-label" style="width: 130px">
-							<label><Strong style="color: red">★ </Strong><Strong>合同实施日期：</Strong></label>
-						</div>
-						<div class="field-widget" style="width: 33.5%">
-							<input class="required" type="text" id="dateForStartContract"
-								style="width: 100%">
-							<div id="dd"></div>
-						</div>
-						<div class="field-label" style="width: 5%; margin-left: 25px">
-							<label style="width: 100%"><Strong>至</Strong></label>
-						</div>
-						<div class="field-widget" style="width: 33.5%">
-							<input class="required" type="text" id="dateForEndContract"
-								style="width: 100%">
-							<div id="dd2"></div>
-						</div>
-					</div>
-
-					<div class="form-row" style="width: 100%; height: auto">
-						<div class="field-label" style="width: 130px">
-							<label><Strong style="color: red">★ </Strong><Strong>销售人员：</Strong></label>
-						</div>
-						<div class="field-widget">
-							<select id="saleUser" class="validate-selection"
-								style="width: 515px">
-							</select>
-						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="field-label" style="width: 130px">
-							<label><Strong style="color: red">★ </Strong><Strong>用户名称：</Strong></label>
-						</div>
-						<div class="field-widget">
-							<select id="clientName" class="validate-selection"
-								style="width: 515px">
-							</select>
-						</div>
-					</div>
-
-					<div class="form-row" style="width: 100%; height: auto">
-						<div class="field-label" style="width: 130px">
-							<label><Strong style="color: red">★ </Strong><Strong>合同金额(含税)：</Strong></label>
-						</div>
-						<div class="field-widget" style="width: 35%">
-							<input id="contractAmount" class="required" style="width: 100%" />
-						</div>
-						<div class="field-label" style="width: 75px; margin-left: 25px">
-							<label><Strong style="color: red;">★ </Strong><Strong>税率：</Strong></label>
-						</div>
-						<div class="field-label2" style="width: 80px">
-							<input type="radio" name="field01" id="taxRate" value="1"
-								checked="checked" onclick="checkTaxRate(1)" />6%
-						</div>
-						<div class="field-label2" style="width: 80px">
-							<input type="radio" name="field01" id="taxRate" value="0"
-								onclick="checkTaxRate(0)" />13%
-						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="field-label" style="width: 130px">
-							<label><Strong style="color: red;">★ </Strong><Strong>服务内容说明：</Strong></label>
-						</div>
-						<div class="field-widget">
-							<textarea id="serviceDetails" class="required"
-								style="resize: none; width: 510px; height: 140px; background-color: #fff"></textarea>
-						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="field-label" style="width: 130px">
-							<label><Strong style="color: red;">★ </Strong><Strong>收款说明：</Strong></label>
-						</div>
-						<div class="field-widget">
-							<textarea id="collectionDetails" class="required"
-								placeholder="时间节点&nbsp-&nbsp节点说明&nbsp-&nbsp收款方式&nbsp-&nbsp收款金额（比例）"
-								style="resize: none; width: 510px; height: 120px; background-color: #fff"></textarea>
-						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="field-label" style="width: 130px">
-							<label><Strong style="color: red; visibility: hidden">★
-							</Strong><Strong>合同交货：</Strong></label>
-						</div>
-						<div class="field-widget">
-							<textarea id="deliveryDetails" class="required"
-								placeholder="交货内容&nbsp-&nbsp要求交货期&nbsp-&nbsp实际交货期"
-								style="resize: none; width: 510px; height: 120px; background-color: #fff"></textarea>
-						</div>
-					</div>
-
-					<input type="button" class="reset" value="提交"
-						style="margin-right: 20px; width: 60px; margin-top: 10px; float: right"
-						onclick="EditContract()" />
-				</fieldset>
+	<div id="pageAll">
+		<!-- pageTop-->
+		<div class="pageTop">
+			<div class="page">
+				<img src="${pageContext.request.contextPath}/image/coin02.png" /><span><a
+					href="#">首页</a>&nbsp;-&nbsp;<a href="#">合同管理</a>&nbsp;-</span>&nbsp;编辑合同信息
 			</div>
+		</div>
+		<!-- end of  pageTop-->
 
-        </form>
+		<div class="page">
+			<div class="banneradd bor">
+				<div class="baTopNo">
+					<span>编辑合同信息</span>
+				</div>
+				<!-- baBody-->
+				<div class="baBody">
+					<div class="bbD">
+						<label>合同编号：</label><input type="text" class="input3"
+							id="contractNum" style="width: 670px; margin-right: 10px;" />
+					</div>
+
+					<div class="bbD">
+						<label>客户名称：</label><select class="selCss" id="companyId"
+							style="margin-right: 10px; width: 285px;"
+							onChange="changeCompany(this.options[this.options.selectedIndex].value)"></select>
+						<label>销售人员：</label><select class="selCss" id="salesId"
+							style="width: 285px;"></select>
+					</div>
+
+					<div class="bbD">
+						<label>项目名称：</label><select class="selCss" id="projectId"
+							style="margin-right: 10px; width: 676px;"><option
+								value="0">请选择...</option></select>
+					</div>
+
+
+
+					<div class="bbD">
+						<label style="margin-left: -12px">合同实施日期：</label><input
+							class="input3" type="text" id="dateForStartContract"
+							style="width: 110px;"> <span id="dd_dateForStartContract"></span>
+						<Strong style="margin-left: 15px; margin-right: 10px">至</Strong> <input
+							class="input3" type="text" id="dateForEndContract"
+							style="width: 110px;"> <span id="dd_dateForEndContract"></span>
+						<label style="margin_left: 15px">合同金额：&nbsp;&nbsp;￥</label><input
+							type="text" class="input3" id="contractAmount"
+							style="width: 100px; margin-right: 5px;" /> <label>税率：</label> <input
+							type="text" class="input3" id="taxrate"
+							style="width: 80px; margin-right: 5px;" />%
+					</div>
+
+					<div class="bbD">
+						<label style="float: left; margin-left: -12px">服务内容说明：</label>
+						<textarea id="serviceDetails"
+							style="width: 670px; resize: none; height: 100px; margin-right: 10px;"
+							class="input3"></textarea>
+					</div>
+
+                    <div style="border:1px solid green;margin:20px;margin-left:-40px;width:900px"></div>
+
+					<div class="bbD" id="collectionInfo" style="margin-left: -26px">
+						<div class="bbD" id="mDiv0_0_1" style="height: 32px">
+							<label style="float: left; margin-left: 42px">收款说明：</label><label
+								style="margin-left: 5px; float: left;">合同收款时间：</label><input
+								class="input3" type="text" id="collectionTime1"
+								style="width: 150px; float: left;" /><span id="dd0_1_0"></span>
+							<label style="margin-left: 15px; float: left;">实际收款时间：</label><input
+								class="input3" type="text" id="actCollectionTime1"
+								style="width: 150px; float: left;" /><span id="dd0_1_1"></span>
+							<label style="margin-left: 15px"></label> <input id="switch0_1"
+								type="checkbox" data-size="mini" data-on-text="已收款"
+								data-off-text="未收款" data-label-text="收款状态"/>
+						</div>
+						<div class="bbD" id="mDiv0_0_2" style="height: 32px">
+							<label style="margin-left: 160px; float: left;">收款说明：</label><input
+								class="input3" id="collectionDesc1"
+								style="width: 500px; height: 20px; float: left;"></input> <img
+								style="height: 30px; margin-left: 10px"
+								src="${pageContext.request.contextPath}/image/plus2018.png"
+								onClick="addNewCollection()"><img style="height: 30px;"
+								src="${pageContext.request.contextPath}/image/minus2018.png"
+								onClick="removeCollection()">
+						</div>
+					</div>
+                    <div style="border:1px solid green;margin:20px;margin-left:-40px;width:900px"></div>
+					<div class="bbD" id="deliveryInfo" style="margin-left: -26px">
+						<div class="bbD" id="mDiv1_0_1" style="height: 32px">
+							<label style="float: left; margin-left: 42px">交货说明：</label><label
+								style="margin-left: 5px; float: left;">合同交货时间：</label><input
+								class="input3" type="text" id="deliveryTime1"
+								style="width: 150px; float: left;"> <span id="dd1_1_0"></span>
+							<label style="margin-left: 15px; float: left;">实际交货时间：</label><input
+								class="input3" type="text" id="actDeliveryTime1"
+								style="width: 150px; float: left;"><span id="dd1_1_1"></span>
+							<label style="margin-left: 15px"></label> <input id="switch1_1"
+								type="checkbox" data-size="mini" data-on-text="已交货"
+								data-off-text="未交货" data-label-text="交货状态"/>
+						</div>
+						<div class="bbD" id="mDiv1_0_2" style="height: 32px">
+							<label style="margin-left: 160px; float: left;">交货说明：</label> <input
+								class="input3" id="deliveryDesc1"
+								style="width: 500px; height: 20px; float: left;"></input> <img
+								style="height: 30px; margin-left: 10px"
+								src="${pageContext.request.contextPath}/image/plus2018.png"
+								onClick="addNewDelivery()"><img style="height: 30px;"
+								src="${pageContext.request.contextPath}/image/minus2018.png"
+								onClick="removeDelivery()">
+						</div>
+					</div>
+
+
+					<div class="cfD" style="margin-bottom: 30px; display: none"
+						id="divEdit">
+						<a class="addA" href="#" onclick="editContract()" id="operation"
+							style="margin-left: 120px; margin-top: 20px">编辑</a> <a
+							class="addA" href="#" onclick="toContractListPage()">返回</a>
+					</div>
+
+				</div>
+				<!-- end of  baBody-->
+			</div>
+			<!-- end of  banneradd bor-->
+		</div>
+		<!-- end of  page-->
 	</div>
 
 </body>

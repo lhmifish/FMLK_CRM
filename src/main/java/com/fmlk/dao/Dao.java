@@ -3862,6 +3862,9 @@ public class Dao {
 					list.add(dr);
 				}
 			}
+			
+			System.out.println(list.size());
+			
 			List<DailyReport> list1st = new ArrayList<DailyReport>(), list2nd = new ArrayList<DailyReport>();
 			List<DailyReport> list3rd = new ArrayList<DailyReport>(), list4th = new ArrayList<DailyReport>();
 			List<DailyReport> list5th = new ArrayList<DailyReport>(), list6th = new ArrayList<DailyReport>();
@@ -3871,6 +3874,7 @@ public class Dao {
 
 			for (int i = 0; i < list.size(); i++) {
 				int month = Integer.parseInt(list.get(i).getDate().substring(5, 7));
+				System.out.println("month:"+month);
 				if (month == 1) {
 					list1st.add(list.get(i));
 				} else if (month == 2) {
@@ -3928,12 +3932,15 @@ public class Dao {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			DBConnection.closeCon(con);
-			DBConnection.closePre(pre);
-			DBConnection.closeRes(res);
-			DBConnection.closeCon(con2);
-			DBConnection.closePre(pre2);
-			DBConnection.closeRes(res2);
+			if(con!=null&&pre!=null&&res!=null) {
+				DBConnection.closeCon(con);
+				DBConnection.closePre(pre);
+				DBConnection.closeRes(res);
+			}else if(con2!=null&&pre2!=null&&res2!=null) {
+				DBConnection.closeCon(con2);
+				DBConnection.closePre(pre2);
+				DBConnection.closeRes(res2);
+			}
 		}
 		return null;
 	}
@@ -4114,6 +4121,30 @@ public class Dao {
 			DBConnection.closePre(pre);
 		}
 	}
+	
+	public String deleteWorkAttendance(String date) {
+		jsonObject = new JSONObject();
+		try {
+			sql = "delete from daily_report where date = ?";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setString(1,date);
+			int j = pre.executeUpdate();
+			if (j > 0) {
+				jsonObject.put("errcode", "0");
+			} else {
+				jsonObject.put("errcode", "1");
+			}
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+		}
+	}
 
 	public String getUserMonthReportList(String date) {
 		try {
@@ -4274,26 +4305,6 @@ public class Dao {
 
 	public String createWorkAttendance(DailyReport dr) {
 		jsonObject = new JSONObject();
-		try {
-			sql2 = "select * from daily_report where date = ? and name = ?";
-			con2 = DBConnection.getConnection_Mysql();
-			pre2 = con2.prepareStatement(sql2);
-			pre2.setString(1, dr.getDate());
-			pre2.setString(2, dr.getName());
-			res2 = pre2.executeQuery();
-			while (res2.next()) {
-				jsonObject.put("errcode", "3");
-				return jsonObject.toString();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			jsonObject.put("errcode", "2");
-			return jsonObject.toString();
-		} finally {
-			DBConnection.closeCon(con2);
-			DBConnection.closePre(pre2);
-			DBConnection.closeRes(res2);
-		}
 		try {
 			sql = "insert into daily_report (date,name,schedule,dailyReport,weekReport,nextWeekPlan,projectReport,sign,remark,islate,overWorkTime,adjustRestTime,festivalOverWorkTime) values (?,?,?,?,?,?,?,?,?,?,?,?,?)";
 			con = DBConnection.getConnection_Mysql();
@@ -4501,5 +4512,7 @@ public class Dao {
 			DBConnection.closePre(pre);
 		}
 	}
+
+	
 
 }

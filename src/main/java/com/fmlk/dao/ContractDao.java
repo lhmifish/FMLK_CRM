@@ -17,6 +17,7 @@ public class ContractDao {
 	private JSONObject jsonObject = null;
 	private ResultSet res, res2, res3 = null;
 	private List<Contract> ctList = null;
+	private List<String> objList = null;
 
 	public String queryContract(Contract contract, String[] paymentInfo) {
 		jsonObject = new JSONObject();
@@ -58,7 +59,7 @@ public class ContractDao {
 			pre2.setString(4, contract.getProjectId());
 			pre2.setString(5, contract.getDateForContract());
 			pre2.setLong(6, contract.getContractAmount());
-			pre2.setInt(7, contract.getTaxRate());
+			pre2.setString(7, contract.getTaxRate()+"%");
 			pre2.setString(8, contract.getServiceDetails());
 			pre2.setString(9, contract.getCreateDate());
 			int j = pre2.executeUpdate();
@@ -158,6 +159,7 @@ public class ContractDao {
 				mContract.setCompanyId(res.getString("companyId"));
 				mContract.setSaleUser(res.getInt("saleUser"));
 				mContract.setDateForContract(res.getString("dateForContract"));
+				mContract.setIsUploadContract(res.getBoolean("isUploadContract"));
 				ctList.add(mContract);
 			}
 			jsonObject = new JSONObject();
@@ -201,28 +203,131 @@ public class ContractDao {
 		}
 	}
 
-	/*
-	 * public String getContractById(int id) { try { sql =
-	 * "select * from contract where id = ?"; con =
-	 * DBConnection.getConnection_Mysql(); pre = con.prepareStatement(sql);
-	 * pre.setInt(1, id); res = pre.executeQuery(); if (res.next()) { Contract ct =
-	 * new Contract(); ct.setId(res.getInt("id"));
-	 * ct.setContractNum(res.getString("contractNum"));
-	 * ct.setProjectName(res.getString("projectName"));
-	 * ct.setProjectNum(res.getString("projectNum"));
-	 * ct.setDateForStartContract(res.getString("dateForStartContract"));
-	 * ct.setDateForEndContract(res.getString("dateForEndContract"));
-	 * ct.setClientName(res.getString("clientName"));
-	 * ct.setSaleUser(res.getString("saleUser"));
-	 * ct.setTaxRate(res.getInt("taxRate"));
-	 * ct.setContractAmount(res.getInt("contractAmount"));
-	 * ct.setServiceDetails(res.getString("serviceDetails"));
-	 * ct.setCollectionDetails(res.getString("collectionDetails"));
-	 * ct.setDeliveryDetails(res.getString("deliveryDetails")); jsonObject = new
-	 * JSONObject(); jsonObject.put("errcode", "0"); jsonObject.put("errmsg",
-	 * "query"); jsonObject.put("contract", JSONArray.fromObject(ct)); return
-	 * jsonObject.toString(); } } catch (Exception e) { e.printStackTrace(); }
-	 * finally { DBConnection.closeCon(con); DBConnection.closePre(pre);
-	 * DBConnection.closeRes(res); } return null; }
-	 */
+	public String getContractById(int id) {
+		try { 
+			sql = "select * from contract where id = ?";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setInt(1, id);
+			res = pre.executeQuery();
+			if (res.next()) {
+				Contract ct = new Contract();
+				ct.setId(res.getInt("id"));
+				ct.setContractNum(res.getString("contractNum"));
+				ct.setProjectId(res.getString("projectId"));
+				ct.setCompanyId(res.getString("companyId"));
+			    ct.setSaleUser(res.getInt("saleUser"));
+			    ct.setDateForContract(res.getString("dateForContract"));
+			    ct.setContractAmount(res.getLong("contractAmount"));
+			    String taxStr = res.getString("taxRate");
+			    ct.setTaxRate(Integer.parseInt(taxStr.substring(0, taxStr.length()-1)));
+				ct.setServiceDetails(res.getString("serviceDetails"));
+			    ct.setIsUploadContract(res.getBoolean("isUploadContract"));
+			    jsonObject = new JSONObject();
+				jsonObject.put("errcode", "0");
+				jsonObject.put("errmsg", "query");
+				jsonObject.put("contract", JSONArray.fromObject(ct));
+				return jsonObject.toString();
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
+
+	public String editContract(Contract ct,String[] paymentInfo) {
+		jsonObject = new JSONObject();
+		try {
+			sql = "update contract set ";
+			con = DBConnection.getConnection_Mysql();
+			if(!ct.getCompanyId().equals("")) {
+				sql += "companyId = '" + ct.getCompanyId() + "',";
+			}
+			if(ct.getSaleUser() != 0) {
+				sql += "saleUser = " + ct.getSaleUser() + ",";
+			}
+			if(!ct.getProjectId().equals("")) {
+				sql += "projectId = '" + ct.getProjectId() + "',";
+			}
+			
+			String dateForContract = ct.getDateForContract();
+			String dateForStartContract = dateForContract.split("-")[0];
+			String dateForEndContract = dateForContract.split("-")[1];
+			if(!dateForStartContract.equals("none") && !dateForEndContract.equals("none")) {
+				sql += "dateForContract = '" + ct.getDateForContract() + "',";
+			}
+
+			if(ct.getContractAmount() != 0) {
+				sql += "contractAmount = " + ct.getContractAmount()+ ",";
+			}
+			
+			if(ct.getTaxRate() != 0) {
+				sql += "taxRate = '" + ct.getTaxRate() + "%',";
+			}
+			
+			if(!ct.getServiceDetails().equals("")) {
+				sql += "serviceDetails = '" + ct.getServiceDetails() + "',";
+			}
+
+			if(ct.getIsUploadContract()) {
+				sql += "isUploadContract = " + ct.getIsUploadContract() + ",";
+			}
+			sql += "contractNum = ? where id = ?";
+			pre = con.prepareStatement(sql);
+			pre.setString(1, ct.getContractNum());
+			pre.setInt(2, ct.getId());
+			int j = pre.executeUpdate();
+			if (j > 0) {
+				jsonObject.put("errcode", "0");
+			} else {
+				jsonObject.put("errcode", "1");
+			}
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+		}
+	}
+
+	public String getContractPaymentInfoList(String contractNum) {
+		try {
+			sql = "select * from contractpaymentinfo  where contractNum = ? order by type,id";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setString(1, contractNum);
+			res = pre.executeQuery();
+			objList = new ArrayList<String>();
+			while (res.next()) {
+				String time = res.getString("time");
+				String actTime = res.getString("actTime");
+				String desc = res.getString("description");
+				int type = res.getInt("type");
+				String isFinished = res.getBoolean("isFinished")?"1":"0";
+				objList.add(time+"#"+actTime+"#"+desc+"#"+type+"#"+isFinished);
+			}
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", "query");
+			jsonObject.put("paymentInfolist", JSONArray.fromObject(objList));
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
+
 }

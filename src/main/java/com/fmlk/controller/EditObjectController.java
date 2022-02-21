@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import com.fmlk.entity.Company;
+import com.fmlk.entity.Contract;
 import com.fmlk.entity.DailyReport;
 import com.fmlk.entity.JobPosition;
 import com.fmlk.entity.MonthReport;
@@ -185,6 +186,31 @@ public class EditObjectController implements ApplicationContextAware {
 		String jsonStr = mProjectService.deleteProject(id);
 		return jsonStr;
 	}
+	
+	
+	/**
+	 * 编辑标书
+	 * 
+	 */
+	@RequestMapping(value = "/editContract", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String editContract(HttpServletRequest request) {
+		mContractService = new ContractService();
+		Contract ct = new Contract();
+		ct.setId(Integer.parseInt(request.getParameter("id")));
+		ct.setContractNum(request.getParameter("contractNum"));
+		ct.setCompanyId(request.getParameter("companyId"));
+		ct.setProjectId(request.getParameter("projectId"));
+		ct.setSaleUser(Integer.parseInt(request.getParameter("saleUser")));
+		ct.setDateForContract(request.getParameter("dateForContract"));
+		ct.setContractAmount(Long.parseLong(request.getParameter("contractAmount")));
+		ct.setTaxRate(Integer.parseInt(request.getParameter("taxRate")));
+		ct.setServiceDetails(request.getParameter("serviceDetails"));
+		ct.setIsUploadContract(Boolean.parseBoolean(request.getParameter("isUploadContract")));
+		String[] paymentInfo = request.getParameterValues("paymentInfo");		
+		String jsonStr = mContractService.editContract(ct,paymentInfo);
+		return jsonStr;
+	}
 
 	/**
 	 * 删除合同
@@ -200,7 +226,7 @@ public class EditObjectController implements ApplicationContextAware {
 	}
 
 	/**
-	 * 删除合同
+	 * 删除派工
 	 * 
 	 */
 	@RequestMapping(value = "/deleteProjectCase", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
@@ -457,6 +483,19 @@ public class EditObjectController implements ApplicationContextAware {
 		dr.setFestivalOverWorkTime(Double.parseDouble(request.getParameter("festivalOverWorkTime")));
 		dr.setIsLate(Integer.parseInt(request.getParameter("isLate")));
 		String jsonStr = mService.editWorkAttendance(dr);
+		return jsonStr;
+	}
+	
+	/**
+	 * 编辑用户考勤数据
+	 * 
+	 */
+	@RequestMapping(value = "/deleteThisWorkAttendance", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String deleteWorkAttendance(HttpServletRequest request) {
+		mService = new Service();
+		String date = request.getParameter("date");
+		String jsonStr = mService.deleteWorkAttendance(date);
 		return jsonStr;
 	}
 

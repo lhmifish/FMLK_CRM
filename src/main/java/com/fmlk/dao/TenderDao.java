@@ -46,7 +46,7 @@ public class TenderDao {
 		try {
 			sql = "insert into tender (tenderNum,tenderCompany,tenderAgency,projectId,dateForBuy,dateForSubmit,dateForOpen,"
 					+ "saleUser,tenderStyle,tenderExpense,tenderIntent,productStyle,productBrand,enterpriseQualificationRequirment,"
-					+ "technicalRequirment,remark,tenderGuaranteeFee,createDate) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+					+ "technicalRequirment,remark,tenderGuaranteeFee,createDate) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setString(1, tender.getTenderNum());

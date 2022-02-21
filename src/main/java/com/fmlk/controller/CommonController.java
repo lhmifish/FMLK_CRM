@@ -63,15 +63,15 @@ public class CommonController implements ApplicationContextAware {
 		int reportType = Integer.parseInt(request.getParameter("reportType"));
 		String projectId = request.getParameter("projectId");
 		String createYear = request.getParameter("createYear");
-		String boundary = multipartRequest.getContentType().split("=")[1];
-        int salesId = Integer.parseInt(request.getParameter("salesId"));
+		String boundary = multipartRequest.getContentType().split("=")[1];		
+		int salesId = Integer.parseInt(request.getParameter("salesId"));
 		int userId = Integer.parseInt(request.getParameter("userId"));
 		String projectName = request.getParameter("projectName");
 		String companyName = request.getParameter("companyName");
 		
 		// 获取accessToken
 		String accessToken = FileServerUtils.getAccessToken();
-		System.out.println(accessToken);
+		//System.out.println(accessToken);
 
 		jsonObject = new JSONObject();
 		if (!accessToken.equals("")) {
@@ -102,6 +102,7 @@ public class CommonController implements ApplicationContextAware {
 					System.out.println("附件上传通知");
 					List<User> userList = new ArrayList<User>();
 					mUserService = new UserService();
+					userList = mUserService.getUserList("15");
 					if (salesId == userId) {
 						if ((salesId != 3)) {
 							userList = mUserService.getUserList(salesId + ",3");
@@ -119,6 +120,7 @@ public class CommonController implements ApplicationContextAware {
 					WeChatEnterpriseUtils.sendProjectReportUploadInform(accessToken2, projectName, companyName, userList,
 							salesId, userId, fileName, reportType);
 				}
+				System.out.println("第" + (chunk + 1) + "分片上传成功");
 				return jsonObject.toString();
 			}
 		} else {

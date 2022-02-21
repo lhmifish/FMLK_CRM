@@ -184,6 +184,8 @@ public class GetObjectListController implements ApplicationContextAware {
 		p.setSalesId(Integer.parseInt(request.getParameter("salesId")));
 		p.setProjectManager(Integer.parseInt(request.getParameter("projectManager")));
 		String jsonStr = mProjectService.getProjectList(p);
+		System.out.println("12345");
+		System.out.println(jsonStr);
 		return jsonStr;
 	}
 
@@ -440,8 +442,21 @@ public class GetObjectListController implements ApplicationContextAware {
         int projectState = Integer.parseInt(request.getParameter("projectState"));
 		int projectType = Integer.parseInt(request.getParameter("projectType"));
 		String jsonStr = mProjectService.getProjectSubStateList(projectState, projectType);
-		//System.out.println(jsonStr);
 		return jsonStr;
 	}
+	
+	/**
+	 * 获取合同收款交货说明
+	 * 
+	 */
+	@RequestMapping(value = "/getContractPaymentInfoList", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getContractPaymentInfoList(HttpServletRequest request) {
+		mContractService = new ContractService();
+		String contractNum = request.getParameter("contractNum");
+		String jsonStr = mContractService.getContractPaymentInfoList(contractNum);		
+		return jsonStr;
+	}
+	
 
 }

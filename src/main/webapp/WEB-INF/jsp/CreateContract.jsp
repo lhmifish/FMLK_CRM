@@ -41,13 +41,19 @@
 	margin-left: -400px;
 }
 
-.xcConfirm .popBox .txtBox{
-       margin: 25px 25px; 
-       height: 380px; 
-       overflow: hidden;
- }
- 
- .xcConfirm .popBox .txtBox p{ height: 350px; margin: 5px; line-height: 16px; overflow-x: hidden; overflow-y: auto;}
+.xcConfirm .popBox .txtBox {
+	margin: 25px 25px;
+	height: 380px;
+	overflow: hidden;
+}
+
+.xcConfirm .popBox .txtBox p {
+	height: 350px;
+	margin: 5px;
+	line-height: 16px;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
 
 a:hover {
 	color: #FF00FF
@@ -56,47 +62,44 @@ a:hover {
 
 <script type="text/javascript">
 	var today;
-	var taxRate;
 	var collectionNum;
 	var deliveryNum;
 	var sId;
 	var host;
 	var isPermissionView;
-	
+
 	var isPermissionCreate;
-	
-	
-	$(document).ready(function() {
-		sId = "${sessionId}";
-		host = "${pageContext.request.contextPath}";
-		checkViewPremission(32);
-		
-		
-		
-		if(sId == null || sId == ""){
-			parent.location.href = "${pageContext.request.contextPath}/page/login";
-		}else{
-			getUserPermissionList();
-			today = formatDate(new Date()).substring(0, 10);
-			$('#dateForStartContract').val(today);
-			$('#dateForEndContract').val(today);
-			getSaleUserList();
-			getCompanyList();
-			$("#saleUser").select2({});
-			$("#companyId").select2({});
-			$("#projectName").select2({});
-			initDate();
-			collectionNum = 1;
-			deliveryNum = 1;
-			taxRate = 1;
-			getUnInputContract();
-		}
-	});
-	
-	function initialPage(){
-		
+
+	$(document)
+			.ready(
+					function() {
+						sId = "${sessionId}";
+						host = "${pageContext.request.contextPath}";
+						checkViewPremission(32);
+
+						if (sId == null || sId == "") {
+							parent.location.href = "${pageContext.request.contextPath}/page/login";
+						} else {
+							getUserPermissionList();
+							today = formatDate(new Date()).substring(0, 10);
+							$('#dateForStartContract').val(today);
+							$('#dateForEndContract').val(today);
+							getSaleUserList();
+							getCompanyList();
+							$("#saleUser").select2({});
+							$("#companyId").select2({});
+							$("#projectName").select2({});
+							initDate();
+							collectionNum = 1;
+							deliveryNum = 1;
+							getUnInputContract();
+						}
+					});
+
+	function initialPage() {
+
 	}
-	
+
 	function getUserPermissionList() {
 		$
 				.ajax({
@@ -126,7 +129,6 @@ a:hover {
 					}
 				});
 	}
-
 
 	function formatDate(date) {
 		var myyear = date.getFullYear();
@@ -423,25 +425,24 @@ a:hover {
 		return mSalesId;
 	}
 
-	function checkTaxRate(rate) {
-		taxRate = rate;
-	}
-
 	function addNewCollection() {
 		if (collectionNum > 2) {
 			alert("最多只能输入3条收款说明");
 			return;
 		}
 		collectionNum++;
-		var str = '<div class="bbD" id="mDiv0_'+collectionNum+'" style="height:32px"><label style="float: left;margin-left:132px">时间节点：</label>'
-				+ '<input class="input3" type="text" id="collectionTime'+ collectionNum +'"'
-		+'style="width: 100px; float: left;"><span id="dd0_'+collectionNum+'_0"></span>'
-				+ '<label style="margin-left: 15px; float: left;">收款说明：</label>'
-				+ '<input class="input3" id="collectionDesc'+ collectionNum +'"'
-		+'style="width: 200px; height: 20px; float: left;"></input>'
+		var str = '<div class="bbD" id="mDiv0_'+(collectionNum-1)+'_1" style="height:32px">'
+		        + '<label style="float: left;margin-left:132px">合同收款时间：</label>'
+				+ '<input class="input3" type="text" id="collectionTime'+ collectionNum +'" style="width: 200px; float: left;"/><span id="dd0_'+collectionNum+'_0"></span>'
 				+ '<label style="margin-left: 15px; float: left;">实际收款时间：</label>'
-				+ '<input class="input3" type="text" id="actCollectionTime'+ collectionNum +'"'
-		+'style="width: 100px; float: left;"><span id="dd0_'+collectionNum+'_1"></span></div>';
+				+ '<input class="input3" type="text" id="actCollectionTime'+ collectionNum +'" style="width: 200px; float: left;"/><span id="dd0_'+collectionNum+'_1"></span>'
+				+ '</div>';
+		$("#collectionInfo").append(str);
+
+		    str = '<div class="bbD" id="mDiv0_'+(collectionNum-1)+'_2" style="height:32px">'
+		        + '<label style="float: left;margin-left:160px">收款说明：</label>'
+				+ '<input class="input3" id="collectionDesc'+ collectionNum +'" style="width: 540px; height: 20px; float: left;"/>'
+				+ '</div>';
 		$("#collectionInfo").append(str);
 
 		var thisNum = collectionNum;
@@ -478,7 +479,8 @@ a:hover {
 			alert("至少要输入1条收款说明");
 			return;
 		}
-		$("#mDiv0_" + collectionNum).remove();
+		$("#mDiv0_" + (collectionNum-1) + "_1").remove();
+		$("#mDiv0_" + (collectionNum-1) + "_2").remove();
 		collectionNum--;
 	}
 
@@ -488,15 +490,20 @@ a:hover {
 			return;
 		}
 		deliveryNum++;
-		var str = '<div class="bbD" id="mDiv1_'+deliveryNum+'" style="height:32px"><label style="float: left;margin-left:132px">时间节点：</label>'
-				+ '<input class="input3" type="text" id="deliveryTime'+ deliveryNum +'"'
-		+'style="width: 100px; float: left;"><span id="dd1_'+deliveryNum+'_0"></span>'
-				+ '<label style="margin-left: 15px; float: left;">交货说明：</label>'
-				+ '<input class="input3" id="deliveryDesc'+ deliveryNum +'"'
-		+'style="width: 200px; height: 20px; float: left;"></input>'
+		var str = '<div class="bbD" id="mDiv1_'+(deliveryNum-1)+'_1" style="height:32px">'
+				+ '<label style="float: left;margin-left:132px">合同交货时间：</label>'
+				+ '<input class="input3" type="text" id="deliveryTime'+ deliveryNum +'" style="width: 200px; float:left;"/><span id="dd1_'+deliveryNum+'_0"></span>'
 				+ '<label style="margin-left: 15px; float: left;">实际交货时间：</label>'
-				+ '<input class="input3" type="text" id="actDeliveryTime'+ deliveryNum +'"'
-		+'style="width: 100px; float: left;"><span id="dd1_'+deliveryNum+'_1"></span></div>';
+				+ '<input class="input3" type="text" id="actDeliveryTime'+ deliveryNum +'" style="width: 200px; float: left;"/><span id="dd1_'+deliveryNum+'_1"></span>'
+				+ '</div>';
+
+		$("#deliveryInfo").append(str);
+
+		    str = '<div class="bbD" id="mDiv1_'+(deliveryNum-1)+'_2" style="height:32px">'
+				+ '<label style="margin-left: 160px; float: left;">交货说明：</label>'
+				+ '<input class="input3" id="deliveryDesc'+ deliveryNum +'" style="width: 540px; height: 20px; float: left;"/>'
+				+ '</div>';
+
 		$("#deliveryInfo").append(str);
 
 		var thisNum = deliveryNum;
@@ -532,21 +539,25 @@ a:hover {
 			alert("至少要输入1条交货说明");
 			return;
 		}
-		$("#mDiv1_" + deliveryNum).remove();
+		$("#mDiv1_" + (deliveryNum-1) + "_1").remove();
+		$("#mDiv1_" + (deliveryNum-1) + "_2").remove();
 		deliveryNum--;
+		
 	}
 
 	function createNewContract() {
-		var contractNum = $("#contractNum").val().trim();
+		var contractNum = $("#contractNum").val().trim();		
 		var companyId = $("#companyId").val();
 		var salesId = $("#saleUser").val();
 		var projectId = $("#projectName").val();
 		var dateForStartContract = $("#dateForStartContract").val().trim();
 		var dateForEndContract = $("#dateForEndContract").val().trim();
 		var contractAmount = $("#contractAmount").val().trim();
-		//	taxRate
+		var taxRate = $("#taxrate").val().trim();
 		var serviceDetails = $("#serviceDetails").val().trim();
+		
 		var arrayPaymentInfo = new Array();
+		
 		for (var i = 1; i <= collectionNum; i++) {
 			var time = $("#collectionTime" + i).val();
 			var time2 = $("#actCollectionTime" + i).val();
@@ -555,7 +566,6 @@ a:hover {
 			time2 = (time2 == "") ? "*" : time2;
 			desc = (desc == "") ? "*" : desc;
 			arrayPaymentInfo.push("1#" + time + "#" + time2 + "#" + desc);
-
 		}
 		for (var j = 1; j <= deliveryNum; j++) {
 			var time3 = $("#deliveryTime" + j).val();
@@ -566,7 +576,7 @@ a:hover {
 			desc2 = (desc2 == "") ? "*" : desc2;
 			arrayPaymentInfo.push("2#" + time3 + "#" + time4 + "#" + desc2);
 		}
-
+		
 		if (contractNum == "") {
 			alert("合同编号不能为空");
 			return;
@@ -609,7 +619,7 @@ a:hover {
 			alert("服务内容不能为空");
 			return;
 		}
-
+		
 		$.ajax({
 			url : "${pageContext.request.contextPath}/createNewContract",
 			type : 'POST',
@@ -667,84 +677,90 @@ a:hover {
 					<div class="bbD">
 						<label style="margin-left: 42px">合同编号：</label><input type="text"
 							class="input3" id="contractNum"
-							style="width: 350px; margin-right: 10px;" />
+							style="width: 670px; margin-right: 10px;" />
 					</div>
 
 					<div class="bbD">
 						<label style="margin-left: 42px">客户名称：</label><select
 							class="selCss" id="companyId"
-							style="margin-right: 10px; width: 360px;"
+							style="margin-right: 10px; width: 290px;"
 							onChange="changeCompany(this.options[this.options.selectedIndex].value)"></select>
 						<label>销售人员：</label><select class="selCss" id="saleUser"
-							style="width: 350px;"></select>
+							style="width: 290px;"></select>
 
 					</div>
 
 					<div class="bbD">
 						<label style="margin-left: 42px">项目名称：</label><select
 							class="selCss" id="projectName"
-							style="margin-right: 10px; width: 360px;"><option
+							style="margin-right: 10px; width: 680px;"><option
 								value="0">请选择...</option></select>
 					</div>
 
 					<div class="bbD">
 						<label>合同实施日期：</label><input class="input3" type="text"
-							id="dateForStartContract" style="width: 145px;"> <span
+							id="dateForStartContract" style="width: 100px;"> <span
 							id="dd_dateForStartContract"></span> <Strong
 							style="margin-left: 15px; margin-right: 10px">至</Strong> <input
 							class="input3" type="text" id="dateForEndContract"
-							style="width: 145px;"> <span id="dd_dateForEndContract"></span>
-						<label>合同金额：&nbsp;&nbsp;&nbsp;RMB</label><input type="text"
+							style="width: 100px;"> <span id="dd_dateForEndContract"></span>
+						<label>合同金额：&nbsp;&nbsp;&nbsp;￥</label><input type="text"
 							class="input3" id="contractAmount"
-							style="width: 100px; margin-right: 10px;" /> <label>税率：</label>
-						<input type="radio" name="field02" id="taxRate" value="1"
-							checked="checked" onclick="checkTaxRate(1)" /><label
-							style="margin-right: 10px; margin-left: 0px;">13%</label> <input
-							type="radio" name="field02" id="taxRate" value="2"
-							onclick="checkTaxRate(2)" /><label style="margin-left: 0px;">6%</label>
+							style="width: 80px; margin-right: 10px;" /> <label>税率：</label> <input
+							type="text" class="input3" id="taxrate"
+							style="width: 60px; margin-right: 10px;" />%
+
 					</div>
 
 					<div class="bbD">
 						<label style="float: left;">服务内容说明：</label>
 						<textarea id="serviceDetails"
-							style="width: 800px; resize: none; height: 100px; float: left; margin-right: 10px;"
+							style="width: 670px; resize: none; height: 100px; margin-right: 10px;"
 							class="input3"></textarea>
 					</div>
+					
+					<div style="border:1px solid green;margin:20px;margin-left:-40px;width:900px;float: left;"></div>
 
 					<div style="float: left;" id="collectionInfo">
-						<div class="bbD" id="mDiv0_1" style="height: 32px">
+						<div class="bbD" id="mDiv0_0_1" style="height: 32px">
 							<label style="float: left; margin-left: 42px">收款说明：</label><label
-								style="margin-left: 5px; float: left;">时间节点：</label><input
+								style="margin-left: 5px; float: left;">合同收款时间：</label><input
 								class="input3" type="text" id="collectionTime1"
-								style="width: 100px; float: left;"><span id="dd0_1_0"></span><label
-								style="margin-left: 15px; float: left;">收款说明：</label><input
-								class="input3" id="collectionDesc1"
-								style="width: 200px; height: 20px; float: left;"></input><label
-								style="margin-left: 15px; float: left;">实际收款时间：</label><input
+								style="width: 200px; float: left;" /><span id="dd0_1_0"></span>
+							<label style="margin-left: 15px; float: left;">实际收款时间：</label><input
 								class="input3" type="text" id="actCollectionTime1"
-								style="width: 100px; float: left;"><span id="dd0_1_1"></span>
-							<img style="height: 30px; margin-left: 10px"
+								style="width: 200px; float: left;" /><span id="dd0_1_1"></span>
+
+						</div>
+						<div class="bbD" id="mDiv0_0_2" style="height: 32px">
+							<label style="margin-left: 160px; float: left;">收款说明：</label><input
+								class="input3" id="collectionDesc1"
+								style="width: 500px; height: 20px; float: left;"></input> <img
+								style="height: 30px; margin-left: 10px"
 								src="${pageContext.request.contextPath}/image/plus2018.png"
 								onClick="addNewCollection()"><img style="height: 30px;"
 								src="${pageContext.request.contextPath}/image/minus2018.png"
 								onClick="removeCollection()">
 						</div>
 					</div>
-
+                    
+                    <div style="border:1px solid green;margin:20px;margin-left:-40px;width:900px;float: left;"></div>
 
 					<div style="float: left;" id="deliveryInfo">
-						<div class="bbD" id="mDiv1_1" style="height: 32px">
+						<div class="bbD" id="mDiv1_0_1" style="height: 32px">
 							<label style="float: left; margin-left: 42px">交货说明：</label><label
-								style="margin-left: 5px; float: left;">时间节点：</label><input
+								style="margin-left: 5px; float: left;">合同交货时间：</label><input
 								class="input3" type="text" id="deliveryTime1"
-								style="width: 100px; float: left;"> <span id="dd1_1_0"></span><label
-								style="margin-left: 15px; float: left;">交货说明：</label> <input
-								class="input3" id="deliveryDesc1"
-								style="width: 200px; height: 20px; float: left;"></input> <label
-								style="margin-left: 15px; float: left;">实际交货时间：</label><input
+								style="width: 200px; float: left;"> <span id="dd1_1_0"></span>
+							<label style="margin-left: 15px; float: left;">实际交货时间：</label><input
 								class="input3" type="text" id="actDeliveryTime1"
-								style="width: 100px; float: left;"><span id="dd1_1_1"></span>
-							<img style="height: 30px; margin-left: 10px"
+								style="width: 200px; float: left;"><span id="dd1_1_1"></span>
+						</div>
+						<div class="bbD" id="mDiv1_0_2" style="height: 32px">
+							<label style="margin-left: 160px; float: left;">交货说明：</label> <input
+								class="input3" id="deliveryDesc1"
+								style="width: 500px; height: 20px; float: left;"></input> <img
+								style="height: 30px; margin-left: 10px"
 								src="${pageContext.request.contextPath}/image/plus2018.png"
 								onClick="addNewDelivery()"><img style="height: 30px;"
 								src="${pageContext.request.contextPath}/image/minus2018.png"
@@ -754,7 +770,8 @@ a:hover {
 
 					<div class="cfD" style="margin-bottom: 30px">
 						<a class="addA" href="#" onclick="createNewContract()"
-							style="margin-left: 130px; margin-top: 30px">提交</a> <a class="addA"
+							style="margin-left: 130px; margin-top: 30px">提交</a> <a
+							class="addA"
 							href="${pageContext.request.contextPath}/page/techJobList">关闭</a>
 					</div>
 				</div>

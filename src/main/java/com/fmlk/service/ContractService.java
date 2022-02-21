@@ -21,10 +21,20 @@ public class ContractService {
 		return dao.deleteContract(id);
 	}
 	
-/*	
+	
 	public String getContractById(int id) {
 		dao = new ContractDao();
 		return dao.getContractById(id);
-	}*/
+	}
+
+	public String editContract(Contract ct,String[] paymentInfo) {
+		dao = new ContractDao();
+		return dao.editContract(ct,paymentInfo);
+	}
+
+	public String getContractPaymentInfoList(String contractNum) {
+		dao = new ContractDao();
+		return dao.getContractPaymentInfoList(contractNum);
+	}
 
 }

@@ -299,9 +299,9 @@ a:hover {
 						"technicalRequirment" : technicalRequirment,
 						"remark" : remark,
 						"tenderGuaranteeFee" : tenderGuaranteeFee
-
 					},
 					success : function(returndata) {
+						//alert(returndata);
 						var data = eval("(" + returndata + ")").errcode;
 						if (data == 0) {
 							alert("新建标书成功");
@@ -337,15 +337,15 @@ a:hover {
 				<div class="baBody">
 					<div class="bbD">
 						<label>招标编号：</label><input type="text" class="input3"
-							id="tenderNum" style="width: 798px; margin-right: 10px;" />
+							id="tenderNum" style="width: 700px; margin-right: 10px;" />
 					</div>
 
 					<div class="bbD">
 						<label>招标单位：</label><select class="selCss" id="companyId"
-							style="margin-right: 10px; width: 340px;"
+							style="margin-right: 10px; width: 290px;"
 							onChange="changeCompany(this.options[this.options.selectedIndex].value)">
 						</select><label>招标代理机构：</label><select class="selCss" id="tenderAgency"
-							style="width: 340px;"></select> <img
+							style="width: 290px;"></select> <img
 							style="width: 30px; height: 30px;"
 							src="${pageContext.request.contextPath}/image/plus2018.png"
 							onclick="createTenderAgency()">
@@ -354,30 +354,30 @@ a:hover {
 
 					<div class="bbD">
 						<label>项目名称：</label><select class="selCss" id="projectId"
-							style="margin-right: 10px; width: 340px;">
+							style="margin-right: 10px; width: 290px;">
 							<option value="0">请选择...</option>
 						</select> <label style="margin-left: 40px">销售人员：</label><select
-							class="selCss" id="salesId" style="width: 340px;" /></select>
+							class="selCss" id="salesId" style="width: 290px;" /></select>
 					</div>
 
 					<div class="bbD">
 						<label style="margin-left: -12px;">购标申请日期：</label><input
-							class="input3" type="text" id="dateForBuy" style="width: 190px;">
+							class="input3" type="text" id="dateForBuy" style="width: 158px;">
 						<span id="dd"></span> <label>投标日期：</label><input class="input3"
-							type="text" id="dateForSubmit" style="width: 190px;"> <span
+							type="text" id="dateForSubmit" style="width: 158px;"> <span
 							id="dd2"></span> <label>开标日期：</label><input class="input3"
-							type="text" id="dateForOpen" style="width: 190px;"> <span
+							type="text" id="dateForOpen" style="width: 158px;"> <span
 							id="dd3"></span>
 					</div>
 
 					<div class="bbD">
 						<label>投标类型：</label><select class="selCss" id="tenderStyle"
-							style="margin-right: 10px; width: 340px;" /></select> <label
-							style="margin-left: 40px">购标费用：&nbsp;RMB</label><input
+							style="margin-right: 10px; width: 168px;" /></select> <label
+							style="margin-left: 15px">购标费用：&nbsp;￥</label><input
 							type="text" class="input3" id="tenderExpense"
-							style="width: 67px;" placeholder="0" /><label>投标保证金：&nbsp;RMB</label><input
+							style="width: 140px;" placeholder="0" /><label>投标保证金：&nbsp;￥</label><input
 							type="text" class="input3" id="tenderGuaranteeFee"
-							style="width: 67px;" placeholder="0" />
+							style="width: 130px;" placeholder="0" />
 					</div>
 
 					<div class="bbD">
@@ -393,25 +393,30 @@ a:hover {
 
 					<div class="bbD">
 						<label>产品类别：</label><select class="selCss" id="productStyle"
-							style="margin-right: 10px; width: 340px;"></select><label
+							style="margin-right: 10px; width: 290px;"></select><label
 							style="margin-left: 40px">产品品牌：</label><select class="selCss"
-							id="productBrand" style="width: 340px;"></select>
+							id="productBrand" style="width: 290px;"></select>
 					</div>
 
 					<div class="bbD">
-						<label>企业资质：</label>
+						<div style="float:left">
+						<label style="float:left">企业资质：</label>
 						<textarea id="enterpriseQualificationRequirment"
-							style="width: 332px; resize: none; height: 80px; margin-right: 10px;"
+							style="width: 280px; resize: none; height: 80px; margin-right: 10px;"
 							class="input3"></textarea>
-						<label style="margin-left: 20px">技术要求：</label>
+						</div>
+						
+						<div>
+						<label style="margin-left: 30px;float:left">技术要求：</label>
 						<textarea id="technicalRequirment"
-							style="width: 332px; resize: none; height: 80px;" class="input3"></textarea>
+							style="width: 280px; resize: none; height: 80px;" class="input3"></textarea>
+						</div>
 					</div>
 
 					<div class="bbD">
-						<label style="margin-left: 44px;">备注：</label>
+						<label style="margin-left: 44px;float:left">备注：</label>
 						<textarea id="remark"
-							style="width: 798px; resize: none; height: 80px; margin-right: 10px;"
+							style="width: 700px; resize: none; height: 80px; margin-right: 10px;"
 							class="input3"></textarea>
 					</div>
 					<div class="cfD" style="margin-bottom: 30px;">

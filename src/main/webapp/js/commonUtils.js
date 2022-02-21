@@ -70,3 +70,11 @@ function toDailyArrangementList(){
 	window.location.href = host + "/page/arrangementList";
 }
 
+function toEditContractPage(contractId){
+	window.location.href = host + "/page/editContract/"+contractId;
+}
+
+function toCreateContractPage(){
+	window.location.href = host + "/page/createContract";
+}
+

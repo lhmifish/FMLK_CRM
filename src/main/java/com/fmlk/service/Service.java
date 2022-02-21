@@ -464,4 +464,9 @@ public class Service {
 		dao = new Dao();
 		return dao.editCompanyInfo(address,tel,mail);
 	}
+
+	public String deleteWorkAttendance(String date) {
+		dao = new Dao();
+		return dao.deleteWorkAttendance(date);
+	}
 }

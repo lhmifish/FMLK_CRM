@@ -46,6 +46,7 @@ a:hover {
 	//var tenderState;
 	var host;
 	var salesId;
+	var isPermissionEdit;
 
 	$(document).ready(function() {
 		id = "${mId}";//标书id
@@ -65,6 +66,9 @@ a:hover {
 		$("#tenderStyle").select2({});
 		$("#productStyle").select2({});
 		$("#productBrand").select2({});
+		if(isPermissionEdit){
+			$("#divEdit").show();
+		}
 	}
 
 	function getTenderInfo(tid) {
@@ -352,40 +356,40 @@ a:hover {
 				<div class="baBody">
 					<div class="bbD">
 						<label>招标编号：</label><input type="text" class="input3"
-							id="tenderNum" style="width: 350px; margin-right: 10px;" />
+							id="tenderNum" style="width: 700px; margin-right: 10px;" />
 					</div>
 
 					<div class="bbD">
 						<label>招标单位：</label><select class="selCss" id="companyId"
-							style="width: 360px;" disabled="disabled"></select><label>招标代理机构：</label><select
-							class="selCss" id="tenderAgency" style="width: 350px;"></select>
+							style="width: 290px;" disabled="disabled"></select><label>招标代理机构：</label><select
+							class="selCss" id="tenderAgency" style="width: 290px;"></select>
 
 					</div>
 
 					<div class="bbD">
 						<label>项目名称：</label><select class="selCss" id="projectId"
-							style="width: 360px;"><option value="0">请选择...</option></select><label
+							style="width: 290px;"><option value="0">请选择...</option></select><label
 							style="margin-left: 42px">销售人员：</label><select class="selCss"
-							id="salesId" style="width: 350px;" /></select>
+							id="salesId" style="width: 290px;" /></select>
 					</div>
 
 					<div class="bbD">
 						<label style="margin-left: -14px;">购标申请日期：</label><input
-							class="input3" type="text" id="dateForBuy" style="width: 200px;">
+							class="input3" type="text" id="dateForBuy" style="width: 158px;">
 						<span id="dd"></span><label>投标日期：</label><input class="input3"
-							type="text" id="dateForSubmit" style="width: 200px;"> <span
+							type="text" id="dateForSubmit" style="width: 158px;"> <span
 							id="dd2"></span><label>开标日期：</label><input class="input3"
-							type="text" id="dateForOpen" style="width: 200px;"> <span
+							type="text" id="dateForOpen" style="width: 158px;"> <span
 							id="dd3"></span>
 					</div>
 
 					<div class="bbD">
 						<label>投标类型：</label><select class="selCss" id="tenderStyle"
-							style="width: 360px;" /></select><label style="margin-left: 42px;">购标费用：
-							RMB</label><input type="text" class="input3" id="tenderExpense"
-							style="width: 70px;" placeholder="0" /><label>投标保证金： RMB</label><input
+							style="width: 168px;" /></select><label style="margin-left: 20px;">购标费用：
+							￥</label><input type="text" class="input3" id="tenderExpense"
+							style="width: 140px;" placeholder="0" /><label>投标保证金： ￥</label><input
 							type="text" class="input3" id="tenderGuaranteeFee"
-							style="width: 70px;" placeholder="0" />
+							style="width: 130px;" placeholder="0" />
 					</div>
 
 					<div class="bbD">
@@ -403,21 +407,26 @@ a:hover {
 
 					<div class="bbD">
 						<label>产品类别：</label><select class="selCss" id="productStyle"
-							style="width: 360px;"></select><label
+							style="width: 290px;"></select><label
 							style="margin-left: 42px;">产品品牌：</label><select class="selCss"
-							id="productBrand" style="width: 350px;"></select>
+							id="productBrand" style="width: 290px;"></select>
 					</div>
 
 					<div class="bbD">
-						<label>企业资质：</label><textarea id="enterpriseQualificationRequirment"
-							style="width: 350px; resize: none; height: 80px;"
-							class="input3"></textarea><label style="margin-left: 42px;">技术要求：</label><textarea id="technicalRequirment"
-							style="width: 340px; resize: none; height: 80px;" class="input3"></textarea>
+						<div style="float:left">
+						<label style="float:left">企业资质：</label><textarea id="enterpriseQualificationRequirment"
+							style="width: 280px; resize: none; height: 80px;"
+							class="input3"></textarea>
+						</div>
+						<div>
+						<label style="margin-left: 42px;float:left">技术要求：</label><textarea id="technicalRequirment"
+							style="width: 280px; resize: none; height: 80px;" class="input3"></textarea>
+						</div>
 					</div>
 
 					<div class="bbD">
-						<label style="margin-left: 40px;">备注：</label><textarea id="remark"
-							style="width: 830px; resize: none; height: 80px; margin-right: 10px;"
+						<label style="margin-left: 40px;float:left">备注：</label><textarea id="remark"
+							style="width: 700px; resize: none; height: 80px; margin-right: 10px;"
 							class="input3"></textarea>
 					</div>
 
@@ -435,12 +444,12 @@ a:hover {
 								style="margin-left: 5px;">未投标/弃标</label> <label
 								style="margin-left: 30px; display: none" id="label">中标服务费：  RMB</label><input
 								type="text" class="input3" id="serviceExpense"
-								style="width: 100px; display: none" placeholder="0" /><Strong
+								style="width: 90px; display: none" placeholder="0" /><Strong
 								id="info" style="margin-left: 30px; color: red; display: none">在备注中说明未投标/弃标原因</Strong>
 						</div>
 					</div>
 
-					<div class="cfD" style="margin-bottom: 30px; display: none">
+					<div class="cfD" style="margin-bottom: 30px; display: none" id="divEdit">
 						<a class="addA" href="#" onclick="editTender()" id="operation"
 							style="margin-left: 120px; margin-top: 20px">编辑</a> <a
 							class="addA" href="#" onclick="toTenderListPage()">返回</a>

@@ -157,7 +157,6 @@ html {
 					cache : false,
 					async : false,
 					success : function(returndata) {
-						//alert(returndata);
 						var data = eval("(" + returndata + ")").tenderlist;
 						var str = "";
 						var tenderResult;
@@ -181,8 +180,6 @@ html {
 											+ data[i].projectId);
 									tenderResult = data[i].tenderResult;
 									if (tenderResult == 1) {
-										/* tenderResultStyle = '<p title="中标" style="vertical-align:middle;width:15px;height:15px;border-radius:50px;'
-												+ 'border:1px solid DeepSkyBlue;background-color:DeepSkyBlue;"></p>'; */
 										bgColor = "DeepSkyBlue";
 									} else if (tenderResult == 2) {
 										bgColor = "Tomato";
@@ -229,7 +226,9 @@ html {
 											+ data[i].tenderNum
 											+ '\','
 											+ data[i].saleUser
-											+ ')">'
+											+ ',\''
+											+ data[i].tenderCompany
+											+ '\')">'
 											+ tenderUploadInfo
 											+ '</a></td>'
 											+ '<td style="width:10%" class="tdColor2">'
@@ -336,13 +335,33 @@ html {
 		});
 		return mSalesId;
 	}
+	
+	function getUserInfo(uNickName) {
+		var mUid;
+		$.ajax({
+			url : "${pageContext.request.contextPath}/getUserByNickName",
+			type : 'GET',
+			async : false,
+			data : {
+				"nickName" : uNickName
+			},
+			cache : false,
+			success : function(returndata) {
+				var data = eval("(" + returndata + ")").user;
+				mUid = data[0].UId;
+			}
+		});
+		return mUid;
+	}
+	
+	
 
-	function getUploadInfo(t, mId, mProjectId, mTenderNum, mSales) {
+	function getUploadInfo(t, mId, mProjectId, mTenderNum, mSales,mCompanyId) {
 		var state = document.getElementById("a_" + t).innerHTML;
 		if (state == "下载") {
 			downloadTender(getProjectReport(mProjectId), mProjectId);
 		} else {
-			uploadTenderWin(t, mId, mTenderNum, mSales, mProjectId);
+			uploadTenderWin(t, mId, mTenderNum, mSales, mProjectId,mCompanyId);
 		}
 	}
 
@@ -402,7 +421,7 @@ html {
 		return isExist;
 	}
 
-	function uploadTenderWin(t, tId, tTenderNum, tSalesId, tProjectId) {
+	function uploadTenderWin(t, tId, tTenderNum, tSalesId, tProjectId,tCompanyId) {
 		if (!isPermissionEditArr[t % 10]) {
 			alert("你没有权限上传此投标文件");
 		} else {
@@ -412,7 +431,7 @@ html {
 			document.getElementById("progress").innerHTML = "";
 			$("#banDel2").show();
 			tUploadFileInfo = tTenderNum + "#" + tSalesId + "#" + tProjectId
-					+ "#" + tId;
+					+ "#" + tId + "#" + tCompanyId;
 		}
 	}
 
@@ -472,6 +491,14 @@ html {
 			formData.append('chunks', chunks);
 			formData.append('chunk', currentChunk);
 			formData.append('file', getSliceFile(tFile, currentChunk));
+			
+			formData.append('salesId', tUploadFileInfo.split("#")[1]);
+			formData.append('userId', getUserInfo(sId));
+            
+			formData.append('projectName', getProject(tUploadFileInfo.split("#")[2]).projectName);
+			formData.append('companyName', getCompany(tUploadFileInfo.split("#")[4]).companyName);
+			
+			
 			var xhr = new XMLHttpRequest();
 			xhr.open("POST", host + "/addProjectReport");
 			xhr.send(formData);
@@ -490,6 +517,7 @@ html {
 				}
 			}
 		} else {
+			//alert("开始编辑标书信息")
 			editTender(tFile);
 		}
 	}
@@ -556,7 +584,7 @@ html {
 					if (data == 0) {
 						alert("提交成功");
 						closeConfirmBox();
-						getTenderList(page);
+						getMyTenderList(page);
 					} else {
 						alert("提交失败");
 					}
@@ -649,40 +677,40 @@ html {
 						<div class="cfD">
 							<Strong style="margin-right: 20px">查询条件：</Strong> <label
 								style="margin-right: 10px">招标单位：</label><select class="selCss"
-								style="width: 20%" id="companyId"
+								style="width: 300px" id="companyId"
 								onChange="changeCompany(this.options[this.options.selectedIndex].value)" /></select>
 							<label style="margin-right: 10px">招标代理机构：</label><select
-								class="selCss" style="width: 20%" id="tenderAgency" /></select>
+								class="selCss" style="width: 300px" id="tenderAgency" /></select>
 						</div>
 
 						<div class="cfD">
 							<label style="margin-left: 114px; margin-right: 10px">项目名称：</label><select
-								class="selCss" style="width: 20%" id="projectId">
+								class="selCss" style="width: 300px" id="projectId">
 								<option value="0">请选择...</option>
 							</select> <label style="margin-right: 10px; margin-left: 48px">销售人员：</label><select
-								class="selCss" style="width: 20%" id="salesId" /></select>
+								class="selCss" style="width: 300px" id="salesId" /></select>
 						</div>
 
 						<div class="cfD">
 							<label style="margin-left: 114px">投标日期：</label><input type="text"
-								id="date1" style="width: 7%; padding-left: 8px" class="input3"
+								id="date1" style="width: 115px; padding-left: 8px" class="input3"
 								placeholder="0000/00/00"> <span id="dd"></span><Strong
 								style="margin-left: 15px; margin-right: 5px">至</Strong> <input
-								type="text" id="date2" style="width: 7%; padding-left: 8px"
+								type="text" id="date2" style="width: 115px; padding-left: 8px"
 								class="input3" placeholder="0000/00/00"> <span id="dd2"></span><label
 								style="margin-left: 48px; margin-right: 10px">投标类型：</label><select
-								class="selCss" style="width: 20%" id="tenderStyle" /></select>
+								class="selCss" style="width: 300px" id="tenderStyle" /></select>
 						</div>
 
 						<div class="cfD">
 							<label style="margin-left: 114px; margin-right: 10px">投标结果：</label><select
-								class="selCss" style="width: 20%" id="tenderResult">
+								class="selCss" style="width: 300px" id="tenderResult">
 								<option value="0">请选择...</option>
 								<option value="1">中标</option>
 								<option value="2">投标未中</option>
 								<option value="3">未投标/弃标</option>
 							</select> <a class="addA" href="#"
-								onClick="toCreateTenderPage()" style="margin-left: 35px">新建标书信息+</a> <a class="addA"
+								onClick="toCreateTenderPage()" style="margin-left: 50px">新建标书信息+</a> <a class="addA"
 								onClick="getMyTenderList(1)">搜索</a>
 						</div>
 					</form>

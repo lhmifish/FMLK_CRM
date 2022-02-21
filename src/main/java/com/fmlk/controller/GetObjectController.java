@@ -190,10 +190,10 @@ public class GetObjectController implements ApplicationContextAware {
 	}
 	
 	/*****************************************************************************/
-/*	*//**
+     /**
 	 * 获取合同
 	 * 
-	 *//*
+	 */
 	@RequestMapping(value = "/getContractById", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
 	@ResponseBody
 	public String getContractById(HttpServletRequest request) {
@@ -201,7 +201,7 @@ public class GetObjectController implements ApplicationContextAware {
 		int id = Integer.parseInt(request.getParameter("id"));
 		String jsonStr = mContractService.getContractById(id);
 	    return jsonStr;
-	}*/
+	}
 	
 	/**
 	 * 获取派工类型

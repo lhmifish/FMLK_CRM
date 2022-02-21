@@ -718,10 +718,11 @@ public class PageController implements ApplicationContextAware {
 
 	@RequestMapping(value = "/page/editContract/{id}", method = RequestMethod.GET)
 	@ResponseBody
-	public ModelAndView getEditContractPage(HttpServletRequest request, @PathVariable(value = "id") int id) {
+	public ModelAndView getEditContractPage(HttpServletRequest request, @PathVariable(value = "id") int id,HttpSession session) {
+		String uId = (String) session.getAttribute("web_userid");
 		ModelAndView mav = new ModelAndView("EditContract");
 		mav.addObject("mId", id);
-		// mav.addObject("user", nickName);
+		mav.addObject("sessionId", uId);
 		return mav;
 	}
 

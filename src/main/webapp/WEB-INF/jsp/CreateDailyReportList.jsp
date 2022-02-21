@@ -405,7 +405,7 @@ html {
 		var mDate = $("#year").val() + "/" + $("#month").val() + "/"
 				+ $("#date").val();
 
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">签到/签退</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">签到/签退('+mDate+')</td></tr>';
 		$
 				.ajax({
 					url : "${pageContext.request.contextPath}/allCheckList",
@@ -505,10 +505,10 @@ html {
 	}
 
 	function getIsLateList() {
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">迟到</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;">迟到</td></tr>';
 		for (var i = 0; i < userArr.length; i++) {
 			var uId = userArr[i].split("#")[0];
-			str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
+			str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;"><input type="text"'
 					+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white" id="isLate'
 					+ uId + '"/></td></tr>';
 		}
@@ -544,7 +544,18 @@ html {
 		getAdjustRestTimeList();
 		getFestivalOverWorkTimeList();
 		getIsLateList();
-		getOperationList();
+		//getOperationList();
+	}
+	
+	function saveAllList(){
+		if (isPermissionEdit) {
+			var date = $("#year").val() + "/" + $("#month").val() + "/"
+			+ $("#date").val();
+			document.getElementById("delP1").innerHTML="你确定要写入 "+date+" 的考勤数据吗?";			
+			$("#banDel").show();			
+		}else{
+			alert("你没有权限对此操作");
+		}
 	}
 
 	function formatDate(date) {
@@ -561,72 +572,95 @@ html {
 		}
 		return (myyear + "/" + mymonth + "/" + myweekday);
 	}
-
-	function createWorkAttendance(mUId) {
-		if (isPermissionEdit) {
-			var date = $("#year").val() + "/" + $("#month").val() + "/"
-					+ $("#date").val();
+	
+	function createWorkAttendance(){
+		var date = $("#year").val() + "/" + $("#month").val() + "/"
+		+ $("#date").val();
+		alert(date);
+		var isScuessUp = false;
+		//先清除
+		$
+		.ajax({
+			url : "${pageContext.request.contextPath}/deleteThisWorkAttendance",
+			type : 'POST',
+			cache : false,
+			async: false,
+			data : {
+				"date" : date
+			},
+			success : function(returndata) {
+				
+			},
+			error : function(XMLHttpRequest, textStatus,
+					errorThrown) {
+			}
+		});
+		//再写入
+		for (var i = 0; i < userArr.length; i++) {
+			var mUId = userArr[i].split("#")[0];
 			var uName = $("#user" + mUId).val();
 			var schedule = $("#schedule" + mUId).val().trim();
 			var dailyReport = $("#dailyReport" + mUId).val().trim();
-		//	var weekReport = $("#weekReport" + mUId).val().trim();
-		//	var nextWeekPlan = $("#nextWeekPlan" + mUId).val().trim();
-		//	var projectReport = $("#projectReport" + mUId).val().trim();
 			var sign = $("#sign" + mUId).val().trim();
 			var remark = $("#remark" + mUId).val().trim();
-			var overWorkTime = $("#overWorkTime" + mUId).val().trim();
-			var adjustRestTime = $("#adjustRestTime" + mUId).val().trim();
-			var festivalOverWorkTime = $("#festivalOverWorkTime" + mUId).val()
-					.trim();
 			var isLate = ($("#isLate" + mUId).val().trim() == 1 || $(
 					"#isLate" + mUId).val().trim() == "迟到") ? 1 : 0;
-
+			var overWorkTime = $("#overWorkTime" + mUId).val().trim();
+			var adjustRestTime = $("#adjustRestTime" + mUId).val().trim();
+			var festivalOverWorkTime = $("#festivalOverWorkTime" + mUId).val().trim();
 			var patten1 = /^[0-9]+(.[0-9]{1})?$/.test(overWorkTime);
 			var patten2 = /^[0-9]+(.[0-9]{1})?$/.test(adjustRestTime);
 			var patten3 = /^[0-9]+(.[0-9]{1})?$/.test(festivalOverWorkTime);
-
 			if (!patten1 || !patten2 || !patten3) {
-				alert("加班或请假输入格式不正确, 请重新输入");
-				return;
+				isScuessUp = false;
+				alert(uName+"的加班或请假输入格式不正确, 请修改后重新写入");
 			}
 			$
-					.ajax({
-						url : "${pageContext.request.contextPath}/createWorkAttendance",
-						type : 'POST',
-						cache : false,
-						data : {
-							"date" : date,
-							"name" : uName,
-							"schedule" : schedule,
-							"dailyReport" : dailyReport,
-						//	"weekReport" : weekReport,
-						//	"nextWeekPlan" : nextWeekPlan,
-						//	"projectReport" : projectReport,
-							"sign" : sign,
-							"remark" : remark,
-							"isLate" : isLate,
-							"overWorkTime" : overWorkTime,
-							"adjustRestTime" : adjustRestTime,
-							"festivalOverWorkTime" : festivalOverWorkTime
-						},
-						success : function(returndata) {
-							var data = eval("(" + returndata + ")").errcode;
-							if (data == 0) {
-								alert("上传成功");
-							} else if (data == 3) {
-								alert("该条记录已经上传,请勿重复上传");
-							} else {
-								alert("上传失败");
-							}
-						},
-						error : function(XMLHttpRequest, textStatus,
-								errorThrown) {
-						}
-					});
-		} else {
-			alert("你没有权限对此操作");
+			.ajax({
+				url : "${pageContext.request.contextPath}/createWorkAttendance",
+				type : 'POST',
+				cache : false,
+				async: false,
+				data : {
+					"date" : date,
+					"name" : uName,
+					"schedule" : schedule,
+					"dailyReport" : dailyReport,
+					"sign" : sign,
+					"remark" : remark,
+					"isLate" : isLate,
+					"overWorkTime" : overWorkTime,
+					"adjustRestTime" : adjustRestTime,
+					"festivalOverWorkTime" : festivalOverWorkTime
+				},
+				success : function(returndata) {
+					var data = eval("(" + returndata + ")").errcode;
+					if (data == 0) {
+						isScuessUp = true;
+					}else{
+						isScuessUp = false;
+						alert(uName+"的考勤写入失败");
+					}
+				},
+				error : function(XMLHttpRequest, textStatus,
+						errorThrown) {
+					    isScuessUp = false;
+				}
+				
+			});
+			if(!isScuessUp){
+				break;
+			}
 		}
+		
+		if(isScuessUp){
+			alert("所有人考勤数据写入成功");
+		}else{
+			alert("所有人考勤数据写入失败，请重新写入");
+		}
+		$("#banDel").hide();	
 	}
+
 </script>
 </head>
 
@@ -689,7 +723,9 @@ html {
 								style="width: 80px;" id="date">
 								<option value="01">1月</option>
 								<option value="02">2月</option>
-							</select> <a class="addA" style="width: 120px" onClick="getAllList()">生成</a>
+							</select> <a class="addA" style="width: 120px" onClick="getAllList()">查询表单</a>
+							<a class="addA" style="width: 120px; margin-left: 10px"
+								onClick="saveAllList()">写入考勤数据</a>
 						</div>
 					</form>
 				</div>
@@ -712,7 +748,7 @@ html {
 						</table>
 					</div>
 
-				 	<!-- <div class="conShow" style="width: 4%; float: left;">
+					<!-- <div class="conShow" style="width: 4%; float: left;">
 						<table id="tbWeekReport" style="width: 100%; overflow: auto">
 						</table>
 					</div>  -->
@@ -727,7 +763,7 @@ html {
 						</table>
 					</div>  -->
 
-					<div class="conShow" style="width: 40%; float: left;">
+					<div class="conShow" style="width: 44%; float: left;">
 						<table id="tbSign" style="width: 100%; overflow: auto">
 						</table>
 					</div>
@@ -758,10 +794,10 @@ html {
 						</table>
 					</div>
 
-					<div class="conShow" style="width: 4%; float: left;">
+					<!-- <div class="conShow" style="width: 4%; float: left;">
 						<table id="tbOperation" style="width: 100%; overflow: auto">
 						</table>
-					</div>
+					</div> -->
 
 				</div>
 
@@ -770,6 +806,22 @@ html {
 		</div>
 
 	</div>
+
+	<!-- 写入弹出框 -->
+	<div class="banDel" id="banDel">
+		<div class="delete">
+			<div class="close">
+				<a><img src="../image/shanchu.png" onclick="closeConfirmBox()" /></a>
+			</div>
+			<p class="delP1" id="delP1">你确定要写入考勤数据吗?</p>
+			<div class="cfD" style="margin-top: 30px">
+				<a class="addA" href="#" onclick="createWorkAttendance()"
+					style="margin-left: 0px; margin-bottom: 30px;">确定</a> <a
+					class="addA" onclick="closeConfirmBox()">取消</a>
+			</div>
+		</div>
+	</div>
+
 
 </body>
 </html>

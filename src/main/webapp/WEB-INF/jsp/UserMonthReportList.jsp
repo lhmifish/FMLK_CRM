@@ -86,6 +86,7 @@ a:hover {
 					cache : false,
 					async : false,
 					success : function(returndata) {
+						//alert(returndata);
 						var str = "";
 						var data = eval("(" + returndata + ")").monthlist;
 						if (data.length == 0) {
