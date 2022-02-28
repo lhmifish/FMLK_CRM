@@ -207,8 +207,9 @@ public class EditObjectController implements ApplicationContextAware {
 		ct.setTaxRate(Integer.parseInt(request.getParameter("taxRate")));
 		ct.setServiceDetails(request.getParameter("serviceDetails"));
 		ct.setIsUploadContract(Boolean.parseBoolean(request.getParameter("isUploadContract")));
-		String[] paymentInfo = request.getParameterValues("paymentInfo");		
+		String[] paymentInfo = request.getParameterValues("paymentInfo");	
 		String jsonStr = mContractService.editContract(ct,paymentInfo);
+		System.out.println(jsonStr);
 		return jsonStr;
 	}
 

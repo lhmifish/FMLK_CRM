@@ -3,7 +3,9 @@ package com.fmlk.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import com.fmlk.entity.Contract;
 import com.fmlk.util.DBConnection;
@@ -59,7 +61,7 @@ public class ContractDao {
 			pre2.setString(4, contract.getProjectId());
 			pre2.setString(5, contract.getDateForContract());
 			pre2.setLong(6, contract.getContractAmount());
-			pre2.setString(7, contract.getTaxRate()+"%");
+			pre2.setString(7, contract.getTaxRate() + "%");
 			pre2.setString(8, contract.getServiceDetails());
 			pre2.setString(9, contract.getCreateDate());
 			int j = pre2.executeUpdate();
@@ -83,12 +85,14 @@ public class ContractDao {
 		jsonObject = new JSONObject();
 		String returnStr = "";
 		for (int i = 0; i < paymentInfo.length; i++) {
+			System.out.println(paymentInfo[i]);
 			int type = Integer.parseInt(paymentInfo[i].split("#")[0]);
 			String time = paymentInfo[i].split("#")[1];
 			String actTime = paymentInfo[i].split("#")[2];
 			String desc = paymentInfo[i].split("#")[3];
+			Boolean IsFinished = paymentInfo[i].split("#")[4].equals("0") ? false : true;
 			try {
-				sql3 = "insert into contractpaymentinfo (type,time,actTime,description,contractNum,createDate) values (?,?,?,?,?,?)";
+				sql3 = "insert into contractpaymentinfo (type,time,actTime,description,contractNum,createDate,isFinished) values (?,?,?,?,?,?,?)";
 				con3 = DBConnection.getConnection_Mysql();
 				pre3 = con3.prepareStatement(sql3);
 				pre3.setInt(1, type);
@@ -97,8 +101,10 @@ public class ContractDao {
 				pre3.setString(4, desc);
 				pre3.setString(5, contractNum);
 				pre3.setString(6, createDate);
+				pre3.setBoolean(7, IsFinished);
 				int j = pre3.executeUpdate();
 				if (j > 0) {
+					System.out.println("22222");
 					jsonObject.put("errcode", "0");
 				} else {
 					jsonObject.put("errcode", "1");
@@ -140,14 +146,16 @@ public class ContractDao {
 				String dateForContract = contract.getDateForContract();
 				dateForStartContract = dateForContract.split("-")[0];
 				dateForEndContract = dateForContract.split("-")[1];
-				if(!dateForStartContract.equals("none")) {
-					sql += "and CAST(SUBSTR(dateForContract,1,10) AS date) >= CAST('" + dateForStartContract + "' AS date) ";
+				if (!dateForStartContract.equals("none")) {
+					sql += "and CAST(SUBSTR(dateForContract,1,10) AS date) >= CAST('" + dateForStartContract
+							+ "' AS date) ";
 				}
-				if(!dateForEndContract.equals("none")) {
-					sql += "and CAST(SUBSTR(dateForContract,12,21) AS date) <= CAST('" + dateForEndContract + "' AS date) ";
+				if (!dateForEndContract.equals("none")) {
+					sql += "and CAST(SUBSTR(dateForContract,12,21) AS date) <= CAST('" + dateForEndContract
+							+ "' AS date) ";
 				}
 			}
-			sql += "ORDER BY id";
+			sql += "ORDER BY id desc";
 			pre = con.prepareStatement(sql);
 			res = pre.executeQuery();
 			ctList = new ArrayList<Contract>();
@@ -179,14 +187,14 @@ public class ContractDao {
 
 	public String deleteContract(int id) {
 		jsonObject = new JSONObject();
-        try {
+		try {
 			sql = "update contract set isDeleted = ? where id = ?";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setBoolean(1, true);
 			pre.setInt(2, id);
 			int j = pre.executeUpdate();
-            if (j > 0) {
+			if (j > 0) {
 				jsonObject.put("errcode", "0");
 			} else {
 				jsonObject.put("errcode", "1");
@@ -204,7 +212,7 @@ public class ContractDao {
 	}
 
 	public String getContractById(int id) {
-		try { 
+		try {
 			sql = "select * from contract where id = ?";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
@@ -216,20 +224,20 @@ public class ContractDao {
 				ct.setContractNum(res.getString("contractNum"));
 				ct.setProjectId(res.getString("projectId"));
 				ct.setCompanyId(res.getString("companyId"));
-			    ct.setSaleUser(res.getInt("saleUser"));
-			    ct.setDateForContract(res.getString("dateForContract"));
-			    ct.setContractAmount(res.getLong("contractAmount"));
-			    String taxStr = res.getString("taxRate");
-			    ct.setTaxRate(Integer.parseInt(taxStr.substring(0, taxStr.length()-1)));
+				ct.setSaleUser(res.getInt("saleUser"));
+				ct.setDateForContract(res.getString("dateForContract"));
+				ct.setContractAmount(res.getLong("contractAmount"));
+				String taxStr = res.getString("taxRate");
+				ct.setTaxRate(Integer.parseInt(taxStr.substring(0, taxStr.length() - 1)));
 				ct.setServiceDetails(res.getString("serviceDetails"));
-			    ct.setIsUploadContract(res.getBoolean("isUploadContract"));
-			    jsonObject = new JSONObject();
+				ct.setIsUploadContract(res.getBoolean("isUploadContract"));
+				jsonObject = new JSONObject();
 				jsonObject.put("errcode", "0");
 				jsonObject.put("errmsg", "query");
 				jsonObject.put("contract", JSONArray.fromObject(ct));
 				return jsonObject.toString();
 			}
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -240,54 +248,85 @@ public class ContractDao {
 		return null;
 	}
 
-	public String editContract(Contract ct,String[] paymentInfo) {
+	public String editContract(Contract ct, String[] paymentInfo) {
 		jsonObject = new JSONObject();
 		try {
 			sql = "update contract set ";
 			con = DBConnection.getConnection_Mysql();
-			if(!ct.getCompanyId().equals("")) {
+			if (!ct.getCompanyId().equals("")) {
 				sql += "companyId = '" + ct.getCompanyId() + "',";
 			}
-			if(ct.getSaleUser() != 0) {
+			if (ct.getSaleUser() != 0) {
 				sql += "saleUser = " + ct.getSaleUser() + ",";
 			}
-			if(!ct.getProjectId().equals("")) {
+			if (!ct.getProjectId().equals("")) {
 				sql += "projectId = '" + ct.getProjectId() + "',";
 			}
-			
+
 			String dateForContract = ct.getDateForContract();
 			String dateForStartContract = dateForContract.split("-")[0];
 			String dateForEndContract = dateForContract.split("-")[1];
-			if(!dateForStartContract.equals("none") && !dateForEndContract.equals("none")) {
+			if (!dateForStartContract.equals("none") && !dateForEndContract.equals("none")) {
 				sql += "dateForContract = '" + ct.getDateForContract() + "',";
 			}
 
-			if(ct.getContractAmount() != 0) {
-				sql += "contractAmount = " + ct.getContractAmount()+ ",";
+			if (ct.getContractAmount() != 0) {
+				sql += "contractAmount = " + ct.getContractAmount() + ",";
 			}
-			
-			if(ct.getTaxRate() != 0) {
+
+			if (ct.getTaxRate() != 0) {
 				sql += "taxRate = '" + ct.getTaxRate() + "%',";
 			}
-			
-			if(!ct.getServiceDetails().equals("")) {
+
+			if (!ct.getServiceDetails().equals("")) {
 				sql += "serviceDetails = '" + ct.getServiceDetails() + "',";
 			}
 
-			if(ct.getIsUploadContract()) {
-				sql += "isUploadContract = " + ct.getIsUploadContract() + ",";
-			}
+			sql += "isUploadContract = ?,";
+			
 			sql += "contractNum = ? where id = ?";
-			pre = con.prepareStatement(sql);
-			pre.setString(1, ct.getContractNum());
-			pre.setInt(2, ct.getId());
+
+            pre = con.prepareStatement(sql);
+			pre.setBoolean(1, ct.getIsUploadContract());
+			pre.setString(2, ct.getContractNum());
+			pre.setInt(3, ct.getId());
+			
 			int j = pre.executeUpdate();
-			if (j > 0) {
-				jsonObject.put("errcode", "0");
+			if (paymentInfo.length < 2) {
+				if (j > 0) {
+					System.out.println("111");
+					jsonObject.put("errcode", "0");
+				} else {
+					System.out.println("222");
+					jsonObject.put("errcode", "1");
+				}
 			} else {
-				jsonObject.put("errcode", "1");
+				System.out.println("333");
+				return deletePaymentInfo(ct, paymentInfo);
 			}
 			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+		}
+	}
+
+	public String deletePaymentInfo(Contract ct, String[] paymentInfo) {
+		jsonObject = new JSONObject();
+		try {
+			sql = "delete from contractpaymentinfo where contractNum = ?";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setString(1, ct.getContractNum());
+			int j = pre.executeUpdate();
+			String update = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+			return createPaymentInfo(ct.getContractNum(), paymentInfo, update);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			jsonObject = new JSONObject();
@@ -312,8 +351,8 @@ public class ContractDao {
 				String actTime = res.getString("actTime");
 				String desc = res.getString("description");
 				int type = res.getInt("type");
-				String isFinished = res.getBoolean("isFinished")?"1":"0";
-				objList.add(time+"#"+actTime+"#"+desc+"#"+type+"#"+isFinished);
+				String isFinished = res.getBoolean("isFinished") ? "1" : "0";
+				objList.add(time + "#" + actTime + "#" + desc + "#" + type + "#" + isFinished);
 			}
 			jsonObject = new JSONObject();
 			jsonObject.put("errcode", "0");

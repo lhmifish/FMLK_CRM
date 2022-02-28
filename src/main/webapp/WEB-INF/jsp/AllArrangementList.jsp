@@ -298,6 +298,15 @@ $(document).ready(function() {
 	host = "${pageContext.request.contextPath}";
 	todayStr = formatDate(new Date()).substring(0, 10);
 	refreshDate(todayStr);
+	document.getElementById("date").flatpickr({
+		defaultDate : formatDate(new Date()).substring(0, 10),
+		dateFormat : "Y/m/d",
+		enableTime : false,
+		onChange : function(dateObj, dateStr) {
+			refreshDate(dateStr);
+			getThisArrangementList();
+		}
+	});
 	getThisArrangementList();
 });
 
@@ -368,7 +377,7 @@ function getThisArrangementList(){
 								
 								arrayDur = new Array();
 								for ( var i in data) {
-									if(sId=="lv.zhong" || sId=="sun.ke" || sId=="yang.huifang" || sId=="gong.zhiping"|| sId=="lu.haiming"){
+									if(sId=="lv.zhong" || sId=="sun.ke" || sId=="yang.huifang" || sId=="gong.zhiping"|| sId=="lu.haiming" || sId=="you.zhiliang"){
 										if (data[i].userId == uUid) {
 											arrayDur.push(data[i]);
 										}
@@ -420,6 +429,10 @@ function getThisArrangementList(){
 <body class="body-gray" style="margin: auto;" id="mBody">
 	<div class="form">
 		<div class="top" style="width: 100%">
+		    <div style="width: 100%; margin-bottom: 5px;">
+				<Strong style="margin-left: 5px">选择日期：</Strong> <input type="text"
+					id="date" style="width: 80px;" />
+			</div>
 			<div style="width: 100%; margin-bottom: 5px;" onclick="changeDate">
 				<Strong style="margin-left: 5px">日程日期：</Strong> <input type="text"
 					id="startDate" style="width: 80px;" readonly="readonly"/>至 <input type="text"

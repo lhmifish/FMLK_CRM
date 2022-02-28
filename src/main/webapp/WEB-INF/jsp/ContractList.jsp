@@ -58,6 +58,7 @@ html {
 		sId = "${sessionId}";
 		host = "${pageContext.request.contextPath}";
 		checkEditPremission(43, 0);
+		sliceSize = 1 * 1024 * 1024;
 	});
 	
 	
@@ -232,17 +233,19 @@ html {
 	
 	function addContractReport(){
 		var myFile = document.getElementById("myfile").files[0];
+		//alert(myFile.size);
 		if (myFile != undefined) {
 			if (myFile.size > 1 * 1024 * 1024 * 1024) {
 				alert("单个文件上传不能大于1GB");
 			} else {
 				chunks = Math.ceil(myFile.size / sliceSize);
+				//alert(chunks);
 				$("#progressDiv").show();
 				currentChunk = 0;
 				doUploadFile(myFile);
 			}
 		} else {
-			alert("请选择投标文件");
+			alert("请选择合同文件");
 		}
 	}
 	
@@ -289,24 +292,30 @@ html {
 	}
 	
 	function editContract(mFile) {
+		var arrayPaymentInfo = new Array();    
+		arrayPaymentInfo.push("1");
+		//alert(arrayPaymentInfo.length)
 		$.ajax({
 			url : host + "/editContract",
 			type : 'POST',
 			cache : false,
+			dataType : "json",
 			data : {
-				"id" : tUploadFileInfo.split("#")[3],
 				"contractNum" : tUploadFileInfo.split("#")[0],
 				"companyId" : tUploadFileInfo.split("#")[4],
 				"projectId" : tUploadFileInfo.split("#")[2],
 				"saleUser" : tUploadFileInfo.split("#")[1],
-				"dateForContract":"none-none",
-				"contractAmount":0,
+				"dateForContract" :"none-none",
+				"contractAmount" : 0,
 				"taxRate" : 0,
-				"serviceDetails":"",
-				"isUploadContract" : true
+				"serviceDetails" : "",
+				"paymentInfo" : arrayPaymentInfo,
+				"id":tUploadFileInfo.split("#")[3],
+				"isUploadContract":true
 			},
+			traditional : true,
 			success : function(returndata) {
-				var data = eval("(" + returndata + ")").errcode;
+				var data = returndata['errcode'];
 				if (data == 0) {
 					saveContractReport(mFile);
 				} else {
@@ -619,6 +628,8 @@ html {
 
 	function getPurchaseInfo(cNum) {
 		alert(cNum);
+		
+		
 		/* var mHtml = '<div style="margin-top:10px;width:100%"><label><Strong>项目编号：</Strong>'
 				+ arrayProjectNum[pNum]
 				+ '</label></div><br/>'

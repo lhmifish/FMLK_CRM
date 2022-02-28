@@ -292,9 +292,12 @@ select::-ms-expand {
 	var endWeekStr;
 	var host;
 	var sId;
+	var arrCompany;
+	var arrProject;
 
 	$(document).ready(function() {
 		sId = "${mUserId}";
+		//sId = "jia.wenjie";
 		host = "${pageContext.request.contextPath}";
 		refreshDate(formatDate(new Date()).substring(0, 10));
 		document.getElementById("date").flatpickr({
@@ -306,8 +309,42 @@ select::-ms-expand {
 				getAllWeekUploadReportList();
 			}
 		});
-		getAllWeekUploadReportList();
+		getArrCompany();
 	});
+
+	function getArrCompany() {
+		var xhr = createxmlHttpRequest();
+		xhr.open("GET", host + "/companyList?salesId=0&companyName=", true);
+		xhr.onreadystatechange = function() {
+			if (this.readyState == 4) {
+				var data = eval("(" + xhr.responseText + ")").companylist;
+				arrCompany = {};
+				for ( var i in data) {
+					arrCompany[data[i].companyId] = data[i].companyName;
+				}
+				getArrProject();
+			}
+		};
+		xhr.send();
+	}
+
+	function getArrProject() {
+		var xhr = createxmlHttpRequest();
+		xhr.open("GET",host+ "/projectList?companyId=&projectName=&salesId=0&projectManager=0",
+						true);
+		xhr.onreadystatechange = function() {
+			if (this.readyState == 4) {
+				var str = '';
+				var data = eval("(" + xhr.responseText + ")").projectList;
+				arrProject = {};
+				for ( var i in data) {
+					arrProject[data[i].projectId] = data[i].projectName;
+				}
+				getAllWeekUploadReportList();
+			}
+		};
+		xhr.send();
+	}
 
 	function getAllWeekUploadReportList() {
 		var today = formatDate(new Date()).substring(0, 10);
@@ -328,46 +365,57 @@ select::-ms-expand {
 								"endDate" : endWeekStr
 							},
 							success : function(returndata) {
+								//alert(returndata);
 								var data = eval("(" + returndata + ")").weekuploadreportlist;
 								var str2 = '';
-								for ( var j in data2) {
-									var nName = data2[j].nickName;
-									
-									arrayDur = new Array();
-									for ( var i in data) {
-										if(sId=="lv.zhong" || sId=="sun.ke" || sId=="yang.huifang" || sId=="gong.zhiping"|| sId=="lu.haiming"){
-											if (data[i].userName == data2[j].nickName) {
-												arrayDur.push(data[i]);
-											}
-										}else{
-											if (data[i].userName == nName && nName == sId) {
-												arrayDur.push(data[i]);
+								if (returndata.length > 0) {
+
+									for ( var j in data2) {
+										var nName = data2[j].nickName;
+
+										arrayDur = new Array();
+										for ( var i in data) {
+											if (sId == "lv.zhong"
+													|| sId == "sun.ke"
+													|| sId == "yang.huifang"
+													|| sId == "gong.zhiping"
+													|| sId == "lu.haiming") {
+												if (data[i].userName == data2[j].nickName) {
+													arrayDur.push(data[i]);
+												}
+											} else {
+												if (data[i].userName == nName
+														&& nName == sId) {
+													arrayDur.push(data[i]);
+												}
 											}
 										}
-									}
-									if (arrayDur.length > 0) {
-										str2 += '<div style="width: 97%; border: 1px solid black; margin: 5px; height: auto" >'
-												+ '<p class="mes2"><strong style="font-size: 16px;">'
-												+ getUser(arrayDur[0].userName).name
-												+ '</strong></p>'
-												+ '<p class="mes" ><strong>周总结：</strong></p><p class="mes3" style="height:auto">';
-										for ( var k in arrayDur) {
-											str2 += arrayDur[k].date
-													+ '&ensp;&ensp;&ensp;'
-													+ arrayDur[k].time
-													+ '<br/>客户：'
-													+ getCompany(arrayDur[k].client).companyName
-													+ '<br/>项目：'
-													+ getProject(arrayDur[k].crmNum).projectName
-													+ '<br/>'
-													+ arrayDur[k].jobContent
-													+ '<br/><br/>';
+										if (arrayDur.length > 0) {
+											str2 += '<div style="width: 97%; border: 1px solid black; margin: 5px; height: auto" >'
+													+ '<p class="mes2"><strong style="font-size: 16px;">'
+													+ getUser(arrayDur[0].userName).name
+													+ '</strong></p>'
+													+ '<p class="mes" ><strong>周总结：</strong></p><p class="mes3" style="height:auto">';
+											for ( var k in arrayDur) {
+												str2 += arrayDur[k].date
+														+ '&ensp;&ensp;&ensp;'
+														+ arrayDur[k].time
+														+ '<br/>客户：'
+														+ arrCompany[arrayDur[k].client]
+														//	+ getCompany(arrayDur[k].client).companyName
+														+ '<br/>项目：'
+														//	+ getProject(arrayDur[k].crmNum).projectName
+														+ arrProject[arrayDur[k].crmNum]
+														+ '<br/>'
+														+ arrayDur[k].jobContent
+														+ '<br/><br/>';
+											}
+
+											str2 += '</p></div>';
+
 										}
 
-										str2 += '</p></div>';
-
 									}
-
 								}
 								$("#list").empty();
 								$("#list").append(str2);

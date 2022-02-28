@@ -739,6 +739,7 @@ public class DailyReportController implements ApplicationContextAware {
 		String startDate = request.getParameter("startDate");
 		String endDate = request.getParameter("endDate");
 		String jsonStr = service.getAllWeekUploadReportList(startDate,endDate);
+		System.out.println(jsonStr);
 	    return jsonStr;
 	}
 	

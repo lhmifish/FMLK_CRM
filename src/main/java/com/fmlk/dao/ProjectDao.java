@@ -272,6 +272,7 @@ public class ProjectDao {
 			pre.setString(6, pr.getFileName());
 			pre.setString(7, pr.getCreateDate());
 			pre.setString(8, pr.getCaseId());
+			System.out.println(sql);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");

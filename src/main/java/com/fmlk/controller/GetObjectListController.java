@@ -55,7 +55,7 @@ public class GetObjectListController implements ApplicationContextAware {
 		user.setJobId(request.getParameter("jobId"));
 		boolean isHide = Boolean.parseBoolean(request.getParameter("isHide"));
 		String jsonStr = mUserService.getUserList(user, date,isHide);
-		//System.out.println(jsonStr);
+		System.out.println(jsonStr);
 		return jsonStr;
 	}
 
@@ -184,8 +184,6 @@ public class GetObjectListController implements ApplicationContextAware {
 		p.setSalesId(Integer.parseInt(request.getParameter("salesId")));
 		p.setProjectManager(Integer.parseInt(request.getParameter("projectManager")));
 		String jsonStr = mProjectService.getProjectList(p);
-		System.out.println("12345");
-		System.out.println(jsonStr);
 		return jsonStr;
 	}
 

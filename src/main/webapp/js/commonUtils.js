@@ -78,3 +78,6 @@ function toCreateContractPage(){
 	window.location.href = host + "/page/createContract";
 }
 
+function toContractListPage(){
+	window.location.href = host + "/page/contractList";
+}

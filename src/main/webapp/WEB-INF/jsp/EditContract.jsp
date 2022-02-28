@@ -63,6 +63,7 @@ a:hover {
 	var deliveryArr;//交货
 	var collectionNum;
 	var deliveryNum;
+	var isUpload;
 
 	$(document).ready(function() {
 		id = "${mId}";//合同id
@@ -180,9 +181,9 @@ a:hover {
 				$("#contractAmount").val(data[0].contractAmount);
 				$("#taxrate").val(data[0].taxRate);
 				$("#serviceDetails").val(data[0].serviceDetails);
-
+				
 				getContractPaymentInfo(data[0].contractNum);
-
+				isUpload = data[0].isUploadContract;
 			},
 			error : function(XMLHttpRequest, textStatus, errorThrown) {
 			}
@@ -216,17 +217,19 @@ a:hover {
 								}
 							}
 						}
-						collectionNum = collectionArr.length;
-						deliveryNum = deliveryArr.length;
+						collectionNum = (collectionArr.length==0)?1:collectionArr.length;
+						deliveryNum = (deliveryArr.length==0)?1:deliveryArr.length;
 						
 						var isFinished;
 						if (collectionArr.length >= 1) {
-							$("#collectionTime1").val(
-									collectionArr[0].split("#")[0]);
-							$("#actCollectionTime1").val(
-									collectionArr[0].split("#")[1]);
-							$("#collectionDesc1").val(
-									collectionArr[0].split("#")[2]);
+							var mct = collectionArr[0].split("#")[0]=="*"?"":collectionArr[0].split("#")[0];
+							var amct = collectionArr[0].split("#")[1]=="*"?"":collectionArr[0].split("#")[1];
+							var cd = collectionArr[0].split("#")[2]=="*"?"":collectionArr[0].split("#")[2];
+							
+							$("#collectionTime1").val(mct);
+							$("#actCollectionTime1").val(amct);
+							$("#collectionDesc1").val(cd);
+							
 							isFinished = collectionArr[0].split("#")[4] == 1 ? true
 									: false;
 							$('#switch0_1').bootstrapSwitch('state',
@@ -250,13 +253,16 @@ a:hover {
 										+ '<input class="input3" id="collectionDesc'+j+'" style="width: 500px; height: 20px; float: left;"></input>'
 										+ '</div>';
 								$("#collectionInfo").append(str);
+								
+								
+								mct = collectionArr[j - 1].split("#")[0]=="*"?"":collectionArr[j - 1].split("#")[0];
+								amct = collectionArr[j - 1].split("#")[1]=="*"?"":collectionArr[j - 1].split("#")[1];
+								cd = collectionArr[j - 1].split("#")[2]=="*"?"":collectionArr[j - 1].split("#")[2];
+								
 
-								$("#collectionTime" + j).val(
-										collectionArr[j - 1].split("#")[0]);
-								$("#actCollectionTime" + j).val(
-										collectionArr[j - 1].split("#")[1]);
-								$("#collectionDesc" + j).val(
-										collectionArr[j - 1].split("#")[2]);
+								$("#collectionTime" + j).val(mct);
+								$("#actCollectionTime" + j).val(amct);
+								$("#collectionDesc" + j).val(cd);
 								isFinished = collectionArr[j-1].split("#")[4] == 1 ? true
 										: false;
 								$('#switch0_'+j).bootstrapSwitch('state',
@@ -290,12 +296,14 @@ a:hover {
 							}
 						}
 						if (deliveryArr.length >= 1) {
-							$("#deliveryTime1").val(
-									deliveryArr[0].split("#")[0]);
-							$("#actDeliveryTime1").val(
-									deliveryArr[0].split("#")[1]);
-							$("#deliveryDesc1").val(
-									deliveryArr[0].split("#")[2]);
+							
+							var mdt = deliveryArr[0].split("#")[0]=="*"?"":deliveryArr[0].split("#")[0];
+							var amdt = deliveryArr[0].split("#")[1]=="*"?"":deliveryArr[0].split("#")[1];
+							var dd = deliveryArr[0].split("#")[2]=="*"?"":deliveryArr[0].split("#")[2];
+							
+							$("#deliveryTime1").val(mdt);
+							$("#actDeliveryTime1").val(amdt);
+							$("#deliveryDesc1").val(dd);							
 							isFinished = deliveryArr[0].split("#")[4] == 1 ? true
 									: false;
 							$('#switch1_1').bootstrapSwitch('state',
@@ -320,12 +328,12 @@ a:hover {
 									+ '</div>';
 							$("#deliveryInfo").append(str);
 							
-							$("#deliveryTime" + j).val(
-									deliveryArr[j - 1].split("#")[0]);
-							$("#actDeliveryTime" + j).val(
-									deliveryArr[j - 1].split("#")[1]);
-							$("#deliveryDesc" + j).val(
-									deliveryArr[j - 1].split("#")[2]);
+							mdt = deliveryArr[j - 1].split("#")[0]=="*"?"":deliveryArr[j - 1].split("#")[0];
+							amdt = deliveryArr[j - 1].split("#")[1]=="*"?"":deliveryArr[j - 1].split("#")[1];
+							dd = deliveryArr[j - 1].split("#")[2]=="*"?"":deliveryArr[j - 1].split("#")[2];
+							$("#deliveryTime" + j).val(mdt);
+							$("#actDeliveryTime" + j).val(amdt);
+							$("#deliveryDesc" + j).val(dd);
 							isFinished = deliveryArr[j-1].split("#")[4] == 1 ? true
 									: false;
 							$('#switch1_'+j).bootstrapSwitch('state',
@@ -437,12 +445,12 @@ a:hover {
 		var str = '<div class="bbD" id="mDiv1_'
 				+ (deliveryNum - 1)
 				+ '_1" style="height: 32px">'
-				+ '<label style="margin-left: 132px; float: left;">合同收款时间：</label>'
+				+ '<label style="margin-left: 132px; float: left;">合同交货时间：</label>'
 				+ '<input class="input3" type="text" id="deliveryTime'+deliveryNum+'" style="width: 150px; float: left;" /><span id="dd1_'+deliveryNum+'_0"></span>'
-				+ '<label style="margin-left: 15px; float: left;">实际收款时间：</label>'
+				+ '<label style="margin-left: 15px; float: left;">实际交货时间：</label>'
 				+ '<input class="input3" type="text" id="actDeliveryTime'+deliveryNum+'" style="width: 150px; float: left;" /><span id="dd1_'+deliveryNum+'_1"></span>'
 				+ '<label style="margin-left: 15px"></label>'
-				+ '<input id="switch1_'+deliveryNum+'" type="checkbox" data-size="mini"  data-on-text="已收款" data-off-text="未收款" data-label-text="收款状态"/>'
+				+ '<input id="switch1_'+deliveryNum+'" type="checkbox" data-size="mini"  data-on-text="已交货" data-off-text="未交货" data-label-text="交货状态"/>'
 				+ '</div>';
 		$("#deliveryInfo").append(str);
 		$("#switch1_"+deliveryNum).bootstrapSwitch('state',false, false);
@@ -450,7 +458,7 @@ a:hover {
 		str = '<div class="bbD" id="mDiv1_'
 				+ (deliveryNum - 1)
 				+ '_2" style="height: 32px">'
-				+ '<label style="margin-left: 160px; float: left;">收款说明：</label>'
+				+ '<label style="margin-left: 160px; float: left;">交货说明：</label>'
 				+ '<input class="input3" id="deliveryDesc'+deliveryNum+'" style="width: 540px; height: 20px; float: left;"></input>'
 				+ '</div>';
 		$("#deliveryInfo").append(str);
@@ -502,18 +510,17 @@ a:hover {
 		deliveryNum--;
 	}
 	
-	function editContract(){
-		//return alert($('#switch0_1').bootstrapSwitch('state'));		
+ 	function editContract(){
 		var contractNum = $("#contractNum").val().trim();		
 		var companyId = $("#companyId").val();
-		var salesId = $("#saleUser").val();
-		var projectId = $("#projectName").val();
+		var salesId = $("#salesId").val();
+		var projectId = $("#projectId").val();
 		var dateForStartContract = $("#dateForStartContract").val().trim();
 		var dateForEndContract = $("#dateForEndContract").val().trim();
 		var contractAmount = $("#contractAmount").val().trim();
 		var taxRate = $("#taxrate").val().trim();
 		var serviceDetails = $("#serviceDetails").val().trim();		
-        var arrayPaymentInfo = new Array();
+        var arrayPaymentInfo = new Array();       
         var isFinished;
 		for (var i = 1; i <= collectionNum; i++) {
 			var time = $("#collectionTime" + i).val();
@@ -579,6 +586,7 @@ a:hover {
 			alert("服务内容不能为空");
 			return;
 		}
+	//	alert(arrayPaymentInfo.length);
 		
 		$.ajax({
 			url : "${pageContext.request.contextPath}/editContract",
@@ -597,13 +605,13 @@ a:hover {
 				"serviceDetails" : serviceDetails,
 				"paymentInfo" : arrayPaymentInfo,
 				"id":id,
-				"isUploadContract":false
+				"isUploadContract":isUpload
 			},
 			traditional : true,
 			success : function(returndata) {
 				var data = returndata.errcode;
 				if (data == 0) {
-					alert("录入合同成功");
+					alert("编辑合同成功");
 					//parent.leftFrame.getContractNum();
 					setTimeout(function() {
 						location.reload();
@@ -615,7 +623,7 @@ a:hover {
 			error : function(XMLHttpRequest, textStatus, errorThrown) {
 			}
 		});
-	}
+ 	}
 </script>
 
 </head>

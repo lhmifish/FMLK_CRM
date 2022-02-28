@@ -183,7 +183,7 @@ a:hover {
 			}
 		});
 
-		$('#dd0_1_1').calendar(
+	/* 	$('#dd0_1_1').calendar(
 				{
 					trigger : '#actCollectionTime1',
 					zIndex : 999,
@@ -194,7 +194,7 @@ a:hover {
 						$('#actCollectionTime1').val(
 								formatDate(date).substring(0, 10));
 					}
-				});
+				}); */
 
 		$('#dd1_1_0').calendar({
 			trigger : '#deliveryTime1',
@@ -206,7 +206,7 @@ a:hover {
 				$('#deliveryTime1').val(formatDate(date).substring(0, 10));
 			}
 		});
-		$('#dd1_1_1').calendar({
+	/* 	$('#dd1_1_1').calendar({
 			trigger : '#actDeliveryTime1',
 			zIndex : 999,
 			format : 'yyyy/mm/dd',
@@ -215,7 +215,7 @@ a:hover {
 			onClose : function(view, date, data) {
 				$('#actDeliveryTime1').val(formatDate(date).substring(0, 10));
 			}
-		});
+		}); */
 
 	}
 
@@ -433,15 +433,15 @@ a:hover {
 		collectionNum++;
 		var str = '<div class="bbD" id="mDiv0_'+(collectionNum-1)+'_1" style="height:32px">'
 		        + '<label style="float: left;margin-left:132px">合同收款时间：</label>'
-				+ '<input class="input3" type="text" id="collectionTime'+ collectionNum +'" style="width: 200px; float: left;"/><span id="dd0_'+collectionNum+'_0"></span>'
-				+ '<label style="margin-left: 15px; float: left;">实际收款时间：</label>'
-				+ '<input class="input3" type="text" id="actCollectionTime'+ collectionNum +'" style="width: 200px; float: left;"/><span id="dd0_'+collectionNum+'_1"></span>'
+				+ '<input class="input3" type="text" id="collectionTime'+ collectionNum +'" style="width: 500px; float: left;"/><span id="dd0_'+collectionNum+'_0"></span>'
+				/* + '<label style="margin-left: 15px; float: left;">实际收款时间：</label>'
+				+ '<input class="input3" type="text" id="actCollectionTime'+ collectionNum +'" style="width: 200px; float: left;"/><span id="dd0_'+collectionNum+'_1"></span>' */
 				+ '</div>';
 		$("#collectionInfo").append(str);
 
 		    str = '<div class="bbD" id="mDiv0_'+(collectionNum-1)+'_2" style="height:32px">'
 		        + '<label style="float: left;margin-left:160px">收款说明：</label>'
-				+ '<input class="input3" id="collectionDesc'+ collectionNum +'" style="width: 540px; height: 20px; float: left;"/>'
+				+ '<input class="input3" id="collectionDesc'+ collectionNum +'" style="width: 500px; height: 20px; float: left;"/>'
 				+ '</div>';
 		$("#collectionInfo").append(str);
 
@@ -460,7 +460,7 @@ a:hover {
 					}
 				});
 
-		$('#dd0_' + thisNum + '_1').calendar(
+		/* $('#dd0_' + thisNum + '_1').calendar(
 				{
 					trigger : '#actCollectionTime' + thisNum,
 					zIndex : 999,
@@ -471,7 +471,7 @@ a:hover {
 						$('#actCollectionTime' + thisNum).val(
 								formatDate(date).substring(0, 10));
 					}
-				});
+				}); */
 	}
 
 	function removeCollection() {
@@ -492,16 +492,16 @@ a:hover {
 		deliveryNum++;
 		var str = '<div class="bbD" id="mDiv1_'+(deliveryNum-1)+'_1" style="height:32px">'
 				+ '<label style="float: left;margin-left:132px">合同交货时间：</label>'
-				+ '<input class="input3" type="text" id="deliveryTime'+ deliveryNum +'" style="width: 200px; float:left;"/><span id="dd1_'+deliveryNum+'_0"></span>'
-				+ '<label style="margin-left: 15px; float: left;">实际交货时间：</label>'
-				+ '<input class="input3" type="text" id="actDeliveryTime'+ deliveryNum +'" style="width: 200px; float: left;"/><span id="dd1_'+deliveryNum+'_1"></span>'
+				+ '<input class="input3" type="text" id="deliveryTime'+ deliveryNum +'" style="width: 500px; float:left;"/><span id="dd1_'+deliveryNum+'_0"></span>'
+				/* + '<label style="margin-left: 15px; float: left;">实际交货时间：</label>'
+				+ '<input class="input3" type="text" id="actDeliveryTime'+ deliveryNum +'" style="width: 200px; float: left;"/><span id="dd1_'+deliveryNum+'_1"></span>' */
 				+ '</div>';
 
 		$("#deliveryInfo").append(str);
 
 		    str = '<div class="bbD" id="mDiv1_'+(deliveryNum-1)+'_2" style="height:32px">'
 				+ '<label style="margin-left: 160px; float: left;">交货说明：</label>'
-				+ '<input class="input3" id="deliveryDesc'+ deliveryNum +'" style="width: 540px; height: 20px; float: left;"/>'
+				+ '<input class="input3" id="deliveryDesc'+ deliveryNum +'" style="width: 500px; height: 20px; float: left;"/>'
 				+ '</div>';
 
 		$("#deliveryInfo").append(str);
@@ -520,7 +520,7 @@ a:hover {
 								formatDate(date).substring(0, 10));
 					}
 				});
-		$('#dd1_' + thisNum + '_1').calendar(
+	/* 	$('#dd1_' + thisNum + '_1').calendar(
 				{
 					trigger : '#actDeliveryTime' + thisNum,
 					zIndex : 999,
@@ -531,7 +531,7 @@ a:hover {
 						$('#actDeliveryTime' + thisNum).val(
 								formatDate(date).substring(0, 10));
 					}
-				});
+				}); */
 	}
 
 	function removeDelivery() {
@@ -560,21 +560,21 @@ a:hover {
 		
 		for (var i = 1; i <= collectionNum; i++) {
 			var time = $("#collectionTime" + i).val();
-			var time2 = $("#actCollectionTime" + i).val();
+			//var time2 = $("#actCollectionTime" + i).val();
 			var desc = $("#collectionDesc" + i).val().trim();
 			time = (time == "") ? "*" : time;
-			time2 = (time2 == "") ? "*" : time2;
+			//time2 = (time2 == "") ? "*" : time2;
 			desc = (desc == "") ? "*" : desc;
-			arrayPaymentInfo.push("1#" + time + "#" + time2 + "#" + desc);
+			arrayPaymentInfo.push("1#" + time + "#*#" + desc+"#0");
 		}
 		for (var j = 1; j <= deliveryNum; j++) {
 			var time3 = $("#deliveryTime" + j).val();
-			var time4 = $("#actDeliveryTime" + j).val();
+			//var time4 = $("#actDeliveryTime" + j).val();
 			var desc2 = $("#deliveryDesc" + j).val().trim();
 			time3 = (time3 == "") ? "*" : time3;
-			time4 = (time4 == "") ? "*" : time4;
+			//time4 = (time4 == "") ? "*" : time4;
 			desc2 = (desc2 == "") ? "*" : desc2;
-			arrayPaymentInfo.push("2#" + time3 + "#" + time4 + "#" + desc2);
+			arrayPaymentInfo.push("2#" + time3 + "#*#" + desc2+"#0");
 		}
 		
 		if (contractNum == "") {
@@ -726,10 +726,10 @@ a:hover {
 							<label style="float: left; margin-left: 42px">收款说明：</label><label
 								style="margin-left: 5px; float: left;">合同收款时间：</label><input
 								class="input3" type="text" id="collectionTime1"
-								style="width: 200px; float: left;" /><span id="dd0_1_0"></span>
-							<label style="margin-left: 15px; float: left;">实际收款时间：</label><input
+								style="width: 500px; float: left;" /><span id="dd0_1_0"></span>
+							<!-- <label style="margin-left: 15px; float: left;">实际收款时间：</label><input
 								class="input3" type="text" id="actCollectionTime1"
-								style="width: 200px; float: left;" /><span id="dd0_1_1"></span>
+								style="width: 200px; float: left;" /><span id="dd0_1_1"></span> -->
 
 						</div>
 						<div class="bbD" id="mDiv0_0_2" style="height: 32px">
@@ -751,10 +751,10 @@ a:hover {
 							<label style="float: left; margin-left: 42px">交货说明：</label><label
 								style="margin-left: 5px; float: left;">合同交货时间：</label><input
 								class="input3" type="text" id="deliveryTime1"
-								style="width: 200px; float: left;"> <span id="dd1_1_0"></span>
-							<label style="margin-left: 15px; float: left;">实际交货时间：</label><input
+								style="width: 500px; float: left;"> <span id="dd1_1_0"></span>
+							<!-- <label style="margin-left: 15px; float: left;">实际交货时间：</label><input
 								class="input3" type="text" id="actDeliveryTime1"
-								style="width: 200px; float: left;"><span id="dd1_1_1"></span>
+								style="width: 200px; float: left;"><span id="dd1_1_1"></span> -->
 						</div>
 						<div class="bbD" id="mDiv1_0_2" style="height: 32px">
 							<label style="margin-left: 160px; float: left;">交货说明：</label> <input
