@@ -62,10 +62,31 @@ function getAreaList(mAreaId) {
 	xhr.send();
 }
 
-function getCompanyList(mCompanyName, mSalesId, mId, mType) {
+function getFieldLevelList(mLevelId) {
+	var xhr = createxmlHttpRequest();
+	xhr.open("GET", host + "/fieldLevelList", true);
+	xhr.onreadystatechange = function() {
+		if (this.readyState == 4) {
+			var str = '<option value="0">请选择...</option>';
+			var data = eval("(" + xhr.responseText + ")").fllist;
+			for ( var i in data) {
+				str += '<option value="' + data[i].levelId + '">'
+						+ data[i].levelName + '</option>';
+			}
+			$("#fieldLevel").empty();
+			$("#fieldLevel").append(str);
+			$("#fieldLevel").find('option[value="' + mLevelId + '"]').attr(
+					"selected", true);
+
+		}
+	};
+	xhr.send();
+}
+
+function getCompanyList(mCompanyName, mSalesId, mId, mType,isFmlkShare) {
 	var xhr = createxmlHttpRequest();
 	xhr.open("GET", host + "/companyList?salesId=" + mSalesId + "&companyName="
-			+ mCompanyName, true);
+			+ mCompanyName + "&isFmlkShare="+isFmlkShare, true);
 	xhr.onreadystatechange = function() {
 		if (this.readyState == 4) {
 			var str = '<option value="0">请选择...</option>';
@@ -88,9 +109,9 @@ function getCompanyList(mCompanyName, mSalesId, mId, mType) {
 	xhr.send();
 }
 
-function getProjectTypeList(mProjectType) {
+function getProjectTypeList(mProjectType,isFmlkShare) {
 	var xhr = createxmlHttpRequest();
-	xhr.open("GET", host + "/projectTypeList", true);
+	xhr.open("GET", host + "/projectTypeList?isFmlkShare="+isFmlkShare, true);
 	xhr.onreadystatechange = function() {
 		if (this.readyState == 4) {
 			var str = '<option value="0">请选择...</option>';
@@ -125,20 +146,18 @@ function getProjectManagerList(mProjectManager, mSalesBeforeUsersArr,
 			}
 			$("#projectManager").empty();
 			$("#projectManager").append(str + str2);
-			$("#projectManager")
-					.find('option[value="' + mProjectManager + '"]').attr(
-							"selected", true);
+			if(mProjectManager != 0){
+				$("#projectManager").find('option[value="' + mProjectManager + '"]').attr("selected", true);
+			}
 			if (mSalesBeforeUsersArr != null) {
 				$("#salesBeforeUsers").empty();
 				$("#salesBeforeUsers").append(str2);
-				$('#salesBeforeUsers').val(mSalesBeforeUsersArr).trigger(
-						"change");
+				$('#salesBeforeUsers').val(mSalesBeforeUsersArr).trigger("change");
 			}
 			if (mSalesAfterUsersArr != null) {
 				$("#salesAfterUsers").empty();
 				$("#salesAfterUsers").append(str2);
-				$('#salesAfterUsers').val(mSalesAfterUsersArr)
-						.trigger("change");
+				$('#salesAfterUsers').val(mSalesAfterUsersArr).trigger("change");
 			}
 		}
 	};
@@ -167,9 +186,8 @@ function getMultiContactUsersList(mCompanyId, mContactUsersArr) {
 }
 
 function getProjectStateList(mProjectState) {
-	var str = '<option value="0">售前服务</option><option value="1">售中服务</option>'
-			+ '<option value="2">售后服务</option>'
-			+ '<option value="3">项目结束关闭</option>'
+	var str = '<option value="0">售前服务</option><option value="1">项目实施</option>'
+			+ '<option value="2">售后服务</option><option value="3">项目结束关闭</option>'
 			+ '<option value="4">项目失败关闭</option>';
 	$("#projectState").empty();
 	$("#projectState").append(str);
@@ -197,14 +215,14 @@ function getCaseTypeList(mCaseType) {
 	xhr.send();
 }
 
-function getProjectList(mCompanyId, mProjectId) {
+function getProjectList(mCompanyId, mProjectId,isFmlkShare) {
 	var xhr = createxmlHttpRequest();
 	xhr.open("GET", host + "/projectList?companyId=" + mCompanyId
-			+ "&projectName=&salesId=0&projectManager=0", true);
+			+ "&projectName=&salesId=0&projectType=0&productStyle=0&isFmlkShare="+isFmlkShare, true);
 	xhr.onreadystatechange = function() {
 		if (this.readyState == 4) {
-			var str = '';
 			var data = eval("(" + xhr.responseText + ")").projectList;
+			var str = '<option value="0">请选择...</option>';
 			for ( var i in data) {
 				str += '<option value="' + data[i].projectId + '">'
 						+ data[i].projectName + '</option>';
@@ -213,7 +231,6 @@ function getProjectList(mCompanyId, mProjectId) {
 			$("#projectId").append(str);
 			$("#projectId").find('option[value="' + mProjectId + '"]').attr(
 					"selected", true);
-			changeProject();
 		}
 	};
 	xhr.send();
@@ -313,7 +330,7 @@ function getMultiServiceUsersList(mServiceUserArr) {
 			+ "&dpartId=1&name=&nickName=&jobId=&isHide=true", true);
 	xhr.onreadystatechange = function() {
 		if (this.readyState == 4) {
-			var str = '<option value="0">请选择...</option>';
+			var str = '';
 			var data = eval("(" + xhr.responseText + ")").userlist;
 			for ( var i in data) {
 				str += '<option value="' + data[i].UId + '">' + data[i].name
@@ -370,21 +387,22 @@ function getTenderStyleList(mTenderStyle) {
 	xhr.send();
 }
 
-function getProductStyleList(mProductStyle) {
+function getProductStyleList(mProductStyleArr,isFmlkShare) {
 	var xhr = createxmlHttpRequest();
-	xhr.open("GET", host + "/productStyleList", true);
+	xhr.open("GET", host + "/productStyleList?isFmlkShare="+isFmlkShare, true);
 	xhr.onreadystatechange = function() {
 		if (this.readyState == 4) {
-			var str = '<option value="0">请选择...</option>';
 			var data = eval("(" + xhr.responseText + ")").pslist;
+			var str="";
 			for ( var i in data) {
 				str += '<option value="' + data[i].id + '">'
 						+ data[i].styleName + '</option>';
 			}
 			$("#productStyle").empty();
 			$("#productStyle").append(str);
-			$("#productStyle").find('option[value="' + mProductStyle + '"]')
-					.attr("selected", true);
+			if (mProductStyleArr != null) {
+				$('#productStyle').val(mProductStyleArr).trigger("change");
+			}
 		}
 	};
 	xhr.send();
@@ -414,8 +432,7 @@ function getUnCheckedTenderList() {
 	var num = 0;
 	var today = formatDate(new Date()).substring(0, 10);
 	var xhr = createxmlHttpRequest();
-	xhr
-			.open(
+	xhr.open(
 					"GET",
 					host
 							+ "/getTenderList?tenderStyle=0&tenderResult=0&tenderCompany=&tenderAgency=0"

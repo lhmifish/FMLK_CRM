@@ -88,25 +88,20 @@ public class CommonUtils {
 		if (cell != null) {
 			switch (cell.getCellType()) {
 			case Cell.CELL_TYPE_NUMERIC:
-				// System.out.println("NUMERIC ");
 				// 日期 时间 和数字都归类在 Cell.CELL_TYPE_NUMERIC里
 				if (DateUtil.isCellDateFormatted(cell)) {
-					// System.out.println("NUMERIC1 "+cell.getCellStyle().getDataFormat());
 					SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 					double value = cell.getNumericCellValue();
 					Date date = DateUtil.getJavaDate(value);
 					if (cell.getCellStyle().getDataFormat() == 14) {
 						cellValue = sdf.format(date).substring(0, 10);
-						// System.out.println("日期 "+ cellValue);
 					} else if (cell.getCellStyle().getDataFormat() == 178) {
 						cellValue = sdf.format(date).substring(11, 16);
-						// System.out.println("时间 "+ cellValue);
 					}
 				} else {
 					// 纯数字
 					cell.setCellType(Cell.CELL_TYPE_STRING);
 					cellValue = cell.getStringCellValue();
-					// System.out.println("数字 "+ cell.getStringCellValue());
 				}
 				break;
 			case Cell.CELL_TYPE_STRING:

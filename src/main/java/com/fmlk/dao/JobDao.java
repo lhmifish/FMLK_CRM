@@ -119,7 +119,6 @@ public class JobDao {
 				sql += " and userId = " + userId;
 			}
 			sql += " order by CAST(date AS datetime),userId";
-			//con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setString(1, month);
 			pre.setString(2, year);
@@ -383,10 +382,8 @@ public class JobDao {
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
-				System.out.println("1");
 			} else {
 				jsonObject.put("errcode", "1");
-				System.out.println("2");
 			}
 			return jsonObject.toString();
 		} catch (Exception e) {

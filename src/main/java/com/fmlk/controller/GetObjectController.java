@@ -70,7 +70,7 @@ public class GetObjectController implements ApplicationContextAware {
 		mUserService = new UserService();
 		String nickName = request.getParameter("nickName");
 		String jsonStr = mUserService.getUserByNickName(nickName);
-	    return jsonStr;
+		return jsonStr;
 	}
 	
 	/*****************************************************************************/
@@ -227,7 +227,7 @@ public class GetObjectController implements ApplicationContextAware {
 		mProjectService = new ProjectService();
 		int id = Integer.parseInt(request.getParameter("id"));
 		String jsonStr = mProjectService.getProjectCase(id);
-	    return jsonStr;
+		return jsonStr;
 	}
 	
 	
@@ -256,5 +256,60 @@ public class GetObjectController implements ApplicationContextAware {
 		String jsonStr = mService.getCompanyInfo();
 	    return jsonStr;
 	}
+	
+	/**
+	 * 获取产品类别
+	 * 
+	 */
+	@RequestMapping(value = "/getProductStyleById", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getProductStyle(HttpServletRequest request) {
+		mService = new Service();
+		int productId = Integer.parseInt(request.getParameter("pid"));
+		String jsonStr = mService.getProductStyle(productId);
+	    return jsonStr;
+	}
+	
+	/**
+	 * 获取项目状态
+	 * 
+	 */
+	@RequestMapping(value = "/getProjectState", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getProjectState(HttpServletRequest request) {
+		mProjectService = new ProjectService();
+		int projectState = Integer.parseInt(request.getParameter("projectState"));
+		int projectSubState = Integer.parseInt(request.getParameter("projectSubState"));
+		int projectType = Integer.parseInt(request.getParameter("projectType"));
+		String jsonStr = mProjectService.getProjectState(projectState,projectSubState,projectType);
+	    return jsonStr;
+	}
+	
+	/**
+	 * 获取行业等级
+	 * 
+	 */
+	@RequestMapping(value = "/getFieldLevel", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getFieldLevel(HttpServletRequest request) {
+		mService = new Service();
+		int levelId = Integer.parseInt(request.getParameter("levelId"));
+		String jsonStr = mService.getFieldLevel(levelId);
+	    return jsonStr;
+	}
+	
+	/**
+	 * 获取客户详细信息
+	 * 
+	 */
+	@RequestMapping(value = "/getClientDetailInfo", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getClientDetailInfo(HttpServletRequest request) {
+		mService = new Service();
+		String companyId = request.getParameter("companyId");
+		String jsonStr = mService.getClientDetailInfo(companyId);
+	    return jsonStr;
+	}
+	
 	
 }

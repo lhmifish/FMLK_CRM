@@ -12,17 +12,21 @@
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/js/common.js"></script>
-
+<script src="${pageContext.request.contextPath}/js/loading.js"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=3"></script>
 <link rel="stylesheet" type="text/css"
 	href="${pageContext.request.contextPath}/css/ns_blue_common.css" />
 <link rel="stylesheet" type="text/css"
 	href="${pageContext.request.contextPath}/css/ns_table_style.css">
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
 
 
 <style>
-
 body::-webkit-scrollbar {
-	display:none;
+	display: none;
 }
 
 html body {
@@ -153,7 +157,14 @@ html, body {
 }
 </style>
 
-<script>
+<script type="text/javascript">
+	var host;
+	var requestReturn;
+	
+	$(document).ready(function() {
+		host = "${pageContext.request.contextPath}";
+	});
+
 	function adminlogin() {
 		var txtName = $("#txtName").val().trim();
 		var txtPWD = $("#txtPWD").val().trim();
@@ -170,54 +181,83 @@ html, body {
 			alert("请输入验证码");
 			return;
 		}
-		$.ajax({
-			type : "POST",
-			url : "${pageContext.request.contextPath}/login",
-			data : {
+		loading();
+		$("#btnLogin").css("background-color", "#EEE");
+		$("#btnLogin").attr("disabled", "disabled");		
+		var params = {
 				"user" : txtName,
 				"psd" : txtPWD,
-				"code" : txtcode
-			},
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").errcode;
-				if (data == 0) {
-					window.location.href = "${pageContext.request.contextPath}/page/index";
-				} else if (data == 1) {
-					alert("验证码错误,请重新输入");
-					$("#txtcode").val("");
-					changeValidateCode();
-				} else if (data == 2) {
-					alert("账号或密码错误,请重新输入");
-					$("#txtcode").val("");
-					$("#txtName").val("");
-					$("#txtPWD").val("");
-					changeValidateCode();
-				} else {
-					alert("登入错误");
-				}
+				"code" : txtcode	
+		}
+        setTimeout(function() {
+			post("login",params,false);
+			$("#btnLogin").css("background-color", "#5EC7CE");
+			$("#btnLogin").removeAttr("disabled");
+			if(requestReturn.result == "error"){
+				closeLoading();
+				alert(requestReturn.error);
+			}else if(parseInt(requestReturn.code)==0){
+				closeLoading();
+				window.location.href = host+"/page/index";
+			}else if(parseInt(requestReturn.code)==1){
+				closeLoading();
+				alert("验证码错误,请重新输入");
+				$("#txtcode").val("");
+				changeValidateCode();
+			}else if(parseInt(requestReturn.code)==2){
+				closeLoading();
+				alert("账号或密码错误,请重新输入");
+				$("#txtcode").val("");
+				$("#txtName").val("");
+				$("#txtPWD").val("");
+				changeValidateCode();
+			}else{
+				closeLoading();
+				alert("登入错误");
 			}
-		});
+		}, 500);
 	}
 
 	function changeValidateCode() {
-		$("#verify_img").hide().attr(
-				'src',
-				'${pageContext.request.contextPath}/getCheckCode?'
+		$("#verify_img").hide().attr('src',host+'/getCheckCode?'
 						+ Math.floor(Math.random() * 100)).fadeIn();
+	}
+
+	function loading() {
+		$('body').loading({
+			loadingWidth : 240,
+			title : '请稍等!',
+			name : 'test',
+			discription : '登入中',
+			direction : 'column',
+			type : 'origin',
+			originDivWidth : 40,
+			originDivHeight : 40,
+			originWidth : 6,
+			originHeight : 6,
+			smallLoading : false,
+			loadingMaskBg : 'rgba(0,0,0,0.2)'
+		});
+	}
+
+	function closeLoading() {
+		removeLoading('test');
 	}
 </script>
 </head>
 
-<body style="overflow-y:hidden">
+<body style="overflow-y: hidden">
 	<div
 		style="height:100%;background-image:url(${pageContext.request.contextPath}/assets/images/main-slider/bannerOne.jpg)">
 		<div class="top">
-			<img src="${pageContext.request.contextPath}/assets/images/logo_new_2021_09_26.png" style="margin-left: 30px"/>
+			<img
+				src="${pageContext.request.contextPath}/assets/images/logo_new_2021_09_26.png"
+				style="margin-left: 30px" />
 		</div>
-		
+
 		<div class="center" style="height: 53%;">
 			<form action="javascript:;" style="margin-top: 5%;">
-				
+
 				<div class="login_box">
 					<p style="font-size: 20px;">
 						<strong>用户登录</strong>
@@ -235,16 +275,15 @@ html, body {
 
 					<div class="input_box">
 						<input type="text" class="input_login1" name="txtcode"
-							id="txtcode" placeholder="验证码"
-							style="padding-left: 15px;" />
+							id="txtcode" placeholder="验证码" style="padding-left: 15px;" />
 						<div class="verify">
 							<img id="verify_img" style="width: 98px; height: 32px"
 								src="${pageContext.request.contextPath}/getCheckCode"
 								onclick="changeValidateCode()">
 						</div>
 					</div>
-					<button style="margin-top: 10px;background-color:#5EC7CE" class="login_btn"
-						onclick="adminlogin()">登入</button>
+					<button style="margin-top: 10px; background-color: #5EC7CE"
+						class="login_btn" onclick="adminlogin()" id="btnLogin">登入</button>
 				</div>
 			</form>
 		</div>

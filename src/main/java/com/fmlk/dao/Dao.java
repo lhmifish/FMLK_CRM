@@ -18,6 +18,7 @@ import com.fmlk.entity.AssignmentOrder;
 import com.fmlk.entity.CaseType;
 import com.fmlk.entity.CheckStatistics;
 import com.fmlk.entity.Client;
+import com.fmlk.entity.ClientDetailInfo;
 import com.fmlk.entity.ClientField;
 import com.fmlk.entity.Company;
 import com.fmlk.entity.ContactUser;
@@ -26,6 +27,7 @@ import com.fmlk.entity.DailyReport;
 import com.fmlk.entity.DailyUploadReport;
 import com.fmlk.entity.DailyWechatCheck;
 import com.fmlk.entity.Department;
+import com.fmlk.entity.FieldLevel;
 import com.fmlk.entity.JobPosition;
 import com.fmlk.entity.MonthReport;
 import com.fmlk.entity.PermissionSetting;
@@ -39,6 +41,7 @@ import com.fmlk.entity.ScheduleReport;
 import com.fmlk.entity.Tender;
 import com.fmlk.entity.TenderStyle;
 import com.fmlk.entity.User;
+import com.fmlk.entity.VisitRecord;
 import com.fmlk.entity.WechatCheck;
 import com.fmlk.entity.WeekDetail;
 import com.fmlk.entity.WeekUploadReport;
@@ -81,6 +84,8 @@ public class Dao {
 	private List<RolePermission> rpList = null;
 	private List<PermissionSetting> psetList = null;
 	private List<Client> clientList = null;
+	private List<FieldLevel> fieldLevelList = null;
+	private List<VisitRecord> visitRecordList = null;
 
 	public boolean add(DailyReport dp) {
 		try {
@@ -122,8 +127,6 @@ public class Dao {
 	}
 
 	public String getMonthList(String date, int dept) {
-		// System.out.println("1 "+date);
-		// System.out.println("1 "+dept);
 		try {
 			sql = "select * from daily_report where CAST(date AS datetime)>=CAST(? AS datetime) "
 					+ "and CAST(date AS datetime)<=CAST(? AS datetime)";
@@ -327,7 +330,6 @@ public class Dao {
 			jsonObject.put("errcode", "0");
 			jsonObject.put("errmsg", "query");
 			jsonObject.put("dailylist", JSONArray.fromObject(list));
-			// System.out.println(JSONArray.fromObject(list));
 			return jsonObject.toString();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -473,7 +475,6 @@ public class Dao {
 			wList = new ArrayList<WechatCheck>();
 			uList = new ArrayList<User>();
 			uList = getUserList2(date, dept);
-
 			while (res2.next()) {
 				WechatCheck wc = new WechatCheck();
 				wc.setUserName(res2.getString("NICKNAME").trim());
@@ -609,7 +610,6 @@ public class Dao {
 				DailyWechatCheck dwc = new DailyWechatCheck();
 				dwc.setDate(date);
 				dwc.setName(uList.get(i).getName());
-				System.out.println("用户    " + uList.get(i).getName());
 				// wList2 一个人的所有考勤 休息和打卡没办法判断，所以没记录一律为空
 				if (wList2.size() > 0) {
 
@@ -668,7 +668,6 @@ public class Dao {
 					+ "WHERE CAST(c.checktime AS datetime) > CAST(? AS datetime) "
 					+ "and CAST(c.checktime AS datetime) < CAST(? AS datetime) "
 					+ "and c.checkflg='Out' and c.userName=d.USERNAME order by a.checktime";
-
 			con = DBConnection.getConnection2();
 			pre = con.prepareStatement(sql);
 			pre.setString(1, date);
@@ -698,13 +697,13 @@ public class Dao {
 			DBConnection.closeRes(res);
 		}
 		try {
-			boolean isNew = sdf.parse(date).compareTo(sdf.parse("2023/5/29"))>=0;
-			if(isNew) {
+			boolean isNew = sdf.parse(date).compareTo(sdf.parse("2023/5/29")) >= 0;
+			if (isNew) {
 				sql2 = "SELECT USERINFO.name as f_ConsumerName,iif(acc_monitor_log.state=1,'打卡出' ,'打卡进') as f_ReaderIDRes,acc_monitor_log.time as f_ReadDate "
-				+ "FROM acc_monitor_log left JOIN USERINFO ON acc_monitor_log.card_no = USERINFO.cardNo where len(acc_monitor_log.card_no)=10 and acc_monitor_log.verified = 4 "
-				+ "and format(acc_monitor_log.time,'yyyy/mm/dd')=? and NOT(USERINFO.name IS NULL) ORDER BY acc_monitor_log.time";
+						+ "FROM acc_monitor_log left JOIN USERINFO ON acc_monitor_log.card_no = USERINFO.cardNo where len(acc_monitor_log.card_no)=10 and acc_monitor_log.verified = 4 "
+						+ "and format(acc_monitor_log.time,'yyyy/mm/dd')=? and NOT(USERINFO.name IS NULL) ORDER BY acc_monitor_log.time";
 				con2 = DBConnection.getAccessConnection();
-			}else {
+			} else {
 				sql2 = "select a.f_ConsumerName,CASE c.f_ReaderID WHEN 1 THEN '打卡进' ELSE '打卡出' END f_ReaderIDRes,c.f_ReadDate "
 						+ "from dbo.t_b_Consumer a,dbo.t_b_IDCard b,dbo.t_d_CardRecord c "
 						+ "where a.f_ConsumerID=b.f_ConsumerID and b.f_CardNO = c.f_CardNO "
@@ -716,154 +715,8 @@ public class Dao {
 			res2 = pre2.executeQuery();
 			while (res2.next()) {
 				String mName = res2.getString("f_ConsumerName").trim();
-				if (!mName.equals("阿姨") && !mName.equals("吕总") && !mName.equals("保洁阿姨") && !mName.equals("吕忠") && !mName.equals("童骏")) {
-					WechatCheck wc2 = new WechatCheck();
-					wc2.setUserName(mName);
-					wc2.setCheckFlag(res2.getString("f_ReaderIDRes"));
-					wc2.setAddress("公司");
-					String dateStr = sdf2.format(res2.getTimestamp("f_ReadDate"));
-					wc2.setCheckTime(dateStr.substring(11, dateStr.length()));
-					wc2.setDate(dateStr.substring(0, 10));
-					wList.add(wc2);
-				}
-			}
-			// 按时间排序
-						Collections.sort(wList, new Comparator<WechatCheck>() {
-
-							@Override
-							public int compare(WechatCheck wc1, WechatCheck wc2) {
-								String date = wc1.getDate() + " " + wc1.getCheckTime();
-								String date2 = wc2.getDate() + " " + wc2.getCheckTime();
-								SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-								Date d1, d2;
-								int t = 0;
-								try {
-									d1 = sdf3.parse(date);
-									d2 = sdf3.parse(date2);
-									if (d1.getTime() > d2.getTime()) {
-										t = 1;
-									} else {
-										t = -1;
-									}
-								} catch (ParseException e) {
-									e.printStackTrace();
-								}
-								return t;
-							}
-
-						});
-						// 这里已获取了所有微信签到和刷门卡的记录 ，并按时间排序 
-						uList = new ArrayList<User>();
-						uList = getUserList2(date, dept);// 除去领导
-						dwList = new ArrayList<DailyWechatCheck>();
-						List<WechatCheck> wList2 = null;
-
-						for (int i = 0; i < uList.size(); i++) {
-							String name = uList.get(i).getName();// 真实姓名
-							String startTime = "", endTime = "", detail = "";
-							wList2 = new ArrayList<WechatCheck>();
-
-							for (int j = 0; j < wList.size(); j++) {
-								if (wList.get(j).getUserName().equals(name)) {
-									wList2.add(wList.get(j));
-								}
-							}
-							JSONObject jo = new JSONObject();
-							jo.put("list", JSONArray.fromObject(wList2));
-							DailyWechatCheck dwc = new DailyWechatCheck();
-							dwc.setDate(date);
-							dwc.setName(name);
-							dwc.setDetail(jo.toString());
-
-							if (wList2.size() > 0) {
-								if (wList2.size() == 1) {
-									WechatCheck object = wList2.get(0);
-									String time = object.getCheckTime();
-									int t = Integer.parseInt(time.substring(0, 2));
-
-									if (object.getCheckFlag().equals("签到") || object.getCheckFlag().equals("打卡进")) {
-										// 只有签到
-										startTime = time;
-										endTime = "未签退";
-									} else if (t >= 10) {
-										// 只有一条超过10点退出的记录
-										// 若只有一条10点前的退出记录，则不算上班
-										endTime = time;
-										startTime = "未签到";
-									}
-								} else {
-									WechatCheck object2 = new WechatCheck();
-									WechatCheck object3 = new WechatCheck();
-									for (int k = 0; k < wList2.size(); k++) {
-										object2 = new WechatCheck();
-										object2 = wList2.get(k);
-										if (object2.getCheckFlag().equals("签到") || object2.getCheckFlag().equals("打卡进")) {
-											startTime = wList2.get(k).getCheckTime();
-											break;
-										}
-									}
-
-									if (startTime.equals("")) {
-										startTime = "未签到";
-									}
-
-									for (int l = wList2.size() - 1; l >= 0; l--) {
-										object3 = new WechatCheck();
-										object3 = wList2.get(l);
-										if (object3.getCheckFlag().equals("签退") || object3.getCheckFlag().equals("打卡出")) {
-
-											if (!startTime.equals("未签到")) {
-												Date tEnd = sdf.parse(object3.getDate());
-												Date tStart = sdf.parse(object2.getDate());
-
-												if (tEnd.getTime() > tStart.getTime()) {
-													endTime = "次日" + wList2.get(l).getCheckTime();
-												} else {
-													endTime = wList2.get(l).getCheckTime();
-												}
-											} else {
-												endTime = wList2.get(l).getCheckTime();
-											}
-											break;
-										}
-									}
-
-									if (endTime.equals("")) {
-										endTime = "未签退";
-									}
-
-								}
-							}
-							dwc.setStartTime(startTime);
-							dwc.setEndTime(endTime);
-							dwList.add(dwc);
-						}
-						jsonObject = new JSONObject();
-						jsonObject.put("errcode", "0");
-						jsonObject.put("errmsg", "query");
-						jsonObject.put("wechatlist", JSONArray.fromObject(dwList));
-						return jsonObject.toString();
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			DBConnection.closeCon(con2);
-			DBConnection.closePre(pre2);
-			DBConnection.closeRes(res2);
-		}
-		
-		/**
-		try {
-			sql2 = "select a.f_ConsumerName,CASE c.f_ReaderID WHEN 1 THEN '打卡进' ELSE '打卡出' END f_ReaderIDRes,c.f_ReadDate "
-					+ "from dbo.t_b_Consumer a,dbo.t_b_IDCard b,dbo.t_d_CardRecord c "
-					+ "where a.f_ConsumerID=b.f_ConsumerID and b.f_CardNO = c.f_CardNO "
-					+ "and cast(? as date)=cast(c.f_ReadDate as date)";
-			con2 = DBConnection.getConnection3();
-			pre2 = con2.prepareStatement(sql2);
-			pre2.setString(1, date);
-			res2 = pre2.executeQuery();
-			while (res2.next()) {
-				String mName = res2.getString("f_ConsumerName").trim();
-				if (!mName.equals("阿姨") && !mName.equals("吕总")) {
+				if (!mName.equals("阿姨") && !mName.equals("吕总") && !mName.equals("保洁阿姨") && !mName.equals("吕忠")
+						&& !mName.equals("童骏")) {
 					WechatCheck wc2 = new WechatCheck();
 					wc2.setUserName(mName);
 					wc2.setCheckFlag(res2.getString("f_ReaderIDRes"));
@@ -899,7 +752,7 @@ public class Dao {
 				}
 
 			});
-			// 这里已获取了所有微信签到和刷门卡的记录 ，并按时间排序 
+			// 这里已获取了所有微信签到和刷门卡的记录 ，并按时间排序
 			uList = new ArrayList<User>();
 			uList = getUserList2(date, dept);// 除去领导
 			dwList = new ArrayList<DailyWechatCheck>();
@@ -989,9 +842,7 @@ public class Dao {
 			jsonObject.put("errcode", "0");
 			jsonObject.put("errmsg", "query");
 			jsonObject.put("wechatlist", JSONArray.fromObject(dwList));
-			// System.out.println(JSONArray.fromObject(dwList));
 			return jsonObject.toString();
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -999,7 +850,6 @@ public class Dao {
 			DBConnection.closePre(pre2);
 			DBConnection.closeRes(res2);
 		}
-		**/
 		return null;
 	}
 	////////////////////////////////////////////
@@ -1099,7 +949,6 @@ public class Dao {
 			jsonObject.put("errcode", "0");
 			jsonObject.put("errmsg", "query");
 			jsonObject.put("checklist", JSONArray.fromObject(wList));
-			// System.out.println(JSONArray.fromObject(wList));
 			return jsonObject.toString();
 
 		} catch (Exception e) {
@@ -1161,7 +1010,6 @@ public class Dao {
 				wc.setState(res.getInt("state"));
 				wList.add(wc);
 			}
-			System.out.println(JSONArray.fromObject(wList));
 			jsonObject = new JSONObject();
 			jsonObject.put("errcode", "0");
 			jsonObject.put("errmsg", "query");
@@ -1834,7 +1682,7 @@ public class Dao {
 			}
 
 			sql += "order by CAST(date AS datetime) desc";
-            con = DBConnection.getConnection_Mysql();
+			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			res = pre.executeQuery();
 			aoList = new ArrayList<AssignmentOrder>();
@@ -2219,7 +2067,7 @@ public class Dao {
 
 		try {
 			sql = "insert into dailyuploadreport (userName,date,client,crmNum,"
-					+ "jobContent,time) values (?,?,?,?,?,?)";
+					+ "jobContent,time,isFmlkShare) values (?,?,?,?,?,?,?)";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setString(1, dur.getUserName());
@@ -2228,6 +2076,7 @@ public class Dao {
 			pre.setString(4, dur.getCrmNum());
 			pre.setString(5, dur.getJobContent());
 			pre.setString(6, dur.getTime());
+			pre.setBoolean(7, dur.getIsFmlkShare());
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -2716,7 +2565,7 @@ public class Dao {
 
 	public String getAllWeekUploadReportList(String startDate, String endDate) {
 		try {
-			sql = "select a.id,a.userName,a.date,a.time,a.client,a.crmNum,a.jobContent from dailyuploadreport a,`user` b"
+			sql = "select b.id,a.userName,a.date,a.time,a.client,a.crmNum,a.jobContent from dailyuploadreport a,`user` b"
 					+ " where CAST(date AS date) >= CAST(? AS date) and CAST(date AS date) <= CAST(? AS date) and a.userName = b.nickName ORDER BY b.departmentId,b.id,CAST(date AS date)";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
@@ -2729,13 +2578,45 @@ public class Dao {
 				dur.setId(res.getInt("id"));
 				dur.setUserName(res.getString("userName"));
 				dur.setDate(res.getString("date"));
-				dur.setTime(res.getString("time"));
+				// dur.setTime(res.getString("time"));
 				dur.setClient(res.getString("client"));
-				dur.setCrmNum(res.getString("crmNum"));
+				// dur.setCrmNum(res.getString("crmNum"));
 				dur.setJobContent(res.getString("jobContent"));
 				durList.add(dur);
 			}
-			System.out.println(durList.size());
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", "query");
+			jsonObject.put("weekuploadreportlist", JSONArray.fromObject(durList));
+			return jsonObject.toString();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
+
+	public String getSalesWeekUploadReportList(String startDate, String endDate) {
+		try {
+			sql = "select * from visitrecord where CAST(visitDate AS date) >= CAST(? AS date) and CAST(visitDate AS date) <= CAST(? AS date) ORDER BY salesId,CAST(visitDate AS date)";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setString(1, startDate);
+			pre.setString(2, endDate);
+			res = pre.executeQuery();
+			durList = new ArrayList<DailyUploadReport>();
+			while (res.next()) {
+				DailyUploadReport dur = new DailyUploadReport();
+				dur.setId(res.getInt("salesId"));
+				dur.setDate(res.getString("visitDate"));
+				dur.setClient(res.getString("companyId"));
+				dur.setJobContent(res.getString("visitDesc"));
+				durList.add(dur);
+			}
 			jsonObject = new JSONObject();
 			jsonObject.put("errcode", "0");
 			jsonObject.put("errmsg", "query");
@@ -2753,14 +2634,11 @@ public class Dao {
 	}
 
 	public String getUserYearUploadReportList(int year, String userNickName) {
-		System.out.println(year + "");
-		System.out.println(userNickName);
 		try {
 			con2 = DBConnection.getConnection_Mysql2();
 			con = DBConnection.getConnection_Mysql();
 			if (year <= 2020) {
 				// 老库
-				System.out.println("<= 2020");
 				sql2 = "select a.date,a.time,b.companyName,c.projectName,jobContent from dailyuploadreport a ,company b,project c "
 						+ "where a.userName = ? and SUBSTR(a.date,1,4) = ? and b.companyId = a.client and c.projectId = a.crmNum order by CAST(a.date AS date),a.id";
 				pre2 = con2.prepareStatement(sql2);
@@ -2778,7 +2656,6 @@ public class Dao {
 					durList.add(dur);
 				}
 			} else if (year > 2021) {
-				System.out.println("> 2021");
 				// 新库
 				sql = "select a.date,a.time,b.companyName,c.projectName,jobContent from dailyuploadreport a ,company b,project c "
 						+ "where a.userName = ? and SUBSTR(a.date,1,4) = ? and b.companyId = a.client and c.projectId = a.crmNum order by CAST(a.date AS date),a.id";
@@ -2797,7 +2674,6 @@ public class Dao {
 					durList.add(dur);
 				}
 			} else {
-				System.out.println("= 2021");
 				// 11月前老库
 				sql2 = "select a.date,a.time,b.companyName,c.projectName,jobContent from dailyuploadreport a ,company b,project c "
 						+ "where a.userName = ? and CAST(a.date AS date)<=CAST(? AS date) and CAST(a.date AS date)>=CAST(? AS date) "
@@ -2817,7 +2693,6 @@ public class Dao {
 					dur.setJobContent(res2.getString("jobContent"));
 					durList.add(dur);
 				}
-				// System.out.println("老库："+durList.size());
 				// 11月后新库
 				sql = "select a.date,a.time,b.companyName,c.projectName,jobContent from dailyuploadreport a ,company b,project c "
 						+ "where a.userName = ? and CAST(a.date AS date)>=CAST(? AS date) "
@@ -2837,9 +2712,7 @@ public class Dao {
 					durList.add(dur);
 				}
 			}
-
-			System.out.println(durList.size());
-			jsonObject = new JSONObject();
+            jsonObject = new JSONObject();
 			jsonObject.put("errcode", "0");
 			jsonObject.put("errmsg", "query");
 			jsonObject.put("yearuploadreportlist", JSONArray.fromObject(durList));
@@ -2848,11 +2721,11 @@ public class Dao {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			if(con!=null&&pre!=null&&res!=null) {
+			if (con != null && pre != null && res != null) {
 				DBConnection.closeCon(con);
 				DBConnection.closePre(pre);
 				DBConnection.closeRes(res);
-			}else if(con2!=null&&pre2!=null&&res2!=null) {
+			} else if (con2 != null && pre2 != null && res2 != null) {
 				DBConnection.closeCon(con2);
 				DBConnection.closePre(pre2);
 				DBConnection.closeRes(res2);
@@ -3356,6 +3229,34 @@ public class Dao {
 		return null;
 	}
 
+	public String getFieldLevelList() {
+		try {
+			sql = "select * from fieldlevel order by levelId";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			res = pre.executeQuery();
+			fieldLevelList = new ArrayList<FieldLevel>();
+			while (res.next()) {
+				FieldLevel fl = new FieldLevel();
+				fl.setLevelId(res.getInt("levelId"));
+				fl.setLevelName(res.getString("levelName"));
+				fieldLevelList.add(fl);
+			}
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", "query");
+			jsonObject.put("fllist", JSONArray.fromObject(fieldLevelList));
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
+
 	public String getClientField(int fieldId) {
 		try {
 			sql = "select * from clientfield where fieldId = ?";
@@ -3473,11 +3374,13 @@ public class Dao {
 		return null;
 	}
 
-	public String getProductStyleList() {
+	public String getProductStyleList(boolean isFmlkShare) {
 		try {
-			sql = "select * from productstyle order by id";
+			sql = "select * from productstyle where isFmlkShare = ?";
+			sql += " order by id";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
+			pre.setBoolean(1, isFmlkShare);
 			res = pre.executeQuery();
 			psList = new ArrayList<ProductStyle>();
 			while (res.next()) {
@@ -3529,11 +3432,13 @@ public class Dao {
 		return null;
 	}
 
-	public String getProjectTypeList() {
+	public String getProjectTypeList(boolean isFmlkShare) {
 		try {
-			sql = "select * from projecttype order by id";
+			sql = "select * from projecttype where isFmlkShare = ?";
+			sql += " order by id";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
+			pre.setBoolean(1, isFmlkShare);
 			res = pre.executeQuery();
 			ptList = new ArrayList<ProjectType>();
 			while (res.next()) {
@@ -4020,9 +3925,7 @@ public class Dao {
 					list.add(dr);
 				}
 			}
-			
-			//System.out.println(list.size());
-			
+
 			List<DailyReport> list1st = new ArrayList<DailyReport>(), list2nd = new ArrayList<DailyReport>();
 			List<DailyReport> list3rd = new ArrayList<DailyReport>(), list4th = new ArrayList<DailyReport>();
 			List<DailyReport> list5th = new ArrayList<DailyReport>(), list6th = new ArrayList<DailyReport>();
@@ -4032,7 +3935,6 @@ public class Dao {
 
 			for (int i = 0; i < list.size(); i++) {
 				int month = Integer.parseInt(list.get(i).getDate().substring(5, 7));
-				//System.out.println("month:"+month);
 				if (month == 1) {
 					list1st.add(list.get(i));
 				} else if (month == 2) {
@@ -4055,7 +3957,6 @@ public class Dao {
 					list10th.add(list.get(i));
 				} else if (month == 11) {
 					list11th.add(list.get(i));
-					System.out.println(list11th);
 				} else if (month == 12) {
 					list12th.add(list.get(i));
 				}
@@ -4073,7 +3974,7 @@ public class Dao {
 			newList.add(list10th);
 			newList.add(list11th);
 			newList.add(list12th);
-			
+
 			MonthReport mReport = new MonthReport();
 			list2 = new ArrayList<MonthReport>();
 			for (int j = 0; j < 12; j++) {
@@ -4090,11 +3991,11 @@ public class Dao {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			if(con!=null&&pre!=null&&res!=null) {
+			if (con != null && pre != null && res != null) {
 				DBConnection.closeCon(con);
 				DBConnection.closePre(pre);
 				DBConnection.closeRes(res);
-			}else if(con2!=null&&pre2!=null&&res2!=null) {
+			} else if (con2 != null && pre2 != null && res2 != null) {
 				DBConnection.closeCon(con2);
 				DBConnection.closePre(pre2);
 				DBConnection.closeRes(res2);
@@ -4104,28 +4005,24 @@ public class Dao {
 	}
 
 	private MonthReport getMonthReport(List<DailyReport> mylist) {
-		
+
 		int scheduleT = 0, dailyReportT = 0, weekReportT = 0, nextWeekPlanT = 0, projectReportT = 0, noSignIn = 0,
 				noSignOut = 0, isLateT = 0;
 		double overWorkTimeT = 0, adjustRestTimeT = 0, festivalOverWorkTimeT = 0;
 		if (mylist.size() > 0) {
 			for (int i = 0; i < mylist.size(); i++) {
-				
+
 				if (mylist.get(i).getSchedule().equals("未发")) {
 					scheduleT++;
 				}
 				if (mylist.get(i).getDailyReport().equals("未发")) {
 					dailyReportT++;
 				}
-				/*if (mylist.get(i).getWeekReport().equals("未发")) {
-					weekReportT++;
-				}
-				if (mylist.get(i).getNextWeekPlan().equals("未发")) {
-					nextWeekPlanT++;
-				}
-				if (mylist.get(i).getProjectReport().equals("未发")) {
-					projectReportT++;
-				}*/
+				/*
+				 * if (mylist.get(i).getWeekReport().equals("未发")) { weekReportT++; } if
+				 * (mylist.get(i).getNextWeekPlan().equals("未发")) { nextWeekPlanT++; } if
+				 * (mylist.get(i).getProjectReport().equals("未发")) { projectReportT++; }
+				 */
 				if (mylist.get(i).getSign().contains("未签到")) {
 					noSignIn++;
 				}
@@ -4152,9 +4049,8 @@ public class Dao {
 			mp.setAdjustRestTime(adjustRestTimeT);
 			mp.setFestivalOverWorkTime(festivalOverWorkTimeT);
 			return mp;
-		} 
-        return null;
-		
+		}
+		return null;
 
 	}
 
@@ -4193,15 +4089,14 @@ public class Dao {
 	}
 
 	public String getUserWorkAttendanceList(String date) {
-		//System.out.println("sssss  "+date);
 		try {
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
 			Date inputDate = sdf.parse(date);
 			Date dateTemp = sdf.parse("2021/11/1");
 			int compareTo = inputDate.compareTo(dateTemp);
-			if(compareTo>=0) {
+			if (compareTo >= 0) {
 				con = DBConnection.getConnection_Mysql();
-			}else {
+			} else {
 				con = DBConnection.getConnection_Mysql2();
 			}
 			sql = "select * from daily_report a,`user` b where date = ? and a.name = b.`name` order by b.departmentId,b.id";
@@ -4226,7 +4121,6 @@ public class Dao {
 				dr.setFestivalOverWorkTime(res.getDouble("festivalOverWorkTime"));
 				dr.setIsLate(res.getInt("islate"));
 				dr.setRoleId(res.getInt("roleId"));
-				//System.out.println("sssss  "+res.getString("name"));
 				list.add(dr);
 			}
 			jsonObject = new JSONObject();
@@ -4281,14 +4175,14 @@ public class Dao {
 			DBConnection.closePre(pre);
 		}
 	}
-	
+
 	public String deleteWorkAttendance(String date) {
 		jsonObject = new JSONObject();
 		try {
 			sql = "delete from daily_report where date = ?";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
-			pre.setString(1,date);
+			pre.setString(1, date);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -4719,7 +4613,7 @@ public class Dao {
 				// 找到了
 				jsonObject.put("errcode", "3");
 				return jsonObject.toString();
-			}else {
+			} else {
 				return addCooperateClient(cName);
 			}
 		} catch (Exception e) {
@@ -4756,7 +4650,7 @@ public class Dao {
 			DBConnection.closePre(pre2);
 		}
 	}
-	
+
 	public String deleteCooperateClient(Client c) {
 		jsonObject = new JSONObject();
 		try {
@@ -4782,7 +4676,7 @@ public class Dao {
 			DBConnection.closePre(pre);
 		}
 	}
-	
+
 	public boolean clearCooperateClient() {
 		jsonObject = new JSONObject();
 		try {
@@ -4790,12 +4684,244 @@ public class Dao {
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			int j = pre.executeUpdate();
-			return j==0?true:false;
+			return j == 0 ? true : false;
 		} catch (Exception e) {
 			return false;
 		} finally {
 			DBConnection.closeCon(con);
 			DBConnection.closePre(pre);
+		}
+	}
+
+	public String getProductStyle(int productId) {
+		jsonObject = new JSONObject();
+		try {
+			sql = "select * from productstyle where id = ?";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setInt(1, productId);
+			res = pre.executeQuery();
+			if (res.next()) {
+				ProductStyle pd = new ProductStyle();
+				pd.setId(res.getInt("id"));
+				pd.setStyleName(res.getString("styleName"));
+				jsonObject.put("errcode", "0");
+				jsonObject.put("errmsg", "query");
+				jsonObject.put("productStyle", JSONArray.fromObject(pd));
+				return jsonObject.toString();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
+
+	public String getFieldLevel(int levelId) {
+		jsonObject = new JSONObject();
+		try {
+			sql = "select * from fieldlevel where levelId = ?";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setInt(1, levelId);
+			res = pre.executeQuery();
+			if (res.next()) {
+				FieldLevel fl = new FieldLevel();
+				fl.setLevelId(res.getInt("levelId"));
+				fl.setLevelName(res.getString("levelName"));
+				jsonObject.put("errcode", "0");
+				jsonObject.put("errmsg", "query");
+				jsonObject.put("fieldLevel", JSONArray.fromObject(fl));
+				return jsonObject.toString();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
+
+	public String getClientDetailInfo(String companyId) {
+		jsonObject = new JSONObject();
+		try {
+			sql = "select * from clientdetailinfo where companyId = ?";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setString(1, companyId);
+			res = pre.executeQuery();
+			if (res.next()) {
+				// 找到了
+				ClientDetailInfo cdi = new ClientDetailInfo();
+				cdi.setCompanyId(res.getString("companyId"));
+				cdi.setSchedule(res.getInt("schedule"));
+				cdi.setPutPosition(res.getString("putPosition"));
+				cdi.setCurrentProblem(res.getString("currentProblem"));
+				cdi.setDemand(res.getString("demand"));
+				cdi.setLeftProblem(res.getString("leftProblem"));
+				cdi.setCurrentStateDesc(res.getString("currentStateDesc"));
+				cdi.setSolution(res.getString("solution"));
+				cdi.setCompetitor(res.getString("competitor"));
+				cdi.setQualifications(res.getString("qualifications"));
+				jsonObject.put("errcode", "0");
+				jsonObject.put("errmsg", "query");
+				jsonObject.put("ClientDetailInfo", JSONArray.fromObject(cdi));
+				return jsonObject.toString();
+			} else {
+				// 没找到
+				return createNewClientDetailInfo(companyId);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
+
+	public String createNewClientDetailInfo(String companyId) {
+		jsonObject = new JSONObject();
+		String date = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+		try {
+			sql2 = "insert into clientdetailinfo (companyId,createDate,updateDate) values (?,?,?)";
+			con2 = DBConnection.getConnection_Mysql();
+			pre2 = con2.prepareStatement(sql2);
+			pre2.setString(1, companyId);
+			pre2.setString(2, date);
+			pre2.setString(3, date);
+			int i = pre2.executeUpdate();
+			if (i > 0) {
+				ClientDetailInfo cdi = new ClientDetailInfo();
+				cdi.setCompanyId(companyId);
+				jsonObject.put("errcode", "0");
+				jsonObject.put("ClientDetailInfo", JSONArray.fromObject(cdi));
+			} else {
+				jsonObject.put("errcode", "1");
+			}
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con2);
+			DBConnection.closePre(pre2);
+		}
+	}
+
+	public String getVisitRecordList(String companyId, int userId, String year, String month) {
+		try {
+			sql = "select * from visitrecord where 1=1";
+			if (!companyId.equals("")) {
+				sql += " and companyId = '" + companyId + "'";
+			}
+			if (userId != 0) {
+				sql += " and salesId = " + userId;
+			}
+			if (!year.equals("")) {
+				sql += " and SUBSTR(visitDate,1,4)='"+ year+ "'";
+			}
+			if (!month.equals("")) {
+				sql += " and SUBSTR(visitDate,6,2)='"+ month+ "'";
+			}
+			sql +=" order by CAST(visitDate AS datetime),salesId,CAST(createDate AS datetime)";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			res = pre.executeQuery();
+			visitRecordList = new ArrayList<VisitRecord>();
+			while (res.next()) {
+				VisitRecord vr = new VisitRecord();
+				vr.setCompanyId(res.getString("companyId"));
+				vr.setVisitDesc(res.getString("visitDesc"));
+				vr.setSalesId(res.getInt("salesId"));
+				vr.setVisitDate(res.getString("visitDate"));
+				visitRecordList.add(vr);
+			}
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", "query");
+			jsonObject.put("visitRecordList", JSONArray.fromObject(visitRecordList));
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
+
+	public String editClientDetailInfo(ClientDetailInfo cdi) {
+		jsonObject = new JSONObject();
+		try {
+			sql = "update clientdetailinfo set competitor = ?,currentProblem = ?,currentStateDesc = ?,leftProblem = ?,"
+					+ "putPosition = ?,demand = ?,solution = ?,schedule = ?,qualifications = ?,updateDate = ? where companyId= ?";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setString(1, cdi.getCompetitor());
+			pre.setString(2, cdi.getCurrentProblem());
+			pre.setString(3, cdi.getCurrentStateDesc());
+			pre.setString(4, cdi.getLeftProblem());
+			pre.setString(5, cdi.getPutPosition());
+			pre.setString(6, cdi.getDemand());
+			pre.setString(7, cdi.getSolution());
+			pre.setInt(8, cdi.getSchedule());
+			pre.setString(9, cdi.getQualifications());
+			pre.setString(10, cdi.getUpdateDate());
+			pre.setString(11, cdi.getCompanyId());
+			int j = pre.executeUpdate();
+			if (j >= 0) {
+				jsonObject.put("errcode", "0");
+			} else {
+				jsonObject.put("errcode", "1");
+			}
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+		}
+	}
+
+	public String createVisitRecord(VisitRecord vr) {
+		jsonObject = new JSONObject();
+		try {
+			sql2 = "insert into visitrecord (companyId,salesId,visitDesc,visitDate,createDate,isFmlkShare) values (?,?,?,?,?,?)";
+			con2 = DBConnection.getConnection_Mysql();
+			pre2 = con2.prepareStatement(sql2);
+			pre2.setString(1, vr.getCompanyId());
+			pre2.setInt(2, vr.getSalesId());
+			pre2.setString(3, vr.getVisitDesc());
+			pre2.setString(4, vr.getVisitDate());
+			pre2.setString(5, vr.getCreateDate());
+			pre2.setBoolean(6, vr.getIsFmlkShare());
+			int i = pre2.executeUpdate();
+			if (i > 0) {
+				jsonObject.put("errcode", "0");
+			} else {
+				jsonObject.put("errcode", "1");
+			}
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con2);
+			DBConnection.closePre(pre2);
 		}
 	}
 }

@@ -21,6 +21,8 @@ function checkMenuPremission() {
 					$('#line_system').show();
 				} else if (data[i].permissionId == 71) {
 					$('#line_attence').show();
+				} else if (data[i].permissionId == 81) {
+					$('#line_maintain').show();
 				}
 			}
 			initialPage();
@@ -117,6 +119,42 @@ function checkEditPremission2(permissionEditId, permissionCheckId,
 	}
 }
 
+function checkEditPremission3(permissionEditId, permissionDownId,
+		permissionUpId,permissionOperationId) {
+	if (sId == null || sId == "") {
+		parent.location.href = host + "/page/login";
+	} else {
+		isPermissionEdit = false;
+		isPermissionDown = false;
+		isPermissionUp = false;
+		isPermissionOperation = false;
+		var xhr = createxmlHttpRequest();
+		xhr.open("GET", host + "/getUserPermissionList?nickName=" + sId, true);
+		xhr.onreadystatechange = function() {
+			if (this.readyState == 4) {
+				var data = eval("(" + xhr.responseText + ")").permissionSettingList;
+				for ( var i in data) {
+					if ((data[i].permissionId == permissionEditId)
+							&& (permissionEditId != 0)) {
+						isPermissionEdit = true;
+					} else if ((data[i].permissionId == permissionDownId)
+							&& (permissionDownId != 0)) {
+						isPermissionDown = true;
+					} else if ((data[i].permissionId == permissionUpId)
+							&& (permissionUpId != 0)) {
+						isPermissionUp = true;
+					} else if ((data[i].permissionId == permissionOperationId)
+							&& (permissionOperationId != 0)) {
+						isPermissionOperation = true;
+					}
+				}
+				initialPage();
+			}
+		};
+		xhr.send();
+	}
+}
+
 function matchUserPremission(objectArr) {
 	if (objectArr.length > 0 && isPermissionEdit) {
 		isPermissionEditArr = new Array();
@@ -153,13 +191,16 @@ function matchEdit(object) {
 			var tRoleId = data[0].roleId;
 			if (salesId == tId || tRoleId == 11) {
 				// 更新 isPermissionEdit
-				isPermissionEdit = true;
 				$('#operation').show();
-				document.getElementById("span_title1").innerHTML = "编辑"
-						+ object + "信息";
-				document.getElementById("span_title2").innerHTML = "编辑"
-						+ object + "信息";
-			} else {
+				isPermissionEdit = true;
+				if(object=="项目"){
+					if(projectState>2){
+						$('#operation').hide();
+					}
+				}
+				document.getElementById("span_title1").innerHTML = "编辑"+ object + "信息";
+				document.getElementById("span_title2").innerHTML = "编辑"+ object + "信息";
+			}else {
 				isPermissionEdit = false;
 				document.getElementById("span_title1").innerHTML = "查看"
 						+ object + "信息";
@@ -190,8 +231,8 @@ function matchEdit2(object) {
 			    $('#operation').show();
 				document.getElementById("span_title1").innerHTML = "技术派工";
 				document.getElementById("span_title2").innerHTML = "技术派工";
-				document.getElementById('okclick').innerHTML = "派工";
-			}else if((salesId == tId || tRoleId == 11) && (checkResult != 2)){
+				document.getElementById('okclick').innerHTML = "审核";
+			}else if(salesId == tId || tRoleId == 11){
 				isPermissionEdit = true;
 			    $('#operation').show();
 				document.getElementById("span_title1").innerHTML = "编辑"
@@ -210,7 +251,7 @@ function matchEdit2(object) {
 	xhr.send();
 }
 
-function matchUpload() {
+function matchUpload(mSalesBeforeUsersArr,mSalesAfterUsersArr) {
 	var xhr = createxmlHttpRequest();
 	xhr.open("GET", host + "/getUserByNickName?nickName=" + sId, true);
 	xhr.onreadystatechange = function() {
@@ -224,46 +265,26 @@ function matchUpload() {
 			} else {
 				isPermissionUpload.push(false);
 			}
-
-			var isFind = false;
-			if (salesBeforeUsersArr.length > 0) {
-				for (var i = 0; i < salesBeforeUsersArr.length; i++) {
-					if (salesBeforeUsersArr[i] == userId || tRoleId == 11) {
+			var isFind = tRoleId == 11;
+			if(!isFind && mSalesBeforeUsersArr.length > 0){
+				for (var i = 0; i < mSalesBeforeUsersArr.length; i++) {
+					if (mSalesBeforeUsersArr[i] == userId) {
 						isFind = true;
 						break;
 					}
 				}
-			} else {
-				if (tRoleId == 11) {
-					isFind = true;
-				}
 			}
-
-			if (isFind) {
-				isPermissionUpload.push(true);
-			} else {
-				isPermissionUpload.push(false);
-			}
-
-			var isFind2 = false;
-			if (salesAfterUsersArr.length > 0) {
-				for (var i = 0; i < salesAfterUsersArr.length; i++) {
-					if (salesAfterUsersArr[i] == userId || tRoleId == 11) {
-						isFind2 = true;
+			isPermissionUpload.push(isFind);
+			isFind = tRoleId == 11;
+			if(!isFind && mSalesAfterUsersArr.length > 0){
+				for (var i = 0; i < mSalesAfterUsersArr.length; i++) {
+					if (mSalesAfterUsersArr[i] == userId) {
+						isFind = true;
 						break;
 					}
 				}
-			} else {
-				if (tRoleId == 11) {
-					isFind2 = true;
-				}
 			}
-
-			if (isFind2) {
-				isPermissionUpload.push(true);
-			} else {
-				isPermissionUpload.push(false);
-			}
+			isPermissionUpload.push(isFind);
 		}
 	};
 	xhr.send();

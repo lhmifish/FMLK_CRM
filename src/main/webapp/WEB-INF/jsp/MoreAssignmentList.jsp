@@ -225,7 +225,6 @@
 						var num_column_1 = 0, num_column_2 = 0, num_column_3 = 0, num_column_4 = 0
 						var data2 = eval("(" + returndata + ")").assignlist;
 						num_all = data2.length;
-						//alert(num_all);
 						if (num_all == 0) {
 							allPage = 1;
 						} else {
@@ -424,15 +423,11 @@
 						var num_column_1 = 0, num_column_2 = 0, num_column_3 = 0, num_column_4 = 0
 						var data2 = eval("(" + returndata + ")").assignlist;
 						num_all = data2.length;
-					//	alert(num_all);
 						if (num_all == 0) {
 							allPage = 1;
 						} else {
 							allPage = Math.ceil(num_all / thisPageNum);
 						}
-						/* alert("当页"+thisPageNum);
-						alert(thisPageNum*(tPage-1));
-						alert(thisPageNum*tPage-1); */
 						for ( var i in data2) {
 							if (i >= thisPageNum * (tPage - 1)
 									&& i <= thisPageNum * tPage - 1) {

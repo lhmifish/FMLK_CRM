@@ -71,7 +71,6 @@ public class WeChatEnterpriseUtils {
 			httpPost.setEntity(se);
 			HttpResponse response = httpclient.execute(httpPost);
 			String reposeContent = EntityUtils.toString(response.getEntity(), Charset.forName("UTF-8"));
-			// System.out.println(reposeContent);
 			jb = JSON.parseObject(reposeContent);
 		} catch (Exception e) {
 			jb = null;
@@ -95,7 +94,6 @@ public class WeChatEnterpriseUtils {
 	}
 	
 	public static JSONObject post(String url,MultipartFile uploadFile) {
-		System.out.println("2");
 		JSONObject jb = null;
 		try {
 			CloseableHttpClient httpclient = HttpClients.createDefault();
@@ -106,31 +104,8 @@ public class WeChatEnterpriseUtils {
 			HttpEntity reqEntity = MultipartEntityBuilder.create().addPart("file", fileBody)
 					.addPart("name", nameBody).setCharset(CharsetUtils.get("UTF-8")).build();
 			httpPost.setEntity(reqEntity);
-			
-			
-			/*CloseableHttpClient httpclient = HttpClients.createDefault();
-			HttpPost httpPost = new HttpPost(url);
-			File file = toFile(uploadFile);
-			FileBody fileBody = new FileBody(file);
-			StringBody fileNameBody = new StringBody(uploadFile.getName(),ContentType.TEXT_PLAIN);
-			StringBody nameBody = new StringBody("media",ContentType.TEXT_PLAIN);
-			StringBody fileLengthBody = new StringBody(Long.toString(uploadFile.getSize()),ContentType.TEXT_PLAIN);*/
-			
-			/*contentBody.append("Content-Disposition: form-data; name=\"media\";filename=\""+uploadFile.getName()+"\""+"\r\n");
-			contentBody.append("Content-Type: multipart/form-data;charset=utf-8"+"\r\n");
-			*/
-			
-		
-					
-			/*			String jsonStr = jsonObject.toJSONString();
-			StringEntity se = new StringEntity(jsonStr, "UTF-8");
-			se.setContentType("text/json");
-			se.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "multipart/form-data"));
-			httpPost.setEntity(se);*/
-			
 			HttpResponse response = httpclient.execute(httpPost);
 			String reposeContent = EntityUtils.toString(response.getEntity(), Charset.forName("UTF-8"));
-			System.out.println(reposeContent);
 			jb = JSON.parseObject(reposeContent);
 		} catch (Exception e) {
 			jb = null;
@@ -171,8 +146,8 @@ public class WeChatEnterpriseUtils {
 			String corpId = prop.getProperty("wechat.corpId");
 			String corpSecret = prop.getProperty("wechat.sales.secret");
 			agentId = prop.getProperty("wechat.sales.agentId");
-			informUserNickName = prop.getProperty("wechat.informUser");
-			informUserNickName2 = prop.getProperty("wechat.informUser2");
+			//informUserNickName = prop.getProperty("wechat.informUser");
+			//informUserNickName2 = prop.getProperty("wechat.informUser2");
 			String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=%s&corpsecret=%s", corpId,
 					corpSecret);
 			JSONObject jb = get(url);
@@ -193,124 +168,59 @@ public class WeChatEnterpriseUtils {
 	// 审核和派工推送消息
 	// 发推送消息 https://work.weixin.qq.com/api/doc#90001/90143/90372
 	public static String sendProjectCaseInform(String accessToken, ProjectCase pc, int checkResult, int type,
-			List<User> userList, List<User> userList2, String companyName, String projectName) {
+			List<User> userList,String companyName, String projectName,String mSalesName,String mServiceUsersName) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.add(Calendar.DATE, 0);
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy年MM月dd日");
 		String todayString = formatter.format(calendar.getTime());// 今天
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=%s", accessToken);
 		String title = null;
-		String title2 = null;
-		String nameList = "";
-		informUserNickName2 = "lv.zhong|wang.fan|zhu.jinglian|";
-		informUserNickName = "";
+		informUserNickName = "lv.zhong|lu.haiming|lin.lin";
 		// 审核派工通知 type 1.销审2.技审
-		String content = todayString + "\n项目名称：" + projectName + "\n客户名称：" + companyName + "\n服务时间："
-				+ pc.getServiceDate() +" to "+pc.getServiceEndDate() + "\n服务内容：" + pc.getServiceContent() + "\n审核结果："
-				+ (checkResult != 1 ? "拒绝" : "通过");
-		String salesName = "";
-		for (int k = 0; k < userList.size(); k++) {
-			if (pc.getSalesId() == userList.get(k).getUId()) {
-				salesName = userList.get(k).getName();
-			}
+		String content = todayString + "\n项目名称：" + projectName + "\n客户名称：" + companyName + "\n销售：" + mSalesName
+				+ "\n服务时间："+ pc.getServiceDate() +" 至 "+pc.getServiceEndDate() + "\n服务内容：" + pc.getServiceContent() + "\n审核结果："
+				+ (checkResult != 1 ? "驳回" : "通过");
+	    if(type == 1) {
+	    	title = checkInfoTitle;
+	    }else if(type==2) {
+	    	title = dispatchInfoTitle;
+	    }
+	    for (int i = 0; i < userList.size(); i++) {
+			// 销售
+			informUserNickName += "|" + userList.get(i).getNickName();
 		}
-		content += "\n销售：" + salesName.trim();
-
-		if (type == 1) {
-			title = checkInfoTitle;
-			title2 = dispatchInfoTitle;
-			for (int i = 0; i < userList.size(); i++) {
-				// 销售
-				informUserNickName += userList.get(i).getNickName() + "|";
-			}
-			for (int j = 0; j < userList2.size(); j++) {
-				// 派工的
-				informUserNickName2 += userList2.get(j).getNickName() + "|";
-			}
-		} else {
-			title = dispatchInfoTitle;
-			for (int i = 0; i < userList.size(); i++) {
-				// 销售+孙
-				informUserNickName2 += userList.get(i).getNickName() + "|";
-			}
-			for (int j = 0; j < userList2.size(); j++) {
-				// 被指派的人
-				informUserNickName += userList2.get(j).getNickName() + "|";
-				nameList += userList2.get(j).getName() + ",";
-			}
-		}
-		JSONObject jsonContent = new JSONObject();
-		JSONObject jsonContent2 = new JSONObject();
+	   /* informUserNickName = "lu.haiming";
+	    System.out.println("通知的人=="+informUserNickName);*/
+	    JSONObject jsonContent = new JSONObject();
 		JSONObject textObject = new JSONObject();
-		JSONObject textObject2 = new JSONObject();
 		JSONObject jsonObject = new JSONObject();
-		JSONObject jsonObject2 = new JSONObject();
 		jsonObject.put("msgtype", "textcard");
 		jsonObject.put("agentid", agentId);
-		jsonObject2.put("msgtype", "textcard");
-		jsonObject2.put("agentid", agentId);
-		if (type == 1) {
-			if (checkResult != 1) {
-				// 销审拒绝,只发给销售
-				textObject.put("title", title);
-				textObject.put("description", content + "\n拒绝理由：" + pc.getRejectReason());
-				textObject.put("url", "");
-				jsonObject.put("textcard", textObject);
-				jsonObject.put("touser", informUserNickName.substring(0, informUserNickName.length() - 1).trim());
-				jsonContent = post(url, jsonObject);
-
-			} else {
-				textObject2.put("title", title);
-				textObject2.put("description", "<div>" + content + "</div>");
-				textObject2.put("url",
-						"https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=www.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
-								+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1#wechat_redirect");
-				jsonObject2.put("textcard", textObject2);
-				jsonObject2.put("touser", informUserNickName.substring(0, informUserNickName.length() - 1).trim());
-				jsonContent2 = post(url, jsonObject2);
-
-				textObject.put("title", title2);
-				textObject.put("description", "<div>" + content + "\n☆☆☆☆☆请尽快派工☆☆☆☆☆</div>");
-				// 派工链接
-				textObject.put("url",
-						"https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=www.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
-								+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1#wechat_redirect");
-				jsonObject.put("textcard", textObject);
-				jsonObject.put("touser", informUserNickName2.substring(0, informUserNickName2.length() - 1).trim());
-				jsonContent = post(url, jsonObject);
+		
+		textObject.put("title", title);
+		content = checkResult != 1?content + "\n驳回理由：" + pc.getRejectReason():content;	
+		if(type == 2 && checkResult == 1) {
+			content += "\n服务工程师："+mServiceUsersName;
+			if(pc.getRemark() != null && !pc.getRemark().equals("")) {
+				content += "\n备注：" + pc.getRemark();
 			}
-		} else {
-			if (checkResult != 1) {
-				// 技审拒绝
-				textObject.put("title", title);
-				textObject.put("description", content + "\n拒绝理由：" + pc.getRejectReason());
-				textObject.put("url",
-						"https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=www.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
-								+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1#wechat_redirect");
-				jsonObject.put("textcard", textObject);
-				jsonObject.put("touser", informUserNickName2.substring(0, informUserNickName2.length() - 1).trim());
-				jsonContent = post(url, jsonObject);
-			} else {
-				textObject.put("title", title);
-				textObject.put("description", content + "\n服务工程师："
-						+ nameList.substring(0, nameList.length() - 1).trim() + "\n备注：" + pc.getRemark()
-						+ "\n☆☆☆☆☆请工程师合理安排好工作时间☆☆☆☆☆\n☆☆☆☆☆完成指派任务后上传项目报告☆☆☆☆☆");
-				textObject.put("url",
-						"https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=www.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
-								+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1#wechat_redirect");
-				jsonObject.put("textcard", textObject);
-				informUserNickName2 = informUserNickName.trim() + informUserNickName2;
-				jsonObject.put("touser", informUserNickName2.substring(0, informUserNickName2.length() - 1).trim());
-				jsonContent = post(url, jsonObject);
-			}
-
+			content += "\n☆☆☆请工程师合理安排好工作时间☆☆☆\n☆☆☆完成指派任务后上传项目报告☆☆☆";
+		}else if(type == 1 && checkResult == 1) {
+			content += "\n☆☆☆请尽快派工☆☆☆";
 		}
+		textObject.put("description","<div>" + content + "</div>");
+		textObject.put("url",
+				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
+						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect");
+		jsonObject.put("textcard", textObject);
+		jsonObject.put("touser", informUserNickName);
+		jsonContent = post(url, jsonObject);
 		return jsonContent.getString("errcode");
 	}
 
 	// 新建派工推送消息
 	public static String sendProjectCaseInform(String accessToken, ProjectCase pc, List<User> userList,
-			String companyName, String projectName) {
+			String companyName, String projectName,String mSalesName,boolean isEdit) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.add(Calendar.DATE, 0);
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy年MM月dd日");
@@ -318,24 +228,22 @@ public class WeChatEnterpriseUtils {
 		// 审核链接
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=%s", accessToken);
 		String title = createProjectCaseInfoTitle;
-		String content = "项目名称：" + projectName + "\n客户名称：" + companyName + "\n服务时间：" + pc.getServiceDate()+" to "+pc.getServiceEndDate() + "\n服务内容："
+		title = isEdit?"[已重新提审]"+title:title;
+		String content = "项目名称：" + projectName + "\n客户名称：" + companyName + "\n销售：" + mSalesName+"\n服务时间：" + pc.getServiceDate()+" 至 "+pc.getServiceEndDate() + "\n服务内容："
 				+ pc.getServiceContent();
-		String salesName = "";
-		informUserNickName = "lv.zhong|wang.fan|zhu.jinglian";
+		String informUserNickName = "lv.zhong|lu.haiming|lin.lin";
 		for (int i = 0; i < userList.size(); i++) {
-			if (pc.getSalesId() == userList.get(i).getUId()) {
-				salesName = userList.get(i).getName();
-			}
 			informUserNickName += "|" + userList.get(i).getNickName();
 		}
-		content += "\n销售：" + salesName.trim();
+		/*informUserNickName = "lu.haiming";
+		System.out.println("通知的人=="+informUserNickName);*/
 		JSONObject textObject = new JSONObject();
 		textObject.put("title", title);
 		textObject.put("description",
 				"<div class=\"gray\">" + todayString + "</div><div class=\"normal\">" + content + "</div>");
 		textObject.put("url",
-				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=www.family-care.cn%2fpage%2feditProjectCaseMobile%2f1%2f"
-						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1#wechat_redirect");
+				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.family-care.cn%2fpage%2feditProjectCaseMobile%2f1%2f"
+						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect");
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("touser", informUserNickName);
 		jsonObject.put("msgtype", "textcard");
@@ -378,8 +286,8 @@ public class WeChatEnterpriseUtils {
 		textObject.put("title", title);
 		textObject.put("description", content);
 		textObject.put("url",
-				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=www.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
-						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000015#wechat_redirect");
+				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=www.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
+						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect");
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("touser", informUserNickName);
 		jsonObject.put("msgtype", "textcard");
@@ -412,8 +320,6 @@ public class WeChatEnterpriseUtils {
 			informUserNickName += "|" + informUserList.get(i).getNickName();
 		}
 		content += "\n销售：" + salesName.trim();
-//		System.out.println(informUserNickName);
-//		System.out.println(content);
 
 		if (reportType == 1) {
 			content += "\n销售进展报告：" + fileName;
@@ -429,14 +335,13 @@ public class WeChatEnterpriseUtils {
 		textObject.put("title", title);
 		textObject.put("description", content);
 		textObject.put("url",
-				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=crm.lanstarnet.com%3a8082%2fdailyUploadProject%2fpage%2findex&response_type=code&scope=snsapi_base&agentid=1#wechat_redirect");
+				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.lanstarnet.com%3a8082%2fdailyUploadProject%2fpage%2findex&response_type=code&scope=snsapi_base&agentid=1#wechat_redirect");
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("touser", informUserNickName);
 		jsonObject.put("msgtype", "textcard");
 		jsonObject.put("agentid", agentId);
 		jsonObject.put("textcard", textObject);
 		JSONObject jsonContent = post(url, jsonObject);
-		System.out.println(jsonContent.toJSONString());
 		return jsonContent.getString("errcode");
 	}
 
@@ -455,7 +360,7 @@ public class WeChatEnterpriseUtils {
 				+ pc.getServiceContent();
 		String salesName = "";
 		String mUrl = "";
-		informUserNickName = "lu.haiming|lv.zhong|wang.fan|zhu.jinglian";
+		informUserNickName = "lu.haiming|lv.zhong";
 		for (int i = 0; i < userList.size(); i++) {
 			if (pc.getSalesId() == userList.get(i).getUId()) {
 				salesName = userList.get(i).getName();
@@ -477,18 +382,18 @@ public class WeChatEnterpriseUtils {
 				}
 				content += "\n服务工程师："+ nameList.substring(0, nameList.length() - 1).trim() + "\n备注：" + pc.getRemark();
 				content += "\n☆☆☆☆☆请工程师合理安排好工作时间☆☆☆☆☆\n☆☆☆☆☆完成指派任务后上传项目报告☆☆☆☆☆";
-				mUrl = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=www.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
-						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1#wechat_redirect";
+				mUrl = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
+						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect";
 			}else {
 				//未派工
 				content += "\n☆☆☆☆☆请尽快派工☆☆☆☆☆";
-				mUrl = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=www.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
-						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1#wechat_redirect";
+				mUrl = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
+						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect";
 			}
 		}else {
 			title += createProjectCaseInfoTitle;
-			mUrl = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=www.family-care.cn%2fpage%2feditProjectCaseMobile%2f1%2f"
-					+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1#wechat_redirect";
+			mUrl = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.family-care.cn%2fpage%2feditProjectCaseMobile%2f1%2f"
+					+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect";
 		}
 		textObject.put("title", title);
 		textObject.put("description","<div class=\"gray\">" + todayString + "</div>" + content);
@@ -522,10 +427,9 @@ public class WeChatEnterpriseUtils {
 		textObject.put("title", title);
 		textObject.put("description", content);
 		textObject.put("url",
-				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=www.family-care.cn%2fpage%2fprojectCaseUnClosedList%2f"+mYear+"%2f"+mMonth+"&response_type=code&scope=snsapi_base&agentid=1000015#wechat_redirect");
+				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.family-care.cn%2fpage%2fprojectCaseUnClosedList%2f"+mYear+"%2f"+mMonth+"&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect");
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("touser", "@all");
-	//	jsonObject.put("touser", "lu.haiming");
 		jsonObject.put("msgtype", "textcard");
 		jsonObject.put("agentid", agentId);
 		jsonObject.put("textcard", textObject);

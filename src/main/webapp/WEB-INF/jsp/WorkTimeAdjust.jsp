@@ -129,7 +129,6 @@ p {
 					},
 					cache : false,
 					success : function(returndata) {
-						//	alert(returndata);
 						var str = '';
 						var str1;
 						var str2;
@@ -189,7 +188,6 @@ p {
                         	   str4 = '<td style="width:9%;"><input type="text" id="lastMonthTotal'+ i
 									 + '" style="font-weight:bold;width:98%;border: 0px;" placeholder="请输入" oninput="OnLastMonthTotalChange(event)"/></td>'
                             }else{
-                            	//alert(lastMonthTotalVal);
                             	str4 = '<td style="width:9%;"><input type="text" value="'+ lastMonthTotalVal +'" disabled="disabled" id="lastMonthTotal'+ i
 								 + '" style="font-weight:bold;width:98%;border: 0px;" placeholder="请输入" oninput="OnLastMonthTotalChange(event)"/></td>'
                             } 
@@ -327,8 +325,7 @@ p {
 			},
 			cache : false,
 			success : function(returndata) {
-			//	alert(returndata);
-				arrayThisMonthTotal.push(eval("(" + returndata + ")").actualOverWorkTime);
+			    arrayThisMonthTotal.push(eval("(" + returndata + ")").actualOverWorkTime);
 				arrayThisMonthTotal.push(eval("(" + returndata + ")").actualOverWorkTime4H);
 				arrayThisMonthTotal.push(eval("(" + returndata + ")").approvedRest);
 				arrayThisMonthTotal.push(eval("(" + returndata + ")").thisMonthTotal);

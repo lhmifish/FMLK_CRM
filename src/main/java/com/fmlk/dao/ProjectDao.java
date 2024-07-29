@@ -9,10 +9,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import com.fmlk.entity.CaseType;
+import com.fmlk.entity.Company;
+import com.fmlk.entity.ContactUser;
 import com.fmlk.entity.Project;
 import com.fmlk.entity.ProjectCase;
 import com.fmlk.entity.ProjectReport;
+import com.fmlk.entity.ProjectState;
 import com.fmlk.entity.ProjectSubState;
+import com.fmlk.service.ProjectService;
 import com.fmlk.util.DBConnection;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -28,6 +32,7 @@ public class ProjectDao {
 	private List<ProjectReport> prList = null;
 	private List<ProjectCase> pcList = null;
 	private List<ProjectSubState> pssList = null;
+	private List<ProjectState> psList = null;
 
 	public String createProject(Project p) {
 		jsonObject = new JSONObject();
@@ -37,19 +42,25 @@ public class ProjectDao {
 		String contactUsers = p.getContactUsers();
 		int salesId = p.getSalesId();
 		int projectType = p.getProjectType();
+		String productStyle = p.getProductStyle();
 		int projectManager = p.getProjectManager();
 		String createDate = p.getCreateDate();
-		String salesBeforeUsers  = p.getSalesBeforeUsers().trim();
-		String salesAfterUsers  = p.getSalesAfterUsers().trim();
+		String salesBeforeUsers = p.getSalesBeforeUsers().trim();
+		String salesAfterUsers = p.getSalesAfterUsers().trim();
+		boolean isFmlkShare = p.getIsFmlkShare();
+		String startDate = p.getStartDate();
+		String endDate = p.getEndDate();
+		int projectState = p.getProjectState();
 
 		try {
-			sql2 = "select * from project where projectName like ? and isDeleted = ? and salesId = ? and companyId = ?";
+			sql2 = "select * from project where projectName like ? and isDeleted = ? and salesId = ? and companyId = ? and isFmlkShare = ?";
 			con2 = DBConnection.getConnection_Mysql();
 			pre2 = con2.prepareStatement(sql2);
 			pre2.setString(1, "%" + projectName + "%");
 			pre2.setBoolean(2, false);
 			pre2.setInt(3, salesId);
 			pre2.setString(4, companyId);
+			pre2.setBoolean(5, isFmlkShare);
 			res2 = pre2.executeQuery();
 			if (res2.next()) {
 				// 找到了
@@ -65,9 +76,8 @@ public class ProjectDao {
 			DBConnection.closePre(pre2);
 			DBConnection.closeRes(res2);
 		}
-
 		try {
-			sql = "insert into project (projectName,projectId,companyId,salesId,createDate,contactUsers,projectType,projectManager,salesBeforeUsers,salesAfterUsers) values (?,?,?,?,?,?,?,?,?,?)";
+			sql = "insert into project (projectName,projectId,companyId,salesId,createDate,contactUsers,projectType,projectManager,salesBeforeUsers,salesAfterUsers,productStyle,isFmlkShare,updateDate,startDate,endDate,projectState) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setString(1, projectName);
@@ -80,7 +90,12 @@ public class ProjectDao {
 			pre.setInt(8, projectManager);
 			pre.setString(9, salesBeforeUsers);
 			pre.setString(10, salesAfterUsers);
-			
+			pre.setString(11, productStyle);
+			pre.setBoolean(12, isFmlkShare);
+			pre.setString(13, createDate);
+			pre.setString(14, startDate);
+			pre.setString(15, endDate);
+			pre.setInt(16, projectState);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -99,33 +114,35 @@ public class ProjectDao {
 		}
 	}
 
-	public String getProjectList(Project mProject) {
+	public String getProjectList(Project mProject, boolean isFmlkShare) {
 		String companyId = mProject.getCompanyId();
 		String projectName = mProject.getProjectName();
 		int salesId = mProject.getSalesId();
-		int projectManager = mProject.getProjectManager();
+		String productStyle = mProject.getProductStyle().trim();
+		int projectType = mProject.getProjectType();
 
 		try {
 			sql = "select * from project where isDeleted = 0";
-			if (salesId != 0 || !companyId.equals("") || projectManager != 0 || !projectName.equals("")) {
-
-				if (salesId != 0) {
-					sql += " and salesId = " + salesId;
-				}
-				if (!companyId.equals("")) {
-					sql += " and companyId = '" + companyId + "'";
-				}
-				if (salesId != 0) {
-					sql += " and projectManager = " + projectManager;
-				}
-				if (!projectName.equals("")) {
-					sql += " and projectName like '%" + projectName + "%'";
-				}
+			if (salesId != 0) {
+				sql += " and salesId = " + salesId;
 			}
+			if (!productStyle.equals("0")) {
+				sql += " and productStyle like '%" + productStyle + "%'";
+			}
+			if (projectType != 0) {
+				sql += " and projectType = " + projectType;
+			}
+			if (!companyId.equals("")) {
+				sql += " and companyId = '" + companyId + "'";
+			}
+			if (!projectName.equals("")) {
+				sql += " and projectName like '%" + projectName + "%'";
+			}
+			sql += " and isFmlkShare = ?";
 			sql += " order by CAST(createDate AS datetime) desc";
-			// System.out.println(sql);
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
+			pre.setBoolean(1, isFmlkShare);
 			res = pre.executeQuery();
 			pList = new ArrayList<Project>();
 			while (res.next()) {
@@ -142,6 +159,12 @@ public class ProjectDao {
 				p.setProjectFailedReason(res.getString("projectFailedReason"));
 				p.setProjectSubState(res.getInt("projectSubState"));
 				p.setCreateDate(res.getString("createDate"));
+				p.setProductStyle(res.getString("productStyle"));
+				p.setProjectType(res.getInt("projectType"));
+				p.setSalesBeforeUsers(res.getString("salesBeforeUsers"));
+				p.setSalesAfterUsers(res.getString("salesAfterUsers"));
+				p.setStartDate(res.getString("startDate"));
+				p.setEndDate(res.getString("endDate"));
 				pList.add(p);
 			}
 			jsonObject = new JSONObject();
@@ -179,6 +202,9 @@ public class ProjectDao {
 				p.setProjectState(res.getInt("projectState"));
 				p.setSalesBeforeUsers(res.getString("salesBeforeUsers"));
 				p.setSalesAfterUsers(res.getString("salesAfterUsers"));
+				p.setProductStyle(res.getString("productStyle"));
+				p.setStartDate(res.getString("startDate"));
+			    p.setEndDate(res.getString("endDate"));
 				jsonObject = new JSONObject();
 				jsonObject.put("errcode", "0");
 				jsonObject.put("errmsg", "query");
@@ -195,14 +221,15 @@ public class ProjectDao {
 		return null;
 	}
 
-	public String deleteProject(int id) {
+	public String deleteProject(int id, String updateDate) {
 		jsonObject = new JSONObject();
 		try {
-			sql = "update project set isDeleted = ? where id = ?";
+			sql = "update project set isDeleted = ?,updateDate=? where id = ?";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setBoolean(1, true);
-			pre.setInt(2, id);
+			pre.setString(2, updateDate);
+			pre.setInt(3, id);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -234,6 +261,7 @@ public class ProjectDao {
 				project.setSalesId(res.getInt("salesId"));
 				project.setProjectId(res.getString("projectId"));
 				project.setProjectType(res.getInt("projectType"));
+				project.setProductStyle(res.getString("productStyle"));
 				project.setCompanyId(res.getString("companyId"));
 				project.setProjectName(res.getString("projectName"));
 				project.setProjectManager(res.getInt("projectManager"));
@@ -242,6 +270,10 @@ public class ProjectDao {
 				project.setCreateDate(res.getString("createDate"));
 				project.setSalesBeforeUsers(res.getString("salesBeforeUsers"));
 				project.setSalesAfterUsers(res.getString("salesAfterUsers"));
+				project.setIsFmlkShare(res.getBoolean("isFmlkShare"));
+				project.setStartDate(res.getString("startDate"));
+				project.setEndDate(res.getString("endDate"));
+				project.setProjectFailedReason(res.getString("projectFailedReason"));
 				jsonObject = new JSONObject();
 				jsonObject.put("errcode", "0");
 				jsonObject.put("errmsg", "query");
@@ -272,7 +304,6 @@ public class ProjectDao {
 			pre.setString(6, pr.getFileName());
 			pre.setString(7, pr.getCreateDate());
 			pre.setString(8, pr.getCaseId());
-			System.out.println(sql);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -341,26 +372,28 @@ public class ProjectDao {
 			if (project.getProjectManager() != 0) {
 				sql += "projectManager = " + project.getProjectManager() + ",";
 			}
+			if (project.getProjectState() != 0) {
+				sql += "projectState = " + project.getProjectState() + ",";
+			}
 			if (!project.getProjectFailedReason().equals("")) {
 				sql += "projectFailedReason = '" + project.getProjectFailedReason() + "',";
 			}
-			if (!project.getContactUsers().equals("")) {
-				sql += "contactUsers = '" + project.getContactUsers() + "',";
+			if (!project.getStartDate().equals("")) {
+				sql += "startDate = '" + project.getStartDate() + "',";
 			}
-			if (!project.getSalesBeforeUsers().equals("")) {
-				sql += "salesBeforeUsers = '" + project.getSalesBeforeUsers() + "',";
+			if (!project.getEndDate().equals("")) {
+				sql += "endDate = '" + project.getEndDate() + "',";
 			}
-			if (!project.getSalesAfterUsers().equals("")) {
-				sql += "salesAfterUsers = '" + project.getSalesAfterUsers() + "',";
-			}
-			if(project.getProjectSubState() != 99) {
+			sql += "productStyle = '" + project.getProductStyle() + "',";
+			sql += "contactUsers = '" + project.getContactUsers() + "',";
+			sql += "salesBeforeUsers = '" + project.getSalesBeforeUsers() + "',";
+			sql += "salesAfterUsers = '" + project.getSalesAfterUsers() + "',";
+			if (project.getProjectSubState() != 99) {
 				sql += "projectSubState = " + project.getProjectSubState() + ",";
 			}
-			sql += "projectState = ? where id = ?";
-			System.out.println(sql);
+			sql += "updateDate = '" + project.getUpdateDate() + "' where id = ?";
 			pre = con.prepareStatement(sql);
-			pre.setInt(1, project.getProjectState());
-			pre.setInt(2, project.getId());
+			pre.setInt(1, project.getId());
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -391,11 +424,31 @@ public class ProjectDao {
 		String serviceContent = pc.getServiceContent();
 		String deviceInfo = pc.getDeviceInfo();
 		String createDate = pc.getCreateDate();
-		String casePeriod = pc.getCasePeriod();
 		String serviceEndDate = pc.getServiceEndDate();
 		try {
+			sql2 = "select * from projectcase where projectId = ? and serviceDate = ? and serviceEndDate = ? ";
+			con2 = DBConnection.getConnection_Mysql();
+			pre2 = con2.prepareStatement(sql2);
+			pre2.setString(1, projectId);
+			pre2.setString(2, serviceDate);
+			pre2.setString(3, serviceEndDate);
+			res2 = pre2.executeQuery();
+			if (res2.next()) {
+				jsonObject.put("errcode", "3");
+				return jsonObject.toString();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con2);
+			DBConnection.closePre(pre2);
+			DBConnection.closeRes(res2);
+		}
+		try {
 			sql = "insert into projectcase (caseId,projectId,salesId,contactUsers,serviceDate,caseType,serviceType,"
-					+ "serviceContent,deviceInfo,createDate,casePeriod,serviceEndDate) values (?,?,?,?,?,?,?,?,?,?,?,?)";
+					+ "serviceContent,deviceInfo,createDate,serviceEndDate,updateDate) values (?,?,?,?,?,?,?,?,?,?,?,?)";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setString(1, caseId);
@@ -408,8 +461,8 @@ public class ProjectDao {
 			pre.setString(8, serviceContent);
 			pre.setString(9, deviceInfo);
 			pre.setString(10, createDate);
-			pre.setString(11, casePeriod);
-			pre.setString(12, serviceEndDate);
+			pre.setString(11, serviceEndDate);
+			pre.setString(12, createDate);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -446,8 +499,7 @@ public class ProjectDao {
 			if (pc.getSalesId() != 0) {
 				sql2 += " and salesId = " + pc.getSalesId();
 			}
-			sql2 += " and projectId in (" + sql + ") order by CAST(serviceDate AS datetime) desc,id desc";
-			// System.out.println(sql2);
+			sql2 += " and projectId in (" + sql + ") order by CAST(createDate AS datetime) desc,serviceType desc,id desc";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql2);
 			res = pre.executeQuery();
@@ -467,6 +519,8 @@ public class ProjectDao {
 				pc2.setIsChecked(res.getBoolean("isChecked"));
 				pc2.setIsRejected(res.getBoolean("isRejected"));
 				pc2.setCaseState(res.getInt("caseState"));
+				pc2.setRejectReason(res.getString("rejectReason"));
+				pc2.setCancelReason(res.getString("cancelReason"));
 				if (tServiceUsers.equals("")) {
 					// 搜索条件不含
 					pcList.add(pc2);
@@ -578,14 +632,15 @@ public class ProjectDao {
 		return null;
 	}
 
-	public String deleteProjectCase(int id) {
+	public String deleteProjectCase(int id, String updateDate) {
 		jsonObject = new JSONObject();
 		try {
-			sql = "update projectcase set isDeleted = ? where id = ?";
+			sql = "update projectcase set isDeleted = ?,updateDate=? where id = ?";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setBoolean(1, true);
-			pre.setInt(2, id);
+			pre.setString(2, updateDate);
+			pre.setInt(3, id);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -715,7 +770,6 @@ public class ProjectDao {
 				pc2.setIsChecked(res.getBoolean("isChecked"));
 				pc2.setIsRejected(res.getBoolean("isRejected"));
 				pc2.setRejectReason(res.getString("rejectReason"));
-				pc2.setCasePeriod(res.getString("casePeriod"));
 				pc2.setRemark(res.getString("remark"));
 				pc2.setServiceEndDate(res.getString("serviceEndDate"));
 				jsonObject = new JSONObject();
@@ -792,7 +846,7 @@ public class ProjectDao {
 				if (checkResult == 1) {
 					sql = "update projectcase set isChecked = 1 where id = " + pc.getId();
 				} else {
-					sql = "update projectcase set isChecked = 1,isRejected = 1,caseState=3,rejectReason = '"
+					sql = "update projectcase set isChecked = 1,isRejected = 1,caseState=6,rejectReason = '"
 							+ pc.getRejectReason() + "' where id = " + pc.getId();
 				}
 			} else if (type == 2) {
@@ -801,12 +855,12 @@ public class ProjectDao {
 					sql = "update projectcase set caseState = 1,serviceUsers = '" + pc.getServiceUsers()
 							+ "',remark = '" + pc.getRemark() + "' where id = " + pc.getId();
 				} else {
-					sql = "update projectcase set isRejected = 1,caseState=3,rejectReason = '" + pc.getRejectReason()
+					sql = "update projectcase set isRejected = 1,caseState=6,rejectReason = '" + pc.getRejectReason()
 							+ "' where id = " + pc.getId();
 				}
 			} else {
 				sql = "update projectcase set salesId = ?,caseType = ?,serviceDate = ?,serviceType=?, serviceContent = ?,"
-						+ "deviceInfo=?,contactUsers = ?,serviceUsers = ?,casePeriod= ?,serviceEndDate= ? where id = ?";
+						+ "deviceInfo=?,contactUsers = ?,serviceEndDate= ?,isChecked= ?,isRejected = ?,rejectReason = ? where id = ?";
 			}
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
@@ -818,11 +872,11 @@ public class ProjectDao {
 				pre.setString(5, pc.getServiceContent());
 				pre.setString(6, pc.getDeviceInfo());
 				pre.setString(7, pc.getContactUsers());
-				pre.setString(8, pc.getServiceUsers());
-				pre.setString(9, pc.getCasePeriod());
-				pre.setString(10, pc.getServiceEndDate());
-				pre.setInt(11, pc.getId());
-
+				pre.setString(8, pc.getServiceEndDate());
+				pre.setBoolean(9, false);
+				pre.setBoolean(10, false);
+				pre.setString(11, "");
+				pre.setInt(12, pc.getId());
 			}
 			int j = pre.executeUpdate();
 
@@ -866,11 +920,12 @@ public class ProjectDao {
 	public String editProjectCase(ProjectCase pc) {
 		jsonObject = new JSONObject();
 		try {
-			sql = "update projectcase set caseState = ? where id = ?";
+			sql = "update projectcase set caseState = ?,cancelReason = ? where id = ?";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setInt(1, pc.getCaseState());
-			pre.setInt(2, pc.getId());
+			pre.setString(2, pc.getCancelReason());
+			pre.setInt(3, pc.getId());
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -1024,7 +1079,6 @@ public class ProjectDao {
 			calendar.add(Calendar.MONTH, 1);
 			calendar.set(Calendar.DATE, 0);
 			String dateString2 = formatter.format(calendar.getTime());// 月的最后一天
-			// System.out.println(dateString+"-"+dateString2);
 			sql = "select * from projectcase where lateTimes > 0 and isDeleted = 0 and isRejected = 0 and "
 					+ "CAST(DATE_ADD(DATE_ADD(serviceDate,INTERVAL casePeriod DAY),INTERVAL 4 DAY) AS date)>= CAST(? AS date) and "
 					+ "CAST(DATE_ADD(DATE_ADD(serviceDate,INTERVAL casePeriod DAY),INTERVAL 4 DAY) AS date)<= CAST(? AS date)";
@@ -1073,10 +1127,13 @@ public class ProjectDao {
 	public String getProjectSubStateList(int projectState, int projectType) {
 		try {
 			sql = "select * from projectsubstate where isDeleted = 0";
-			sql += " and projectState = " + projectState;
+			if (projectState == 99) {
+				// 全部
+			} else {
+				sql += " and projectState = " + projectState;
+			}
 			sql += " and projectType = " + projectType;
 			sql += " order by projectType,projectState,pid";
-			//System.out.println(sql);
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			res = pre.executeQuery();
@@ -1104,4 +1161,103 @@ public class ProjectDao {
 		return null;
 	}
 
+	public String getProjectState(int projectState, int projectSubState, int projectType) {
+		try {
+			sql = "select * from projectstate a,projectsubstate b where b.projectState = a.stateId and a.stateId = ? and b.pid = ? and b.projectType= ? and isDeleted = 0";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setInt(1, projectState);
+			pre.setInt(2, projectSubState);
+			pre.setInt(3, projectType);
+			res = pre.executeQuery();
+			pssList = new ArrayList<ProjectSubState>();
+			while (res.next()) {
+				ProjectState ps = new ProjectState();
+				ps.setStateId(res.getInt("stateId"));
+				ps.setStateName(res.getString("stateName"));
+				ps.setSubStateId(res.getInt("pId"));
+				ps.setSubStateName(res.getString("name"));
+				psList.add(ps);
+			}
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", "query");
+			jsonObject.put("projectStateList", JSONArray.fromObject(psList));
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
+
+	public String editProjectSubState(int projectType, String[] arraySubState) {
+		jsonObject = new JSONObject();
+		try {
+			deleteProjectSubStateList(projectType);
+			if (arraySubState.length > 0) {
+				return createProjectSubState(projectType, arraySubState);
+			} else {
+				jsonObject = new JSONObject();
+				jsonObject.put("errcode", "0");
+				return jsonObject.toString();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+		}
+	}
+
+	public void deleteProjectSubStateList(int projectType) {
+		try {
+			sql = "delete from projectsubstate where projectType = ?";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setInt(1, projectType);
+			pre.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+		}
+	}
+
+	public String createProjectSubState(int projectType, String[] arraySubState) {
+		for (int i = 0; i < arraySubState.length; i++) {
+			try {
+				sql = "insert into projectsubstate (projectType,pid,name,projectState) values (?,?,?,?)";
+				con = DBConnection.getConnection_Mysql();
+				pre = con.prepareStatement(sql);
+				pre.setInt(1, projectType);
+				pre.setInt(2, Integer.parseInt(arraySubState[i].split("#")[0]));
+				pre.setString(3, arraySubState[i].split("#")[1]);
+				pre.setInt(4, Integer.parseInt(arraySubState[i].split("#")[2]));
+				int j = pre.executeUpdate();
+				if (j <= 0) {
+					jsonObject.put("errcode", "1");
+					break;
+				} else if (i == arraySubState.length - 1) {
+					jsonObject.put("errcode", "0");
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				jsonObject = new JSONObject();
+				jsonObject.put("errcode", "2");
+				break;
+			} finally {
+				DBConnection.closeCon(con);
+				DBConnection.closePre(pre);
+			}
+		}
+		return jsonObject.toString();
+	}
 }

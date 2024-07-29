@@ -46,7 +46,7 @@ public class TenderDao {
 		try {
 			sql = "insert into tender (tenderNum,tenderCompany,tenderAgency,projectId,dateForBuy,dateForSubmit,dateForOpen,"
 					+ "saleUser,tenderStyle,tenderExpense,tenderIntent,productStyle,productBrand,enterpriseQualificationRequirment,"
-					+ "technicalRequirment,remark,tenderGuaranteeFee,createDate) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+					+ "technicalRequirment,remark,tenderGuaranteeFee,createDate,isFmlkShare) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setString(1, tender.getTenderNum());
@@ -67,6 +67,7 @@ public class TenderDao {
 			pre.setString(16, tender.getRemark());
 			pre.setInt(17, tender.getTenderGuaranteeFee());
 			pre.setString(18, tender.getCreateDate());
+			pre.setBoolean(19, tender.getIsFmlkShare());
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -90,9 +91,6 @@ public class TenderDao {
 		try {
 			sql = "update tender set ";
 			con = DBConnection.getConnection_Mysql();
-			if(!tender.getTenderCompany().equals("")) {
-				sql += "tenderCompany = '" + tender.getTenderCompany() + "',";
-			}
 			if(tender.getTenderAgency() != 0) {
 				sql += "tenderAgency = " + tender.getTenderAgency() + ",";
 			}
@@ -114,10 +112,10 @@ public class TenderDao {
 			if(tender.getTenderStyle() != 0) {
 				sql += "tenderStyle = " + tender.getTenderStyle() + ",";
 			}
-			if(tender.getTenderExpense() != 0) {
+			if(tender.getTenderExpense() != -1) {
 				sql += "tenderExpense = " + tender.getTenderExpense() + ",";
 			}
-			if(tender.getTenderResult() != 0) {
+			if(tender.getTenderResult() != -1) {
 				sql += "tenderResult = " + tender.getTenderResult() + ",";
 			}
 			if(tender.getTenderIntent() != 0) {
@@ -135,16 +133,27 @@ public class TenderDao {
 			if(!tender.getTechnicalRequirment().equals("")) {
 				sql += "technicalRequirment = '" + tender.getTechnicalRequirment() + "',";
 			}
+			if(tender.getTenderGuaranteeFee() != -1) {
+				sql += "tenderGuaranteeFee = " + tender.getTenderGuaranteeFee() + ",";
+			}
 			if(!tender.getRemark().equals("")) {
 				sql += "remark = '" + tender.getRemark() + "',";
 			}
-			if(tender.getServiceExpense() != 0) {
+			sql += "updateDate = '" + tender.getUpdateDate() + "',";
+			if(tender.getServiceExpense() != -1) {
 				sql += "serviceExpense = " + tender.getServiceExpense() + ",";
+			}
+			if(tender.getTenderAmount() != -1) {
+				sql += "tenderAmount = " + tender.getTenderAmount() + ",";
 			}
 			if(tender.getIsUploadTender()) {
 				sql += "isUploadTender = " + tender.getIsUploadTender() + ",";
 			}
-			sql += "tenderNum = ? where id = ?";
+			if(!tender.getTenderCompany().equals("")) {
+				sql += "tenderCompany = '" + tender.getTenderCompany() + "',";
+			}
+			sql += "tenderNum = ?";
+			sql += " where id = ?";
 			pre = con.prepareStatement(sql);
 			pre.setString(1, tender.getTenderNum());
 			pre.setInt(2, tender.getId());
@@ -166,14 +175,15 @@ public class TenderDao {
 		}
 	}
 
-	public String deleteTender(int id) {
+	public String deleteTender(int id,String updateDate) {
 		jsonObject = new JSONObject();
 		try {
-			sql = "update tender set isDeleted = ? where id = ?";
+			sql = "update tender set isDeleted = ?,updateDate=? where id = ?";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setBoolean(1, true);
-			pre.setInt(2, id);
+			pre.setString(2, updateDate);
+			pre.setInt(3, id);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -194,36 +204,39 @@ public class TenderDao {
 
 	public String getTenderList(Tender tender, String date1, String date2) {
 		try {
-			sql = "select * from tender where isDeleted = 0 ";
+			sql = "select * from tender where isDeleted = 0 and isFmlkShare = ?";
 			con = DBConnection.getConnection_Mysql();
 
 			if (tender.getTenderStyle() != 0) {
-				sql += "and tenderStyle = " + tender.getTenderStyle() + " ";
+				sql += " and tenderStyle = " + tender.getTenderStyle();
+			}
+			if (tender.getProductStyle() != 0) {
+				sql += " and productStyle = " + tender.getProductStyle();
 			}
 			if (tender.getTenderResult() != 0) {
-				sql += "and tenderResult = " + tender.getTenderResult() + " ";
+				sql += " and tenderResult = " + tender.getTenderResult();
 			}
 			if (!tender.getTenderCompany().equals("")) {
-				sql += "and tenderCompany = '" + tender.getTenderCompany() + "' ";
+				sql += " and tenderCompany = '" + tender.getTenderCompany() + "'";
 			}
-			if (tender.getTenderAgency() != 0) {
+			/*if (tender.getTenderAgency() != 0) {
 				sql += "and tenderAgency = " + tender.getTenderAgency() + " ";
-			}
+			}*/
 			if (!tender.getProjectId().equals("")) {
-				sql += "and projectId = '" + tender.getProjectId() + "' ";
+				sql += " and projectId = '" + tender.getProjectId() + "'";
 			}
 			if (tender.getSaleUser() != 0) {
-				sql += "and saleUser = " + tender.getSaleUser() + " ";
+				sql += " and saleUser = " + tender.getSaleUser();
 			}
 			if (!date1.equals("")) {
-				sql += "and CAST(dateForSubmit AS date) >= CAST('" + date1 + "' AS date) ";
+				sql += " and CAST(dateForSubmit AS date) >= CAST('" + date1 + "' AS date)";
 			}
 			if (!date2.equals("")) {
-				sql += "and CAST(dateForSubmit AS date) <= CAST('" + date2 + "' AS date) ";
+				sql += " and CAST(dateForSubmit AS date) <= CAST('" + date2 + "' AS date)";
 			}
-			sql += "order by CAST(dateForSubmit AS datetime) desc";
-			// System.out.println(sql);
+			sql += " order by CAST(dateForSubmit AS datetime) desc";
 			pre = con.prepareStatement(sql);
+			pre.setBoolean(1, tender.getIsFmlkShare());
 			res = pre.executeQuery();
 			tList = new ArrayList<Tender>();
 			while (res.next()) {
@@ -283,6 +296,8 @@ public class TenderDao {
 				tender.setEnterpriseQualificationRequirment(res.getString("enterpriseQualificationRequirment"));
 				tender.setRemark(res.getString("remark"));
 				tender.setServiceExpense(res.getInt("serviceExpense"));
+				tender.setIsFmlkShare(res.getBoolean("isFmlkShare"));
+				tender.setTenderAmount(res.getInt("tenderAmount"));
 				jsonObject = new JSONObject();
 				jsonObject.put("errcode", "0");
 				jsonObject.put("errmsg", "query");
@@ -346,6 +361,7 @@ public class TenderDao {
 	public String getTenderListUnInputContract() {
 		jsonObject = new JSONObject();
 		tList = new ArrayList<Tender>();
+		//已中标或投标未中
 		tList = getTenderList(1);
 		if (tList != null && tList.size() > 0) {
 			List<Tender> newList = new ArrayList<Tender>();
@@ -383,9 +399,16 @@ public class TenderDao {
 		return jsonObject.toString();
 	}
 
-	private List<Tender> getTenderList(int tenderResult) {
+	private List<Tender> getTenderList(int type) {
 		try {
-			sql = "select * from tender where isDeleted = 0 and tenderResult = 1 order by CAST(dateForSubmit AS datetime) desc";
+			sql = "select * from tender where isDeleted = 0";
+			if(type==1) {
+				//已中标或投标未中
+				sql += " and tenderResult in (1,2)";
+			}else {
+				
+			}
+			sql += " order by CAST(dateForSubmit AS datetime) desc";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			res = pre.executeQuery();
@@ -396,6 +419,8 @@ public class TenderDao {
 				mTender.setTenderCompany(res.getString("tenderCompany"));
 				mTender.setProjectId(res.getString("projectId"));
 				mTender.setSaleUser(res.getInt("saleUser"));
+				mTender.setIsFmlkShare(res.getBoolean("isFmlkShare"));
+				mTender.setTenderResult(res.getInt("tenderResult"));
 				tList.add(mTender);
 			}
 			return tList;

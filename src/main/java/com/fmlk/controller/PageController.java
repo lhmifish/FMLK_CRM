@@ -106,11 +106,11 @@ public class PageController implements ApplicationContextAware {
 		return mav;
 	}
 
-	@RequestMapping(value = "/page/confirmCompany", method = RequestMethod.GET)
+	@RequestMapping(value = "/page/companyRecord", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getConfirmCompanyPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("ConfirmCompany");
+		ModelAndView mav = new ModelAndView("CompanyRecord");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -184,14 +184,7 @@ public class PageController implements ApplicationContextAware {
 		if (uId != null && !uId.equals("")) {
 			mav.addObject("sessionId", uId);
 		} else {
-
-			/*
-			 * String accessToken =
-			 * WeiXinEnterpriseUtils.getAccessToken("wxfca99e2643b26241",
-			 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
-			 */
-
-			String accessToken = WeChatEnterpriseUtils.getAccessToken();
+            String accessToken = WeChatEnterpriseUtils.getAccessToken();
 			String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
 			mav.addObject("sessionId", wechatUserId);
 		}
@@ -228,18 +221,13 @@ public class PageController implements ApplicationContextAware {
 		if (uId != null && !uId.equals("")) {
 			mav.addObject("sessionId", uId);
 		} else {
-			/*
-			 * String accessToken =
-			 * WeiXinEnterpriseUtils.getAccessToken("wxfca99e2643b26241",
-			 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
-			 */
 			String accessToken = WeChatEnterpriseUtils.getAccessToken();
 			String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
 			mav.addObject("sessionId", wechatUserId);
 		}
 		return mav;
 	}
-
+	
 	@RequestMapping(value = "/page/editProjectCaseMobile/{type}/{id}", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getEditProjectCaseMobilePage(HttpServletRequest request, @PathVariable(value = "id") int id,
@@ -251,15 +239,19 @@ public class PageController implements ApplicationContextAware {
 		if (uId != null && !uId.equals("")) {
 			mav.addObject("sessionId", uId);
 		} else {
-			/*
-			 * String accessToken =
-			 * WeiXinEnterpriseUtils.getAccessToken("wxfca99e2643b26241",
-			 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
-			 */
 			String accessToken = WeChatEnterpriseUtils.getAccessToken();
 			String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
 			mav.addObject("sessionId", wechatUserId);
 		}
+		return mav;
+	}
+	
+	@RequestMapping(value = "/page/editProjectState", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getEditProjectStatePage(HttpServletRequest request, HttpSession session) {
+		String uId = (String) session.getAttribute("web_userid");
+		ModelAndView mav = new ModelAndView("EditProjectState");
+		mav.addObject("sessionId", uId);
 		return mav;
 	}
 
@@ -480,12 +472,10 @@ public class PageController implements ApplicationContextAware {
 		 */
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String code = request.getParameter("code");
-		System.out.println(code);
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
 				accessToken, code);
 		com.alibaba.fastjson.JSONObject jsonObject = WeiXinEnterpriseUtils.get(url);
 		String errcode = jsonObject.getString("errcode");
-		System.out.println(errcode);
 		if (errcode.equals("0")) {
 			result = jsonObject.getString("UserId");
 		} else {
@@ -614,15 +604,10 @@ public class PageController implements ApplicationContextAware {
 		 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
 		 */
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
-		System.out.println("accessToken==");
-		System.out.println(accessToken);
 		String code = request.getParameter("code");
-		System.out.println("code==");
-		System.out.println(code);
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
 				accessToken, code);
 		com.alibaba.fastjson.JSONObject jsonObject = WeiXinEnterpriseUtils.get(url);
-		System.out.println(jsonObject.toJSONString());
 		String errcode = jsonObject.getString("errcode");
 		if (errcode.equals("0")) {
 			result = jsonObject.getString("UserId");
@@ -874,9 +859,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getArrangementListPage(HttpServletRequest request) {
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
-		System.out.println(accessToken);
 		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
-		System.out.println(wechatUserId);
 		ModelAndView mav = new ModelAndView("ArrangementList");
 		mav.addObject("mUserId", wechatUserId);
 		return mav;
@@ -899,7 +882,6 @@ public class PageController implements ApplicationContextAware {
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
 		ModelAndView mav = new ModelAndView("AllArrangementList");
-		// wechatUserId = "wang.fan";
 		mav.addObject("mUserId", wechatUserId);
 		return mav;
 	}
@@ -911,7 +893,6 @@ public class PageController implements ApplicationContextAware {
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
 		ModelAndView mav = new ModelAndView("AllWeekUploadReportList");
-		// wechatUserId = "jia.wenjie";
 		mav.addObject("mUserId", wechatUserId);
 		return mav;
 	}
@@ -1007,6 +988,27 @@ public class PageController implements ApplicationContextAware {
 			mav.addObject("sessionId", uId);
 			mav.addObject("year", request.getParameter("year"));
 			mav.addObject("month", request.getParameter("month"));
+			return mav;
+		}
+		
+		// 企业号-添加客户拜访记录
+		@RequestMapping(value = "/page/createVisitRecord", method = RequestMethod.GET)
+		@ResponseBody
+		public ModelAndView createVisitRecordPage(HttpServletRequest request) {
+			String result = null;
+			String accessToken = WeChatEnterpriseUtils.getSalesAccessToken();
+			String code = request.getParameter("code");
+			String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
+					accessToken, code);
+			com.alibaba.fastjson.JSONObject jsonObject = WeiXinEnterpriseUtils.get(url);
+			String errcode = jsonObject.getString("errcode");
+			if (errcode.equals("0")) {
+				result = jsonObject.getString("UserId");
+			} else {
+				result = null;
+			}
+			ModelAndView mav = new ModelAndView("CreateVisitRecord");
+			mav.addObject("mUserId", result);
 			return mav;
 		}
 

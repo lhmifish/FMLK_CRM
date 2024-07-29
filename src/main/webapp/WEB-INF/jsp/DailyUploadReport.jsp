@@ -20,11 +20,29 @@
 	href="${pageContext.request.contextPath}/css/css.css?v=1990" />
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/select4.css?v=2000" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/bootstrap-switch.css" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/highlight.css" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/main2.css" />
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/jweixin-1.0.0.js"></script>
-<script src="${pageContext.request.contextPath}/js/getObjectList.js"></script>
+<script src="${pageContext.request.contextPath}/js/getObjectList.js?v=2024"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
+<script type="text/javascript"
+	src="${pageContext.request.contextPath}/js/bootstrap-switch.js"></script>
+<script type="text/javascript"
+	src="${pageContext.request.contextPath}/js/bootstrap.js"></script>
+<script type="text/javascript"
+	src="${pageContext.request.contextPath}/js/highlight.js"></script>
+<script type="text/javascript"
+	src="${pageContext.request.contextPath}/js/main.js"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=2"></script>
+<script src="${pageContext.request.contextPath}/js/getObject.js?v=0"></script>
 <style>
 .button-submit button {
 	position: fixed;
@@ -41,14 +59,24 @@
 <script type="text/javascript">
 	var sId;
 	var host;
+	var isFmlkShare;
+	var requestReturn;
+	var tUser;
+	var isShowCompanySelect;
 
 	$(document).ready(function() {
 		sId = "${mUserId}";
 		host = "${pageContext.request.contextPath}";
-		$(document).attr("title", getUser().name + "的日报");
+		tUser =  getUser("nickName", sId);
+		$(document).attr("title", tUser.name + "的日报");
+		isFmlkShare = true;
 		getDateSelect();
 		getTimeList();
-		getCompanyList("", 0, 0, 1);
+		if(tUser.departmentId != 1){
+			$("#time1").val("09:00");
+			$("#time2").val("18:00");
+		}
+		getCompanyList("", 0, 0, 1, isFmlkShare);
 		$("#date").select2({
 			minimumResultsForSearch : -1
 		});
@@ -60,26 +88,30 @@
 		});
 		$("#companyId").select2({});
 		$("#projectId").select2({});
-	});
-
-	function getUser() {
-		var user;
-		$.ajax({
-			url : host + "/getUserByNickName",
-			type : 'GET',
-			data : {
-				"nickName" : sId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				user = eval("(" + returndata + ")").user[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
+		$('#typeCheck').bootstrapSwitch();
+		$("#typeCheck").on('switchChange.bootstrapSwitch', function(event, state) {
+			isFmlkShare = state
+			if(tUser.roleId == 5){
+				getCompanyList("", tUser.UId, 0, 1, isFmlkShare);
+			}else{
+				getCompanyList("", 0, 0, 1, isFmlkShare);
 			}
+			$("#projectId").empty();
+			$("#projectId").append('<option value="0">请选择...</option>');
 		});
-		return user;
-	}
+		setTimeout(function() {
+			if(tUser.departmentId==2){
+				alert("销售人员的客户拜访记录=日报，这里无需重复填写\n【当天在公司的在这里填写】");
+			}
+			isShowCompanySelect = tUser.departmentId==8;
+			if(isShowCompanySelect){
+				//只有运维部需要填客户
+				$("#cpmpanyLineTitle").show();
+				$("#cpmpanyLineSelect").show();
+			}
+		}, 500);
+	
+	});
 
 	function getDateSelect() {
 		var da = new Date();
@@ -104,7 +136,7 @@
 	}
 
 	function changeCompany(tCompanyId) {
-		getProjectList(tCompanyId, 0);
+		//getProjectList(tCompanyId, 0,isFmlkShare);
 	}
 
 	function createDailyReport() {
@@ -112,16 +144,11 @@
 		var time1 = $("#time1 option:selected").text();
 		var time2 = $("#time2 option:selected").text();
 		var companyId = $("#companyId").val();
-		var projectId = $("#projectId").val();
+	//	var projectId = $("#projectId").val();
 		var jobContent = $("#jobContent").val();
 
-		if (companyId == 0) {
+		if (companyId == 0 && isShowCompanySelect) {
 			alert("请选择客户公司");
-			return;
-		}
-
-		if (projectId == null) {
-			alert("请选择项目");
 			return;
 		}
 
@@ -129,41 +156,32 @@
 			alert("工作内容不能为空");
 			return;
 		}
-
-		$.ajax({
-			url : host + "/createDailyUploadReport",
-			type : 'POST',
-			cache : false,
-			data : {
-				"userName" : sId,
+        var params = {
+        		"userName" : sId,
 				"date" : date,
 				"client" : companyId,
-				"crmNum" : projectId,
+		    	"crmNum" : "0",
 				"jobContent" : jobContent,
-				"time" : time1 + "-" + time2
-			},
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").errcode;
-				if (data == 0) {
-					alert("提交成功");
-					setTimeout(function() {
-
-						//这个可以关闭安卓系统的手机  
-						document.addEventListener('WeixinJSBridgeReady',
-								function() {
-									WeixinJSBridge.call('closeWindow');
-								}, false);
-						//这个可以关闭ios系统的手机  
-						WeixinJSBridge.call('closeWindow');
-					}, 500)
-				} else {
-					alert("提交失败  " + eval("(" + returndata + ")").message);
-				}
-
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
+				"time" : time1 + "-" + time2,
+				"isFmlkShare":isFmlkShare	
+        }
+        post("createDailyUploadReport",params,false);
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else if(parseInt(requestReturn.code)==0){
+			alert("提交成功");
+			setTimeout(function() {
+				document.addEventListener('WeixinJSBridgeReady',
+						function() {
+							WeixinJSBridge.call('closeWindow');
+						}, false);
+				WeixinJSBridge.call('closeWindow');
+			}, 500);
+		}else if(parseInt(requestReturn.code)==3){
+			alert("提交失败: 请勿重新提交日报");
+		}else{
+			alert("提交失败，错误编码: " + requestReturn.code);
+		}
 	}
 </script>
 </head>
@@ -188,22 +206,26 @@
 					id="time2" style="width: 42%; margin-left: 5px"></select>
 			</div>
 
-			<p style="margin-left: 5%; margin-top: 10px;">
-				<a style="color: red">* </a>客户公司
+			<p style="margin-left: 5%; margin-top: 10px;display:none" id="cpmpanyLineTitle">
+				<a style="color: red">* </a><span style="margin-right: 30px">客户公司</span><input
+					type="checkbox" data-on-text="共享陪护" data-off-text="信息"
+					data-size="mini" data-label-text="点击切换" data-on-color="info"
+					data-off-color="warning" data-handle-width="50px"
+					data-label-width="70px" id="typeCheck" checked="checked">
 			</p>
-			<div style="margin-left: 5%;">
+			<div style="margin-left: 5%;display:none" id="cpmpanyLineSelect">
 				<select id="companyId" style="width: 90%;"
 					onChange="changeCompany(this.options[this.options.selectedIndex].value)">
 				</select>
 			</div>
-
+            <%--
 			<p style="margin-left: 5%; margin-top: 10px;">
-				<a style="color: red">* </a>项目名称
+				<a style="color: red; visibility: hidden">* </a>项目名称
 			</p>
 			<div style="margin-left: 5%;">
-				<select id="projectId" style="width: 90%;"></select>
+				<select id="projectId" style="width: 90%;"><option value="0">请选择...</option></select>
 			</div>
-
+            --%>
 			<p style="margin-left: 5%; margin-top: 10px;">
 				<a style="color: red">* </a>工作内容
 			</p>

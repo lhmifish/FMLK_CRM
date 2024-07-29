@@ -14,38 +14,47 @@
 <meta http-equiv="pragma" content="no-cache" />
 <meta http-equiv="cache-control" content="no-cache" />
 <title>编辑派工单</title>
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/select4.css?v=1999" />
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/css.css?v=1997" />
-<%-- <link rel="stylesheet" type="text/css"
-	href="${pageContext.request.contextPath}/css/flatpickr.material_blue.min.css"> --%>
 <link rel="stylesheet" type="text/css"
 	href="${pageContext.request.contextPath}/css/material_blue.css">
-<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/ie.css">
+<link rel="stylesheet" type="text/css"
+	href="https://npmcdn.com/flatpickr/dist/ie.css">
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
-<%-- <script type="text/javascript"
-	src="${pageContext.request.contextPath}/js/flatpickr.js"></script> --%>
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/flatpickr_v3.js"></script>
-<script src="${pageContext.request.contextPath}/js/checkPermission.js"></script>
+<script src="${pageContext.request.contextPath}/js/checkPermission.js?v=3"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
 <script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
-<script src="${pageContext.request.contextPath}/js/getObjectList.js"></script>
-
+<script
+	src="${pageContext.request.contextPath}/js/getObjectList.js?v=103"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=3"></script>
+<script src="${pageContext.request.contextPath}/js/getObject.js?v=1"></script>
+<script src="${pageContext.request.contextPath}/js/loading.js"></script>
 <style type="text/css">
 a:hover {
 	color: #FF00FF
 } /* 鼠标移动到链接上 */
+.need {
+	color: red;
+	margin-right: 5px;
+	margin-left: 0px
+}
 </style>
 
 <script type="text/javascript">
 	var id;//projectCase_id
 	var type;//0.编辑1.销审2.技审
 	var host;
-	var checkResult;
+	var checkResult;//1.通过2.驳回
 	var chunks;
 	var sliceSize;
 	var currentChunk;
@@ -57,25 +66,28 @@ a:hover {
 	var salesId;//projectCase_salesId
 	var tId;//user_id
 	var tRoleId;//user_roleId
-	var isChecked;
+	var isChecked;//销售已审
+	var isFmlkShare;
+	var requestReturn;
+	var isRejected;
 
 	$(document).ready(function() {
 		id = "${mId}";
 		type = "${type}";
-	    sId = "${sessionId}";
+		sId = "${sessionId}";
 		host = "${pageContext.request.contextPath}";
 		checkEditPremission2(23, 25, 26);
 	});
 
 	function initialPage() {
+		isFmlkShare = false;
 		document.getElementById("serviceDate").flatpickr({
 			minuteIncrement : 30,
-			mode: "range",
-			enableTime: true,
-			dateFormat: "Y-m-d H:i",
-			time_24hr:true,
+			mode : "range",
+			enableTime : true,
+			dateFormat : "Y-m-d H:i",
+			time_24hr : true,
 			onChange : function(dateObj, dateStr) {
-
 			}
 		});
 		getProjectCaseInfo(id);
@@ -87,7 +99,6 @@ a:hover {
 		});
 		$("#projectState").select2({});
 		$("#caseType").select2({});
-		$("#casePeriod").select2({});
 		$("#serviceType").select2({});
 		$("#serviceUsers").select2({
 			placeholder : "请选择..."
@@ -96,132 +107,153 @@ a:hover {
 	}
 
 	function getProjectCaseInfo(tid) {
-		$.ajax({
-			url : host + "/getProjectCase",
-			type : 'GET',
-			cache : false,
-			async : false,
-			data : {
-				"id" : tid
-			},
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").projectCase;
-				$("#companyName")
-						.val(getCompany(data[0].projectId).companyName);
-				getSalesList(data[0].salesId);
-				salesId = data[0].salesId;
-				var companyId = getCompany(data[0].projectId).companyId;
-				getProjectList(companyId, data[0].projectId);
-				$("#projectIdNum").val(data[0].projectId);
-				
-				if(data[0].serviceEndDate==""||data[0].serviceEndDate==null){
-				    $('#serviceDate').val(data[0].serviceDate+" to "+data[0].serviceDate);
-				}else{
-					$('#serviceDate').val(data[0].serviceDate+" to "+data[0].serviceEndDate);
+		get("getProjectCase", {
+			"id" : tid
+		}, false);
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			var projectCase = requestReturn.data.projectCase[0];
+			salesId = projectCase.salesId;
+			getSalesList(salesId);
+			var mCompany = getCompany("projectId", projectCase.projectId);
+			$("#companyName").val(mCompany.companyName);
+			getProjectList(mCompany.companyId, projectCase.projectId);
+			$('#serviceDate').val(projectCase.serviceDate + " to "+ projectCase.serviceEndDate);
+			var arr = new Array();
+			if (projectCase.contactUsers.indexOf(",") != -1) {
+				for (var i = 0; i < projectCase.contactUsers.split(",").length; i++) {
+					arr.push(projectCase.contactUsers.split(",")[i])
 				}
-				getMultiContactUsersList(companyId, data[0].contactUsers
-						.split(","));
-				getProjectStateList(data[0].caseType.split("#")[0]);
-				getCaseTypeList(data[0].caseType.split("#")[1]);
-				getServiceTypeList(data[0].serviceType);
-				getCasePeriodList(data[0].casePeriod);
-				$('#serviceContent').val(data[0].serviceContent);
-				$('#deviceInfo').val(data[0].deviceInfo);
-				caseId = data[0].caseId;
-				getProjectCaseUploadFile(caseId, data[0].projectId);
-				var isRejected = data[0].isRejected;
-				isChecked = data[0].isChecked;
-				checkResult = 1;
-				if (type == 2) {
-					$("#checkDiv").show();
+			} else {
+				arr.push(projectCase.contactUsers);
+			}
+			getMultiContactUsersList(mCompany.companyId, arr);
+			getProjectStateList(projectCase.caseType.split("#")[0]);
+			getCaseTypeList(projectCase.caseType.split("#")[1]);
+			getServiceTypeList(projectCase.serviceType);
+			$('#serviceContent').val(projectCase.serviceContent);
+			$('#deviceInfo').val(projectCase.deviceInfo);
+			caseId = projectCase.caseId;
+			getProjectCaseUploadFile(caseId, projectCase.projectId);
+			isChecked = projectCase.isChecked;//销售已审
+			var serviceUsers = projectCase.serviceUsers;
+			var serviceUsersArr = new Array();
+			if(serviceUsers != null && serviceUsers != ""){
+				if (serviceUsers.indexOf(",") != -1) {
+					for (var j = 0; j < serviceUsers.split(",").length; j++) {
+						serviceUsersArr.push(serviceUsers.split(",")[j])
+					}
+				}else{
+					serviceUsersArr.push(serviceUsers);
+				}
+				$("#remark").val(projectCase.remark);
+			}else{
+				serviceUsersArr = null;
+			}
+			getMultiServiceUsersList(serviceUsersArr);
+			isRejected = projectCase.isRejected;
+			
+			$("#projectId").attr("disabled", "disabled");
+			if(type >0){
+				//销售审核和派工页面不能编辑
+				$("#contactUsers").attr("disabled", "disabled");
+				$("#serviceDate").attr("disabled", "disabled");
+				$("#serviceDate").css("background-color", "#EEE");
+				$("#serviceType").attr("disabled", "disabled");
+				$("#serviceContent").attr("disabled", "disabled");
+				$("#deviceInfo").attr("disabled", "disabled");
+				$("#serviceContent").css("background-color", "#EEE");
+				$("#deviceInfo").css("background-color", "#EEE");
+				$("#myfile").attr("disabled", "disabled");
+				$("input[name='field02']").removeAttr("disabled");
+				//审核操作显示
+				$("#checkDiv").show();
+				selCheckResult(1);
+				if(type==2){
+					//技术审核
 					$("#serviceUserDiv").show();
 					$("#remarkDiv").show();
-					getMultiServiceUsersList(null);
-					$("#remark").val("");
-				} else if (type == 1) {
-					$("#checkDiv").show();
-				} else if (isChecked) {
-					$("#checkDiv").show();
-					$("input[name='field02']").attr("disabled", "disabled");
-					if (isRejected) {
-						selCheckResult(2);
-						$("input[name='field02'][value='" + checkResult + "']")
-								.attr("checked", true);
-						$("#reasonForReject").val(data[0].rejectReason);
-						$('#reasonForReject').attr("disabled", "disabled");
-						$('#reasonForReject').css("background-color", "#EEE");
-					} else {
-						selCheckResult(1);
-						$("input[name='field02'][value='" + checkResult + "']")
-								.attr("checked", true);
-						getMultiServiceUsersList(data[0].serviceUsers.split(","));
-						$('#serviceUsers').attr("disabled", "disabled");
-						$('#serviceUsers').css("background-color", "#EEE");
-						$("#remark").val(data[0].remark);
-						$('#remark').attr("disabled", "disabled");
-						$('#remark').css("background-color", "#EEE");
-						$('#remark').css("color", "red");
-					}
 				}
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
+			}else{
+				//编辑页面
+				if(projectCase.caseState > 0 && projectCase.caseState <6){
+					//开始处理了就不能编辑了
+					$("#contactUsers").attr("disabled", "disabled");
+					$("#serviceDate").attr("disabled", "disabled");
+					$("#serviceDate").css("background-color", "#EEE");
+					$("#serviceType").attr("disabled", "disabled");
+					$("#serviceContent").attr("disabled", "disabled");
+					$("#deviceInfo").attr("disabled", "disabled");
+					$("#serviceContent").css("background-color", "#EEE");
+					$("#deviceInfo").css("background-color", "#EEE");
+					$("#myfile").attr("disabled", "disabled");
+					$("#checkDiv").show();
+					$("#okclick").hide();
+					selCheckResult(1);
+					$("input[name='field02']").attr("disabled", "disabled");
+					//已派工
+					$("#serviceUserDiv").show();
+					$("#remarkDiv").show();
+				}else{
+					$("#contactUsers").removeAttr("disabled");
+					$("#serviceDate").removeAttr("disabled");
+					$("#serviceDate").css("background-color", "#fff");
+					$("#serviceType").removeAttr("disabled");
+					$("#serviceContent").removeAttr("disabled");
+					$("#deviceInfo").removeAttr("disabled");
+					$("#serviceContent").css("background-color", "#fff");
+					$("#deviceInfo").css("background-color", "#fff");
+					$("#myfile").removeAttr("disabled");
+					
+					if(isChecked){
+						$("#checkDiv").show();
+						$("input[name='field02']").attr("disabled", "disabled");
+						if(isRejected){
+							$("#okclick").show();
+							if(projectCase.caseState == 6){
+								selCheckResult(2);
+								$("input[name='field02'][value='2']").attr("checked", true);
+								$("input[name='field02']").attr("disabled", "disabled");
+								$("#reasonForReject").val(projectCase.rejectReason.indexOf("@")>-1?projectCase.rejectReason.split("@")[0]:projectCase.rejectReason);
+								$('#reasonForReject').attr("disabled", "disabled");
+								$('#reasonForReject').css("background-color", "#EEE");
+								$("#checkDiv").show();
+							}
+						}else{
+							$("#okclick").hide();
+						}
+					}
+				}	
 			}
-		});
+		}
 	}
 
-	function getCompany(mProjectId) {
-		var company;
-		$.ajax({
-			url : host + "/getCompanyByProjectId",
-			type : 'GET',
-			data : {
-				"projectId" : mProjectId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				company = eval("(" + returndata + ")").company[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return company;
+	function changeProject(tProjectId) {
+		if (tProjectId != 0) {
+			var project = getProject("projectId", tProjectId);
+			getProjectStateList(project.projectState);
+		} else {
+			getProjectStateList(0);
+		}
+		$("#caseType").removeAttr("disabled");
 	}
 
-	function changeProject() {
-		$.ajax({
-			url : host + "/getProjectByProjectId",
-			type : 'GET',
-			data : {
-				"projectId" : $("#projectId").val()
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").project;
-				getProjectStateList(data[0].projectState);
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		$("#projectIdNum").val($("#projectId").val());
-	}
-
+	//销售审核
 	function selCheckResult(mSel) {
 		checkResult = mSel;
-		//只有在审核时才能选择
 		if (mSel == 2) {
 			//拒绝
-			$("#reasonDiv").show();
+			$("#remark").val("");
 			$("#serviceUserDiv").hide();
 			$("#remarkDiv").hide();
-			getMultiServiceUsersList(null);
-			$("#remark").val("");
+			$("#reasonDiv").show();
 		} else {
 			//通过
 			$("#reasonDiv").hide();
 			$("#reasonForReject").val("");
-			if (type != 1) {
+			if (type == 2) {
+				//技术审核
 				$("#serviceUserDiv").show();
 				$("#remarkDiv").show();
 			}
@@ -267,27 +299,30 @@ a:hover {
 			alert("你没有权限派工");
 			return;
 		}
-		var projectId = $("#projectIdNum").val();
+		if(type==0 && !isRejected){
+			alert("审核被驳回后才可以重新提审");
+			return;
+		}
+		var projectId = $("#projectId").val();
 		var mSalesId = $("#salesId").val();
 		var contactUsersArr = new Array();
 		$("#contactUsers option:selected").each(function() {
 			contactUsersArr.push($(this).val());
 		});
-		var serviceDate = $("#serviceDate").val();
 		var projectState = $("#projectState").val();
-		var caseType = $("#caseType").val();
+        var caseType = $("#caseType").val();
+        var serviceDate = $("#serviceDate").val();
 		var serviceType = $("#serviceType").val();
 		var serviceContent = $("#serviceContent").val().trim();
 		var deviceInfo = $("#deviceInfo").val().trim();
 		var rejectReason = $("#reasonForReject").val().trim();
-		var casePeriod = $("#casePeriod").val();
 		var remark = $("#remark").val();
 		var serviceUsersArr = new Array();
 		$("#serviceUsers option:selected").each(function() {
 			serviceUsersArr.push($(this).val());
 		});
-
-		if (mSalesId == 0) {
+		
+        if (mSalesId == 0) {
 			alert("请选择销售人员");
 			return;
 		}
@@ -296,28 +331,18 @@ a:hover {
 			alert("请选择客户联系人");
 			return;
 		}
-		
-		if(serviceDate == ""){
+
+		if (serviceDate == "") {
 			alert("客户服务时间不能为空");
 			return;
+		}else{
+			var timeStart = serviceDate.split("to")[0].replace(/-/g, "/").trim();
+			var timeEnd = serviceDate.split("to")[1].replace(/-/g, "/").trim();
+			if(new Date(timeEnd).getTime() - new Date(timeStart).getTime()<=0){
+				alert("客户服务时间有误,请重新选择");
+				return;
+			}
 		}
-		
-		var timeStart = serviceDate.split("to")[0].replace(/-/g, "/").trim();
-		var timeEnd = serviceDate.split("to")[1].replace(/-/g, "/").trim();
-        var timeDiff = (new Date(timeEnd).getTime()-new Date(timeStart).getTime())/(3600*1000);
-        
-        //alert(timeDiff);
-        
-        if(timeDiff<=0){
-        	alert("客户服务时间有误");
-			return;
-        }else if(timeDiff<=6){
-        	timeDiff = 0.5
-        }else{
-        	timeDiff = Math.ceil(timeDiff/24);
-        }
-        
-       
 
 		if (caseType == 0) {
 			alert("请选择派工类别");
@@ -330,22 +355,11 @@ a:hover {
 			alert("请选择服务级别");
 			return;
 		}
-
-		if (casePeriod == 0) {
-			alert("请选择服务时长");
-			return;
-		}else if(casePeriod != timeDiff){
-			alert("客户服务时间段与服务时长不一致");
-			return;
-		}
-		
-		serviceDate = timeStart;
-		var serviceEndDate = timeEnd;
 		if (serviceContent == "") {
 			alert("请输入服务内容");
 			return;
 		}
-
+		
 		var myFile = document.getElementById("myfile").files[0];
 		if (myFile != undefined && myFile.size > 3 * 1024 * 1024 * 1024) {
 			alert("单个文件上传不能大于3GB");
@@ -353,7 +367,7 @@ a:hover {
 		}
 
 		if (checkResult == 2 && rejectReason == "") {
-			alert("请填写拒绝理由");
+			alert("请填写驳回理由");
 			return;
 		}
 
@@ -361,37 +375,42 @@ a:hover {
 			alert("请选择服务工程师");
 			return;
 		}
-
-		if (myFile != undefined) {
+		if(serviceUsersArr.length==0){
+			serviceUsersArr.push("");
+		}
+		
+		if (type==0 && myFile != undefined) {
 			if (!checkFileExist(myFile.name, projectId)) {
 				chunks = Math.ceil(myFile.size / sliceSize);
 				$("#progressDiv").show();
 				currentChunk = 0;
+				loading();
 				doUploadFile(myFile, mSalesId, projectId, contactUsersArr,
-						serviceDate, caseType, serviceType, serviceContent,
-						deviceInfo, rejectReason, serviceUsersArr, casePeriod,remark,serviceEndDate);
+						timeStart, caseType, serviceType, serviceContent,
+						deviceInfo, rejectReason, serviceUsersArr,remark, timeEnd);
 			} else {
 				alert("该派工有相同文件名的附件已上传，请修改文件名");
 				return;
 			}
 		} else {
 			//无附件,保存派工单
-			var result = editCaseRecord(mSalesId, contactUsersArr, serviceDate,
+			loading();
+			var result = editCaseRecord(mSalesId, contactUsersArr, timeStart,
 					caseType, serviceType, serviceContent, deviceInfo,
-					rejectReason, serviceUsersArr, casePeriod,remark,serviceEndDate);
+					rejectReason, serviceUsersArr,remark,timeEnd);
 			if (result) {
 				if (type == 0) {
-					alert("编辑派工单成功");
-				} else if(type == 1){
+					alert("派工单已重新提审");
+				} else if (type == 1) {
 					alert("派工单已审核");
-				}else {
-					alert("派工已完成");
+				} else {
+					alert("派工审核已完成");
 				}
 				parent.leftFrame.initialPage();
-				setTimeout(
-						function() {
-							toProjectCaseListPage();
-						}, 500);
+				setTimeout(function() {
+					closeLoading();
+					toPage();
+				}, 500);
 			}
 		}
 	}
@@ -399,37 +418,31 @@ a:hover {
 	//检查文件服务器相同文件是否存在
 	function checkFileExist(fileName, projectId) {
 		var isExist = false;
-		$.ajax({
-			url : host + "/queryUploadFile",
-			type : 'GET',
-			data : {
-				"createYear" : "",
+        var params = {
+        		"createYear" : "",
 				"projectId" : projectId,
-				"reportType" : 99
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").fileList;
-				for (var i = 0; i < data.length; i++) {
-					var path = data[i].path;
-					var tFileName = path.substring(path.lastIndexOf("\/") + 1,
-							path.length);
-					if (fileName == tFileName) {
-						isExist = true;
-						break;
-					}
+				"reportType" : 99	
+        }
+        get("queryUploadFile",params,false);
+        if(requestReturn.result == "error"){
+    		alert(requestReturn.error);
+    	}else{
+    		var data = requestReturn.data.fileList;
+    		for(var i = 0; i < data.length; i++){
+    			var path = data[i].path;
+				var tFileName = path.substring(path.lastIndexOf("\/") + 1,path.length);
+				if (fileName == tFileName) {
+					isExist = true;
+					break;
 				}
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return isExist;
+    		}
+    		return isExist;
+    	}
 	}
 
 	function doUploadFile(mFile, mUserId, mProjectId, mContactUsersArr,
 			mServiceDate, mCaseType, mServiceType, mServiceContent,
-			mDeviceInfo, mRejectReason, mServiceUsersArr, casePeriod,mRemark,mServiceEndDate) {
+			mDeviceInfo, mRejectReason, mServiceUsersArr, mRemark,mServiceEndDate) {
 		if (currentChunk < chunks) {
 			var formData = new FormData();
 			formData.append('reportType', 99);
@@ -440,15 +453,13 @@ a:hover {
 			formData.append('chunks', chunks);
 			formData.append('chunk', currentChunk);
 			formData.append('file', getSliceFile(mFile, currentChunk));
-			
 			formData.append('salesId', mUserId);
 			formData.append('userId', mUserId);
 			formData.append('projectName', $("#projectId option:selected").text());
 			formData.append('companyName', $('#companyName').val());
-			
+
 			var xhr = new XMLHttpRequest();
-			xhr.open("POST",
-					host + "/addProjectReport");
+			xhr.open("POST", host + "/addProjectReport");
 			xhr.send(formData);
 			xhr.onreadystatechange = function() {
 				if (xhr.readyState == 4) {
@@ -460,10 +471,10 @@ a:hover {
 						doUploadFile(mFile, mUserId, mProjectId,
 								mContactUsersArr, mServiceDate, mCaseType,
 								mServiceType, mServiceContent, mDeviceInfo,
-								mRejectReason, mServiceUsersArr, casePeriod,mRemark,mServiceEndDate);
+								mRejectReason, mServiceUsersArr,mRemark, mServiceEndDate);
 					} else {
 						alert("上传文件错误，错误信息：" + info);
-
+						closeLoading();
 					}
 				}
 			}
@@ -471,8 +482,7 @@ a:hover {
 			setTimeout(function() {
 				var result = editCaseRecord(mUserId, mContactUsersArr,
 						mServiceDate, mCaseType, mServiceType, mServiceContent,
-						mDeviceInfo, mRejectReason, mServiceUsersArr,
-						casePeriod,mRemark,mServiceEndDate);
+						mDeviceInfo, mRejectReason, mServiceUsersArr,mRemark, mServiceEndDate);
 				if (result) {
 					saveFileRecord(mUserId, mProjectId, mFile.name);
 				}
@@ -499,51 +509,35 @@ a:hover {
 
 	function saveFileRecord(mUserId, mProjectId, mFileName) {
 		//保存到数据库
-		$
-				.ajax({
-					url : host + "/createProjectReport",
-					type : 'POST',
-					data : {
-						"contactDate" : "",
-						"userId" : mUserId,
-						"reportDesc" : "",
-						"projectId" : mProjectId,
-						"reportType" : 99,
-						"fileName" : mFileName,
-						"caseId" : caseId
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						var data = eval("(" + returndata + ")").errcode;
-						if (data == 0) {
-							alert("编辑派工单成功");
-							parent.leftFrame.initialPage();
-							setTimeout(
-									function() {
-										toProjectCaseListPage();
-									}, 500);
-						} else {
-							alert("写入附件信息失败");
-						}
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
+		var params = {
+				"contactDate" : "",
+				"userId" : mUserId,
+				"reportDesc" : "",
+				"projectId" : mProjectId,
+				"reportType" : 99,
+				"fileName" : mFileName,
+				"caseId" : caseId
+		}
+		post("createProjectReport",params,true);
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else if(parseInt(requestReturn.code)==0){
+			alert("编辑派工单成功");
+			parent.leftFrame.initialPage();
+			setTimeout(function() {
+				toPage();
+			}, 500);
+		}else{
+			alert("写入附件信息失败");
+		}
+		closeLoading();
 	}
 
 	function editCaseRecord(mSalesId, contactUsersArr, serviceDate, caseType,
 			serviceType, serviceContent, deviceInfo, rejectReason,
-			serviceUsersArr, casePeriod,mRemark,mServiceEndDate) {
-	//	alert($('#companyName').val());
+			serviceUsersArr,mRemark, mServiceEndDate) {
 		var isSuccess = false;
-		$.ajax({
-			url : host + "/editCaseRecord",
-			type : 'POST',
-			cache : false,
-			dataType : "json",
-			async : false,
-			data : {
+		var params = {
 				"id" : id,
 				"type" : type,
 				"checkResult" : checkResult,
@@ -554,36 +548,96 @@ a:hover {
 				"serviceType" : serviceType,
 				"serviceContent" : serviceContent,
 				"deviceInfo" : deviceInfo,
-				"rejectReason" : rejectReason,
+				"rejectReason" : rejectReason==""?"":rejectReason+"@"+type,
 				"serviceUsers" : serviceUsersArr,
-				"casePeriod" : casePeriod,
 				"projectId" : $("#projectId").val(),
 				"companyName" : $('#companyName').val(),
 				"projectName" : $("#projectId option:selected").text(),
-				"remark":mRemark,
-				"isChecked":isChecked,
-				"serviceEndDate":mServiceEndDate
-			},
-			traditional : true,
-			success : function(returndata) {
-				var data = returndata.errcode;
-				if (data == 0) {
-					isSuccess = true;
-				} else {
-					if (type == 0) {
-						isSuccess = true;
-					} else if(type == 1){
-						alert("审核派工失败");
-					} else{
-						alert("派工失败");
-					}
-
-				}
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
+				"remark" : mRemark,
+				"isChecked" : isChecked,
+				"serviceEndDate" : mServiceEndDate	
+		}
+		post("editCaseRecord",params,true);
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+			closeLoading();
+		}else if(parseInt(requestReturn.code)==0){
+			isSuccess = true;
+		}else {
+			if (type == 0) {
+				isSuccess = true;
+			} else if (type == 1) {
+				alert("审核失败");
+				closeLoading();
+			} else {
+				alert("派工失败");
+				closeLoading();
 			}
-		});
+		}
 		return isSuccess;
+	}
+
+	function getProjectList(tCompanyId, tProjectId) {
+		var params = {
+			"companyId" : tCompanyId,
+			"projectName" : "",
+			"salesId" : 0,
+			"projectType" : 0,
+			"productStyle" : 0,
+			"isFmlkShare" : isFmlkShare
+		}
+		get("projectList", params, false)
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			var data = requestReturn.data.projectList;
+			var str = '<option value="0">请选择...</option>';
+			for ( var i in data) {
+				var disableSelect = data[i].projectState > 2;
+				if (!disableSelect && data[i].endDate != "") {
+					disableSelect = (new Date(data[i].endDate).getTime() - new Date()
+							.getTime())
+							/ (3600 * 1000) <= 0
+				}
+				if (disableSelect) {
+					str += '<option value="' + data[i].projectId + '" disabled>'
+							+ data[i].projectName + '</option>';
+				} else {
+					str += '<option value="' + data[i].projectId + '">'
+							+ data[i].projectName + '</option>';
+				}
+
+			}
+			$("#projectId").empty();
+			$("#projectId").append(str);
+			$("#projectId").find('option[value="' + tProjectId + '"]').attr(
+					"selected", true);
+		}
+	}
+
+	function toPage() {
+		toProjectCaseListPage(type);
+	}
+	
+	function loading() {
+		$('body').loading({
+			loadingWidth : 240,
+			title : '请稍等!',
+			name : 'test',
+			discription : '提交中',
+			direction : 'column',
+			type : 'origin',
+			originDivWidth : 40,
+			originDivHeight : 40,
+			originWidth : 6,
+			originHeight : 6,
+			smallLoading : false,
+			loadingMaskBg : 'rgba(0,0,0,0.2)'
+		});
+	}
+
+	function closeLoading() {
+		removeLoading('test');
 	}
 </script>
 
@@ -605,43 +659,42 @@ a:hover {
 				</div>
 				<div class="baBody">
 					<div class="bbD">
-						<label>客户名称：</label><input type="text" class="input3"
-							id="companyName" disabled="disabled"
-							style="width: 330px; background-color: #EEE" /><label
-							style="margin-left: 15px">销售人员：</label><select class="selCss"
-							id="salesId" style="width: 340px;"></select>
+						<span class="need">*</span><label style="margin-left: 0px">客户名称：</label><input
+							type="text" class="input3" id="companyName" disabled="disabled"
+							style="width: 786px; background-color: #EEE" />
 					</div>
 					<div class="bbD">
-						<label>项目名称：</label><select class="selCss" id="projectId"
-							style="width: 340px;" onChange="changeProject()"></select><label
-							style="margin-left: 15px">项目编号：</label><input class="input3"
-							type="text" style="width: 330px; background-color: #EEE"
-							id="projectIdNum" disabled="disabled" />
+						<span class="need">*</span><label style="margin-left: 0px">项目名称：</label><select
+							class="selCss" id="projectId" style="width: 340px;"
+							onChange="changeProject(this.options[this.options.selectedIndex].value)"></select>
+						<span class="need" style="margin-left: 15px">*</span><label
+							style="margin-left: 0px">销售人员：</label><select class="selCss"
+							id="salesId" style="width: 330px;" disabled></select>
 					</div>
 
 					<div class="bbD">
-						<label style="margin-left: 0px">客户联系人：</label><select
+						<span class="need">*</span><label style="margin-left: 0px">客户联系人：</label><select
 							class="selCss" id="contactUsers" multiple="multiple"
-							style="width: 340px;"></select><label style="margin-left: 15px">客户服务时间：</label>
+							style="width: 327px;"></select><span class="need"
+							style="margin-left: 17px">*</span><label style="margin-left: 0px">客户服务时间：</label>
 						<input class="input3" type="text" id="serviceDate"
-							onfocus="this.blur();" style="width: 300px" />
+							onfocus="this.blur();" style="width: 284px" />
 					</div>
 
 					<div class="bbD">
-						<label>派工类别：</label><select class="selCss" id="projectState"
+						<span class="need">*</span><label style="margin-left: 0px">派工类别：</label><select
+							class="selCss" id="projectState"
 							style="width: 150px; background-color: #EEE" disabled="disabled">
 						</select><label style="margin-left: 15px"></label><select class="selCss"
-							id="caseType" style="width: 150px;"></select><label
-							style="margin-left: 25px">服务级别：</label><select class="selCss"
-							id="serviceType" style="width: 110px;"></select><label
-							style="margin-left: 25px">服务时长：</label><select class="selCss"
-							id="casePeriod" style="width: 110px;">
-						</select>
+							id="caseType" style="width: 162px;" disabled></select><span
+							class="need" style="margin-left: 17px">*</span><label
+							style="margin-left: 0px">服务级别：</label><select class="selCss"
+							id="serviceType" style="width: 332px;"></select>
 					</div>
 
-					<div class="bbD">
-						<label style="float: left">上传附件：</label><input type="file"
-							name="myfile" id="myfile"
+					<div class="bbD" style="margin-top: 20px">
+						<label style="float: left; margin-left: 15px">上传附件：</label><input
+							type="file" name="myfile" id="myfile"
 							style="width: 335px; border: none; float: left"
 							accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel,application/vnd.ms-powerpoint,application/msword,image/*,application/pdf,application/x-zip-compressed,application/x-rar-compressed,.docx,.rar" />
 						<div id="progressDiv"
@@ -652,56 +705,55 @@ a:hover {
 						<br />
 					</div>
 					<div class="bbD" id="upFileDiv"
-						style="margin-top: 10px; float: left; display: none">
-						<label style="float: left; margin-left: 42px">附件：</label>
+						style="margin-top: 20px; display: none">
+						<label style="float: left; margin-left: 15px">已上传附件：</label>
 						<table id="filelist" style="height: auto;">
 						</table>
 					</div>
-					<div class="bbD">
-						<label style="margin-left: -15px; float: left; margin-top: 5px;">要求服务内容：</label>
+					<div class="bbD" style="margin-top: 20px">
+						<span class="need" style="float: left">*</span><label
+							style="float: left; margin-left: 0px">要求服务内容：</label>
 						<textarea class="input3" id="serviceContent"
-							style="width: 776px; resize: none; height: 80px; margin-top: 5px"></textarea>
+							style="width: 760px; resize: none; height: 80px;"></textarea>
 					</div>
 
 					<div class="bbD" style="margin-bottom: 30px;">
-						<label style="margin-left: -15px; float: left;">设备型号数量：</label>
+						<label style="margin-left: 12px; float: left;">设备型号数量：</label>
 						<textarea class="input3" id="deviceInfo"
-							style="width: 776px; resize: none; height: 80px;"></textarea>
+							style="width: 760px; resize: none; height: 80px;"></textarea>
 					</div>
 
 
 					<div class="bbD" id="checkDiv"
 						style="display: none; margin-bottom: 30px;">
-						<label><strong
-							style="font-size: 20px; margin-left: -28px;">审核结果：</strong></label> <input
-							type="radio" name="field02" id="checkResult" value="1"
+						<label><strong style="font-size: 20px; margin-left: 0px;">审核结果：</strong></label>
+						<input type="radio" name="field02" id="checkResult" value="1"
 							checked="checked" onclick="selCheckResult(1)" /><label
 							style="margin-right: 50px; margin-left: 5px;">通过</label><input
 							type="radio" name="field02" id="checkResult" value="2"
 							onclick="selCheckResult(2)" /><label
-							style="margin-left: 5px; color: red">拒绝</label>
+							style="margin-left: 5px; color: red">驳回</label>
 					</div>
 
 					<div class="bbD" id="serviceUserDiv"
 						style="margin-bottom: 30px; display: none;">
-						<label style="margin-left: 0px;">服务工程师：</label><select
-							class="selCss" id="serviceUsers" multiple="multiple"
-							style="width: 786px;"></select>
+						<span class="need" style="margin-left: 15px">*</span><label
+							style="margin-left: 0px;">服务工程师：</label><select class="selCss"
+							id="serviceUsers" multiple="multiple" style="width: 786px;"></select>
 
 					</div>
-					
+
 					<div class="bbD" id="remarkDiv"
 						style="margin-bottom: 30px; display: none;">
-						<label style="margin-left: 40px;color:red">备注：</label>
-                        <input type="text" class="input3"
-							id="remark" style="width: 776px;" />
+						<label style="margin-left: 68px; color: red">备注：</label> <input
+							type="text" class="input3" id="remark" style="width: 776px;" />
 					</div>
 
 					<div class="bbD" id="reasonDiv"
 						style="margin-bottom: 30px; display: none;">
-						<label style="margin-left: 15px">拒绝理由：</label><input
-							class="input3" id="reasonForReject"
-							style="width: 776px; font-weight: bold;"></input>
+						<span class="need" style="margin-left: 15px">*</span><label
+							style="margin-left: 0px">驳回理由：</label><input class="input3"
+							id="reasonForReject" style="width: 776px; font-weight: bold;"></input>
 					</div>
 
 
@@ -709,8 +761,8 @@ a:hover {
 						style="margin-bottom: 30px; margin-top: 30px; display: none"
 						id="operation">
 						<a class="addA" href="#" onclick="editProjectCase()"
-							style="margin-left: 95px" id="okclick">编辑</a> <a class="addA"
-							href="#" onclick="toProjectCaseListPage()">返回</a>
+							style="margin-left: 125px" id="okclick">重新提审</a> <a class="addA"
+							href="#" onclick="toPage()">返回</a>
 					</div>
 
 				</div>

@@ -24,25 +24,25 @@ public class CompanyDao {
 		jsonObject = new JSONObject();
 		String companyName = c.getCompanyName();
 		String abbrCompanyName = c.getAbbrCompanyName();
-		int fieldId = c.getFieldId();
 		int salesId = c.getSalesId();
+		int fieldId = c.getFieldId();
+		int fieldLevel = c.getFieldLevel();
+		String hospitalDataInfo = c.getHospitalDataInfo();
 		String address = c.getAddress();
 		int areaId = c.getAreaId();
 		String companySource = c.getCompanySource();
 		String createDate = c.getCreateDate();
 		String companyId = c.getCompanyId();
 		boolean isFmlkShare = c.getIsFmlkShare();
-
 		try {
-			sql2 = "select * from company where companyName like ? and isDeleted = ? and salesId = ?";
+			sql2 = "select * from company where companyName like ? and isDeleted = ? and isFmlkShare = ?";
 			con2 = DBConnection.getConnection_Mysql();
 			pre2 = con2.prepareStatement(sql2);
 			pre2.setString(1, "%" + companyName + "%");
 			pre2.setBoolean(2, false);
-			pre2.setInt(3, salesId);
+			pre2.setBoolean(3, isFmlkShare);
 			res2 = pre2.executeQuery();
 			if (res2.next()) {
-				// 找到了
 				jsonObject.put("errcode", "3");
 				return jsonObject.toString();
 			}
@@ -57,7 +57,7 @@ public class CompanyDao {
 		}
 
 		try {
-			sql = "insert into company (companyName,fieldId,salesId,address,createDate,abbrCompanyName,areaId,companySource,companyId,isFmlkShare) values (?,?,?,?,?,?,?,?,?,?)";
+			sql = "insert into company (companyName,fieldId,salesId,address,createDate,abbrCompanyName,areaId,companySource,companyId,isFmlkShare,updateDate,fieldLevel,hospitalDataInfo) values (?,?,?,?,?,?,?,?,?,?,?,?,?)";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setString(1, companyName);
@@ -70,31 +70,47 @@ public class CompanyDao {
 			pre.setString(8, companySource);
 			pre.setString(9, companyId);
 			pre.setBoolean(10, isFmlkShare);
+			pre.setString(11, createDate);
+			pre.setInt(12, fieldLevel);
+			pre.setString(13, hospitalDataInfo);
+			
 			int j = pre.executeUpdate();
 			if (j > 0) {
-				jsonObject.put("errcode", "0");
-				cuList = new ArrayList<ContactUser>();
-				for (int i = 0; i < arrayContact.length; i++) {
-					ContactUser cu = new ContactUser();
-					cu.setCompanyId(companyId);
-					cu.setUserName(arrayContact[i].split("#")[0]);
-					cu.setTel(arrayContact[i].split("#")[1]);
-					cu.setEmail(arrayContact[i].split("#")[2]);
-					cu.setDepartment(arrayContact[i].split("#")[3]);
-					cu.setPosition(arrayContact[i].split("#")[4]);
-					cu.setCreateDate(createDate);
-					cuList.add(cu);
+				if(arrayContact != null && arrayContact.length>0){
+					cuList = new ArrayList<ContactUser>();
+					for (int i = 0; i < arrayContact.length; i++) {
+						ContactUser cu = new ContactUser();
+						cu.setCompanyId(companyId);
+						cu.setUserName(arrayContact[i].split("#")[0]);
+						String tel = arrayContact[i].split("#")[1].equals("null")?"":arrayContact[i].split("#")[1];
+						String email = arrayContact[i].split("#")[2].equals("null")?"":arrayContact[i].split("#")[2];
+						String department = arrayContact[i].split("#")[3].equals("null")?"":arrayContact[i].split("#")[3];
+						String position = arrayContact[i].split("#")[4].equals("null")?"":arrayContact[i].split("#")[4];
+						String wechatNo = arrayContact[i].split("#")[5].equals("null")?"":arrayContact[i].split("#")[5];
+						cu.setTel(tel);
+						cu.setEmail(email);
+						cu.setDepartment(department);
+						cu.setPosition(position);
+						cu.setCreateDate(createDate);
+						cu.setUpdateDate(createDate);
+						cu.setWechatNo(wechatNo);
+						cuList.add(cu);
+					}
+					UserDao ud = new UserDao();
+					String ret = ud.createContactUser(cuList);
+					jsonObject.put("errcode", ret);
+				}else {
+					jsonObject.put("errcode", "0");
 				}
-				UserDao ud = new UserDao();
-				ud.createContactUser(cuList);
+				return jsonObject.toString();
 			} else {
 				jsonObject.put("errcode", "1");
+				return jsonObject.toString();
 			}
-			return jsonObject.toString();
 		} catch (Exception e) {
 			e.printStackTrace();
 			jsonObject = new JSONObject();
-			jsonObject.put("errcode", "2");
+			jsonObject.put("errcode", "4");
 			return jsonObject.toString();
 		} finally {
 			DBConnection.closeCon(con);
@@ -105,7 +121,7 @@ public class CompanyDao {
 	public String editCompany(Company c, String[] arrayContact) {
 		jsonObject = new JSONObject();
 		try {
-			sql = "update company set companyName = ?,abbrCompanyName = ?,fieldId = ? ,salesId = ?,address = ?,areaId = ?,companySource = ? where id = ?";
+			sql = "update company set companyName = ?,abbrCompanyName = ?,fieldId = ? ,salesId = ?,address = ?,areaId = ?,companySource = ?,updateDate=?,fieldLevel=?,hospitalDataInfo=? where id = ?";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setString(1, c.getCompanyName());
@@ -115,26 +131,21 @@ public class CompanyDao {
 			pre.setString(5, c.getAddress());
 			pre.setInt(6, c.getAreaId());
 			pre.setString(7, c.getCompanySource());
-			pre.setInt(8, c.getId());
+			pre.setString(8, c.getUpdateDate());
+			pre.setInt(9, c.getFieldLevel());
+			pre.setString(10, c.getHospitalDataInfo());
+			pre.setInt(11, c.getId());
 			int j = pre.executeUpdate();
-			// deletecuList 数据库中有，但arrayContact中没有
 			// updatecuList 数据库和arrayContact中都有
 			// newcuList数据库中没有，但arrayContact中有
 			// 获取数据库cuList
 			UserDao ud = new UserDao();
-			String userListJson = ud.getUserContactList(c.getCompanyId());
-		    JSONArray arrayList = new JSONObject().fromObject(userListJson).getJSONArray("contactUserList");
-			List<ContactUser> cuList = new ArrayList<ContactUser>();
-			cuList = (List<ContactUser>) JSONArray.toCollection(arrayList, ContactUser.class);
-			List<ContactUser> deletecuList = new ArrayList<ContactUser>();
 			List<ContactUser> updatecuList = new ArrayList<ContactUser>();
 			List<ContactUser> newcuList = new ArrayList<ContactUser>();
-		    deletecuList = ud.checkNonExistContactUser(c.getCompanyId(), arrayContact, cuList);
-			updatecuList = ud.checkExistContactUser(c.getCompanyId(), arrayContact, cuList);
-			newcuList = ud.checkNonExistContactUser2(c.getCompanyId(), arrayContact, cuList);
+			updatecuList = ud.checkExistContactUser(c.getCompanyId(), arrayContact);
+			newcuList = ud.checkNonExistContactUser(c.getCompanyId(), arrayContact);
 			if (j >= 0) {
 				jsonObject.put("errcode", "0");
-				ud.deleteContactUser(deletecuList);
 				ud.updateContactUser(updatecuList);
 				ud.createContactUser(newcuList);
 			} else {
@@ -152,14 +163,15 @@ public class CompanyDao {
 		}
 	}
 
-	public String deleteCompany(int id) {
+	public String deleteCompany(int id,String updateDate) {
 		jsonObject = new JSONObject();
 		try {
-			sql = "update company set isDeleted = ? where id = ?";
+			sql = "update company set isDeleted = ?,updateDate = ? where id = ?";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setBoolean(1, true);
-			pre.setInt(2, id);
+			pre.setString(2, updateDate);
+			pre.setInt(3, id);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -178,7 +190,7 @@ public class CompanyDao {
 		}
 	}
 
-	public String getCompanyList(int salesId, String companyName) {
+	public String getCompanyList(int salesId, String companyName,boolean isFmlkShare) {
 		try {
 			sql = "select * from company where isDeleted = 0";
 			if (salesId != 0 || !companyName.equals("")) {
@@ -190,9 +202,11 @@ public class CompanyDao {
 					sql += " and companyName like '%" + companyName + "%'";
 				}
 			}
+			sql += " and isFmlkShare = ?";
 			sql += " order by companyName";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
+			pre.setBoolean(1, isFmlkShare);
 			res = pre.executeQuery();
 			cList = new ArrayList<Company>();
 			while (res.next()) {
@@ -241,6 +255,9 @@ public class CompanyDao {
 				c.setAreaId(res.getInt("areaId"));
 				c.setAddress(res.getString("address"));
 				c.setCompanySource(res.getString("companySource"));
+				c.setIsFmlkShare(res.getBoolean("isFmlkShare"));
+				c.setFieldLevel(res.getInt("fieldLevel"));
+				c.setHospitalDataInfo(res.getString("hospitalDataInfo"));
 				jsonObject = new JSONObject();
 				jsonObject.put("errcode", "0");
 				jsonObject.put("errmsg", "query");
@@ -275,6 +292,9 @@ public class CompanyDao {
 				c.setAreaId(res.getInt("areaId"));
 				c.setAddress(res.getString("address"));
 				c.setCompanySource(res.getString("companySource"));
+				c.setIsFmlkShare(res.getBoolean("isFmlkShare"));
+				c.setFieldLevel(res.getInt("fieldLevel"));
+				c.setHospitalDataInfo(res.getString("hospitalDataInfo"));
 				jsonObject = new JSONObject();
 				jsonObject.put("errcode", "0");
 				jsonObject.put("errmsg", "query");

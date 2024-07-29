@@ -1,5 +1,4 @@
-
-function changePsd(mUid, mNickName,mHost) {
+function changePsd(mUid, mNickName, mHost) {
 	var oldpsd = $("#oldPsd").val().trim();
 	var newpsd = $("#newPsd").val().trim();
 	if (oldpsd == "" || newpsd == "") {
@@ -12,33 +11,27 @@ function changePsd(mUid, mNickName,mHost) {
 		alert("新密码不能少于6位");
 		return;
 	}
-
-	var data = new FormData();
-	data.append("oldpsd", oldpsd);
-	data.append("newpsd", newpsd);
-	data.append("nickName", mNickName);
-	data.append("uId", mUid);
-	var xhr = createxmlHttpRequest();
-	xhr.open("POST", mHost + "/checkAndUpdateUserPsd", true);
-	xhr.addEventListener("readystatechange", function() {
-		if (this.readyState === 4) {
-			var data = eval("(" + xhr.responseText + ")").errcode;
-			if (data == 0) {
-				alert("修改密码成功,请重新登入");
-				setTimeout(function() {
-					$(".banDel").hide();
-					parent.location.href = mHost + "/page/login";
-				}, 500);
-			} else if (data == 2) {
-				alert("旧密码输入错误,请重新输入");
-				$("#oldPsd").val("");
-			} else {
-				alert("修改密码错误");
-			}
-		}
-
-	});
-	xhr.send(data);
+	var params = {
+		"oldpsd" : oldpsd,
+		"newpsd" : newpsd,
+		"nickName" : mNickName,
+		"uId" : mUid
+	}
+	post("checkAndUpdateUserPsd",params,false);
+    if(requestReturn.result == "error"){
+		alert(requestReturn.error);
+	}else if(parseInt(requestReturn.code)==0){
+		alert("修改密码成功,请重新登入");
+		setTimeout(function() {
+			closeConfirmBox();
+			parent.location.href = mHost + "/page/login";
+		}, 500);
+	}else if(parseInt(requestReturn.code)==2){
+		alert("旧密码输入错误,请重新输入");
+		$("#oldPsd").val("");
+	}else{
+		alert("修改密码错误");
+	}
 }
 
 function closeConfirmBox() {

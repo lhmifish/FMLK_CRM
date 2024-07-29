@@ -120,7 +120,6 @@ p {
 					data : {"date" : $('#date').val(),"department" : dept},
 					cache : false,
 					success : function(returndata) {
-						//alert(returndata);
 						var str = '';
 						var link = '';
 						var data = eval("(" + returndata + ")").wechatlist;

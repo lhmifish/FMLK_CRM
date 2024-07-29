@@ -58,7 +58,7 @@ public class MyTimerTask2 {
 						companyName = company.getCompanyName();
 					}
 					List<User> userList = new ArrayList<User>();
-					userList = mUserService.getUserList(pc.getServiceUsers() + "," + pc.getSalesId());
+					userList = mUserService.getUserListByIds(pc.getServiceUsers() + "," + pc.getSalesId());
 
 					pc.setProjectId(projectName);
 					pc.setCaseId(companyName);

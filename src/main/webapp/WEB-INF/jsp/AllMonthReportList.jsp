@@ -8,9 +8,13 @@
 <meta http-equiv="cache-control" content="no-cache" />
 <title>所有人统计数据</title>
 <link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
+<link rel="stylesheet" type="text/css"
 	href="${pageContext.request.contextPath}/css/css.css?v=1990" />
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/select4.css?v=1997" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
@@ -18,6 +22,8 @@
 	src="${pageContext.request.contextPath}/js/jquery.jqprint-0.3.js"></script>
 <script src="http://www.jq22.com/jquery/jquery-migrate-1.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
+<script src="${pageContext.request.contextPath}/js/loading.js"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=3"></script>
 <style type="text/css">
 a:hover {
 	color: #FF00FF
@@ -37,134 +43,113 @@ html {
 	var isPermissionEdit;
 	var queryType;
 	var isUpdate;
+	var host;
+	var requestReturn;
 
-	$(document)
-			.ready(
-					function() {
-						sId = "${sessionId}";
-						if (sId == null || sId == "") {
-							parent.location.href = "${pageContext.request.contextPath}/page/login";
-						} else {
-							getUserPermissionList();
-							getUserList();
-							var year = new Date().getFullYear();
-							var month = new Date().getMonth() + 1;
-							month = month < 10 ? "0" + month : month;
-							$("#year").val(year);
-							$("#month").val(month);
-							queryType = 1;
-							
-							/* var updateDate = new Date(Date.parse("2021/10/01"));
-							var thisDate = new Date();
-							if(thisDate>updateDate){
-								isUpdate = true;
-							}else{
-								isUpdate = false;
-							} */
-							getUserMonthReportList();
-							$("#year").select2({});
-							$("#month").select2({});
-							$("#queryType").select2({});
-							$("#userId").select2({});
-						}
-					});
+	$(document).ready(function() {
+		sId = "${sessionId}";
+		host = "${pageContext.request.contextPath}";
+		if (sId == null || sId == "") {
+			parent.location.href = host + "/page/login";
+		} else {
+			getUserPermissionList();
+			getUserList();
+			var year = new Date().getFullYear();
+			var month = new Date().getMonth() + 1;
+			month = month < 10 ? "0" + month : month;
+			$("#year").val(year);
+			$("#month").val(month);
+			queryType = 1;
+			$("#year").select2({});
+			$("#month").select2({});
+			$("#queryType").select2({});
+			$("#userId").select2({});
+			getUserMonthReportList();
+		}
+	});
 
 	function getUserPermissionList() {
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/getUserPermissionList",
-					type : 'GET',
-					data : {
-						"nickName" : sId
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						var data = eval("(" + returndata + ")").permissionSettingList;
-						isPermissionEdit = false;
-						for ( var i in data) {
-							if (data[i].permissionId == 75) {
-								isPermissionEdit = true;
-								break;
-							}
-						}
-						if (!isPermissionEdit) {
-							window.location.href = "${pageContext.request.contextPath}/page/error";
-						} else {
-							$('#body').show();
-						}
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
+		var params = {
+			"nickName" : sId
+		}
+		get("getUserPermissionList", params, false)
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			var data = requestReturn.data.permissionSettingList;
+			isPermissionEdit = false;
+			for ( var i in data) {
+				if (data[i].permissionId == 75) {
+					isPermissionEdit = true;
+					break;
+				}
+			}
+			if (!isPermissionEdit) {
+				window.location.href = host + "/page/error";
+			} else {
+				$('#body').show();
+			}
+		}
 	}
 
 	function getUserList() {
-		$.ajax({
-			url : "${pageContext.request.contextPath}/userList",
-			type : 'GET',
-			data : {
-				"dpartId" : 99,
-				"date" : "",
-				"name" : "",
-				"nickName" : "",
-				"jobId" : "",
-				"isHide" : false
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var str = '';
-				var data2 = eval("(" + returndata + ")").userlist;
-				for ( var i in data2) {
-					str += '<option value="'+data2[i].nickName+'">'
-							+ data2[i].name + '</option>';
-				}
-				$("#userId").empty();
-				$("#userId").append(str);
-
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
+		var params = {
+			"dpartId" : 99,
+			"date" : "",
+			"name" : "",
+			"nickName" : "",
+			"jobId" : "",
+			"isHide" : false
+		}
+		get("userList", params, false)
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			var data2 = requestReturn.data.userlist;
+			var str = "";
+			for ( var i in data2) {
+				str += '<option value="'+data2[i].nickName+'">' + data2[i].name
+						+ '</option>';
 			}
-		});
+			$("#userId").empty();
+			$("#userId").append(str);
+		}
 	}
 
 	function getUserMonthReportList() {
-		var month;
-		var year;
-		if ($("#mSpan2").css("display") == 'none') {
-			queryType = 2;
-			month = "";
-		} else {
-			queryType = 1;
-			month = $("#month").val();
-		}
-		year = $("#year").val();
-		
-		var updateDate = new Date(Date.parse("2021/10/01"));
-		var selectDATE = new Date(Date.parse(year+"/" + month + "/01"));
-		if(selectDATE>=updateDate){
-			isUpdate = true;
-		}else{
-			isUpdate = false;
-		}
-		
-		
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/getUserMonthReportList",
-					type : 'GET',
-					data : {
+		loading();
+		setTimeout(
+				function() {
+					var month;
+					var year;
+					if ($("#mSpan2").css("display") == 'none') {
+						queryType = 2;
+						month = "";
+					} else {
+						queryType = 1;
+						month = $("#month").val();
+					}
+					year = $("#year").val();
+
+					var updateDate = new Date(Date.parse("2021/10/01"));
+					var selectDATE = new Date(Date.parse(year + "/" + month
+							+ "/01"));
+					if (selectDATE >= updateDate) {
+						isUpdate = true;
+					} else {
+						isUpdate = false;
+					}
+					var params = {
 						"year" : year,
 						"nickName" : $("#userId").val(),
 						"month" : month
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						//alert(returndata);
+					}
+					get("getUserMonthReportList", params, false)
+					if (requestReturn.result == "error") {
+						alert(requestReturn.error);
+					} else {
 						var str = "";
-						var data = eval("(" + returndata + ")").monthlist;
+						var data = requestReturn.data.monthlist;
 						if (data.length == 0) {
 							str += '<tr style="width: 100%"><td style="width: 100%;color:red;font-size: 12px; height: 35px;">月数据还没有录入</td></tr>';
 						} else {
@@ -180,33 +165,27 @@ html {
 							var allFestivalOverWorkTimeNum = 0;
 							var allIsLateNum = 0;
 							var allOverWorkTime4HNum = 0;
-
 							for (var i = 0; i < data.length; i++) {
 								var sign = parseInt(parseInt(data[i].noSignIn)
 										+ parseInt(data[i].noSignOut));
 								var monthAccumulateData = getMonthAccumulateData(
 										data[i].month, data[i].name);
-								/* var amount = (parseInt(data[i].scheduleT)
-										+ parseInt(data[i].dailyReportT)
-										+ parseInt(data[i].weekReportT)
-										+ parseInt(data[i].nextWeekPlanT) + parseInt(data[i].projectReportT))
-										* 50 + sign * 200 + data[i].isLate * 30; */
 								var amount;
-								if(isUpdate){
-									amount = (parseInt(data[i].scheduleT)
-											+ parseInt(data[i].dailyReportT))
+								if (isUpdate) {
+									amount = (parseInt(data[i].scheduleT) + parseInt(data[i].dailyReportT))
 											* 50 + sign * 200;
-									for(var k=0;k<parseInt(data[i].isLate)-3;k++){
-										amount += 30*Math.pow(2,k);
+									for (var k = 0; k < parseInt(data[i].isLate) - 3; k++) {
+										amount += 30 * Math.pow(2, k);
 									}
-									
-								}else{
-									amount = (parseInt(data[i].scheduleT)
-											+ parseInt(data[i].dailyReportT))
-											* 50 + sign * 200 + data[i].isLate * 30;
-								}	
-								
 
+								} else {
+									amount = (parseInt(data[i].scheduleT) + parseInt(data[i].dailyReportT))
+											* 50
+											+ sign
+											* 200
+											+ data[i].isLate
+											* 30;
+								}
 								var accumulateOverWorkTime = monthAccumulateData
 										.split("#")[0];
 								var accumulateYearVacation = monthAccumulateData
@@ -227,7 +206,6 @@ html {
 								var accumulateYearVacationTd = "";
 								var first_column = "";
 								var amountTd = "";
-
 								if (queryType == 1) {
 									first_column = '<td style="width:8%;height: 35px;" class="tdColor2">'
 											+ '<input type="text"  id="name'
@@ -252,7 +230,8 @@ html {
 
 								if (data[i].scheduleT != 0) {
 									scheduleTd = '<td style="width:8%;font-size: 14px; height: 35px;color:red;" class="tdColor2"><strong>'
-											+ data[i].scheduleT + '</strong></td>';
+											+ data[i].scheduleT
+											+ '</strong></td>';
 									allScheduleNum += parseInt(data[i].scheduleT);
 								} else {
 									scheduleTd = '<td style="width:8%;font-size: 12px; height: 35px;" class="tdColor2">'
@@ -261,7 +240,8 @@ html {
 
 								if (data[i].dailyReportT != 0) {
 									dailyReportTd = '<td style="width:8%;font-size: 14px; height: 35px;color:red;" class="tdColor2"><strong>'
-											+ data[i].dailyReportT + '</strong></td>';
+											+ data[i].dailyReportT
+											+ '</strong></td>';
 									allDailyReportNum += parseInt(data[i].dailyReportT);
 								} else {
 									dailyReportTd = '<td style="width:8%;font-size: 12px; height: 35px;" class="tdColor2">'
@@ -270,7 +250,8 @@ html {
 
 								if (data[i].weekReportT != 0) {
 									weekReportTd = '<td style="width:6%;font-size: 14px; height: 35px;color:red;" class="tdColor2"><strong>'
-											+ data[i].weekReportT + '</strong></td>';
+											+ data[i].weekReportT
+											+ '</strong></td>';
 									allWeekReportNum += parseInt(data[i].weekReportT);
 								} else {
 									weekReportTd = '<td style="width:6%;font-size: 12px; height: 35px;" class="tdColor2">'
@@ -279,7 +260,8 @@ html {
 
 								if (data[i].nextWeekPlanT != 0) {
 									nextWeekPlanTd = '<td style="width:7%;font-size: 14px; height: 35px;color:red;" class="tdColor2"><strong>'
-											+ data[i].nextWeekPlanT + '</strong></td>';
+											+ data[i].nextWeekPlanT
+											+ '</strong></td>';
 									allNextWeekPlanNum += parseInt(data[i].nextWeekPlanT);
 								} else {
 									nextWeekPlanTd = '<td style="width:7%;font-size: 12px; height: 35px;" class="tdColor2">'
@@ -288,7 +270,8 @@ html {
 
 								if (data[i].projectReportT != 0) {
 									projectReportTd = '<td style="width:7%;font-size: 14px; height: 35px;color:red;" class="tdColor2"><strong>'
-											+ data[i].projectReportT + '</strong></td>';
+											+ data[i].projectReportT
+											+ '</strong></td>';
 									allProjectReportNum += parseInt(data[i].projectReportT);
 								} else {
 									projectReportTd = '<td style="width:7%;font-size: 12px; height: 35px;" class="tdColor2">'
@@ -313,68 +296,22 @@ html {
 											+ data[i].isLate + '</td>';
 								}
 
-								/* if (data[i].overWorkTime != 0) {
-									overWorkTimeTd = '<td style="width:9%;height: 35px;" class="tdColor2"><strong>'
-									if (overWorkTime4H > 0) {
-										overWorkTimeTd += '<input type="text" style="font-size: 14px;border:none;width:40%;color:blue;text-align:right;font-weight:900" id="overWorkTime4H'
-												+ i
-												+ '" value="'
-												+ overWorkTime4H
-												+ '" oninput="OnChangeOverWorkTime4H(event)"/>';
-									} else {
-										overWorkTimeTd += '<input type="text" style="font-size: 14px;border:none;width:40%;text-align:right;" id="overWorkTime4H'
-												+ i
-												+ '" value="'
-												+ overWorkTime4H
-												+ '" oninput="OnChangeOverWorkTime4H(event)"/>';
-									}
-									overWorkTimeTd += "/"
-											+ '<input type="text" style="font-size: 14px;border:none;width:40%;color:blue;text-align:left;background-color:#fff;font-weight:900" disabled="disabled" id="overWorkTime'
-											+ i + '" value="'
-											+ (data[i].overWorkTime-overWorkTime4H) + '"/></strong></td>';
-											
-											overWorkTimeTd += "/"
-												+ '<input type="text" style="font-size: 14px;border:none;width:40%;color:blue;text-align:left;background-color:#fff;font-weight:900" disabled="disabled" id="overWorkTime'
-												+ i + '" value="'
-												+ (data[i].overWorkTime-overWorkTime4H) + '"/></strong></td>';
+								if (data[i].overWorkTime != 0) {
+									overWorkTimeTd = '<td style="width:10%;height: 35px;color:blue;" class="tdColor2"><strong>'
+											+ data[i].overWorkTime
+											+ '</strong></td>';
 
-									allOverWorkTimeNum += parseFloat(data[i].overWorkTime-overWorkTime4H);
-									allOverWorkTime4HNum += parseFloat(overWorkTime4H);
+								} else {
+									overWorkTimeTd = '<td style="width:10%;height: 35px" class="tdColor2">'
+											+ data[i].overWorkTime + '</td>';
 
-								} else { 
-									overWorkTimeTd = '<td style="width:9%;height: 35px" class="tdColor2">'
-										    + '<input type="text" style="font-size: 14px;border:none;width:40%;text-align:right;background-color:white;color:black" disabled="disabled" id="overWorkTime4H'
-											+ i
-											+ '" value="'
-											+ overWorkTime4H
-											+ '"/>/'
-											+ '<input type="text" style="font-size: 14px;border:none;width:40%;text-align:left;background-color:white;color:black" disabled="disabled" id="overWorkTime'
-											+ i
-											+ '" value="'
-											+ data[i].overWorkTime + '"/>' 
-											+ data[i].overWorkTime
-											+'</td>';*/
-									
-									if(data[i].overWorkTime != 0){
-										overWorkTimeTd = '<td style="width:10%;height: 35px;color:blue;" class="tdColor2"><strong>'
-											+ data[i].overWorkTime
-											+'</strong></td>';
-										
-									}else{
-										overWorkTimeTd = '<td style="width:10%;height: 35px" class="tdColor2">'
-											+ data[i].overWorkTime
-											+'</td>';
-										
-										
-									}
-									allOverWorkTimeNum += parseFloat(data[i].overWorkTime);
-									
-									
-							//	}
+								}
+								allOverWorkTimeNum += parseFloat(data[i].overWorkTime);
 
 								if (data[i].adjustRestTime != 0) {
 									adjustRestTimeTd = '<td style="width:8%;font-size: 14px; height: 35px;color:red;border-left:3px solid blue" class="tdColor2"><strong>'
-											+ data[i].adjustRestTime + '</strong></td>';
+											+ data[i].adjustRestTime
+											+ '</strong></td>';
 									allAdjustRestTimeNum += parseFloat(data[i].adjustRestTime);
 								} else {
 									adjustRestTimeTd = '<td style="width:8%;font-size: 12px; height: 35px;border-left:3px solid blue" class="tdColor2">'
@@ -444,9 +381,6 @@ html {
 										+ first_column
 										+ scheduleTd
 										+ dailyReportTd
-									//	+ weekReportTd
-									//	+ nextWeekPlanTd
-									//	+ projectReportTd
 										+ signTd
 										+ isLateTd
 										+ amountTd
@@ -459,52 +393,33 @@ html {
 										+ '<img title="编辑" style="vertical-align:middle" class="operation" src="../image/update.png" onclick="editMonthReport('
 										+ i + ')"/></td></tr>';
 							}
-
 							str += '<tr style="width: 100%"><td style="width: 8%; font-size: 12px; height: 35px;color:white;background-color:green" class="tdColor2">总数</td>'
 									+ '<td style="width: 8%; font-size: 12px; height: 35px;;color:white;background-color:green" class="tdColor2">'
 									+ allScheduleNum
 									+ '</td><td style="width: 8%; font-size: 12px; height: 35px;color:white;background-color:green" class="tdColor2">'
 									+ allDailyReportNum
-									/* + '</td><td style="width: 6%; font-size: 12px; height: 35px;color:white;background-color:green" class="tdColor2">'
-									+ allWeekReportNum */
-									/* + '</td><td style="width: 7%; font-size: 12px; height: 35px;color:white;background-color:green" class="tdColor2">'
-									+ allNextWeekPlanNum */
-									/* + '</td><td style="width: 7%; font-size: 12px; height: 35px;color:white;background-color:green;" class="tdColor2">'
-									+ allProjectReportNum */
 									+ '</td><td style="width: 10%; font-size: 12px; height: 35px;color:white;background-color:green" class="tdColor2">'
 									+ allSignNum
 									+ '</td><td style="width: 8%; font-size: 12px; height: 35px;color:white;background-color:green" class="tdColor2">'
 									+ allIsLateNum
 									+ '</td><td style="width: 8%; font-size: 12px; height: 35px;color:white;background-color:green;border-left:3px solid blue;border-right:3px solid blue;border-bottom:3px solid blue;" class="tdColor2">'
 									+ allAmountNum
-									+ '</td>'
-									
-									+'<td style="width: 10%;height: 35px;background-color:green;border-left:3px solid blue;border-right:3px solid blue;border-bottom:3px solid blue;color:white;" class="tdColor2">'
-									
-									/* + '<input type="text" style="font-size: 12px;border:none;width:40%;line-height:32px;text-align:right;color:white;background-color:green" disabled="disabled" id="allOverWorkTime4HNum" value="'
-									+ allOverWorkTime4HNum
-									+ '"/>'
-									+ '<a style="color:white;">/</a>'
-									+ '<input type="text" style="font-size: 12px;border:none;width:40%;line-height:32px;text-align:left;color:white;background-color:green" disabled="disabled" value="'
+									+ '</td><td style="width: 10%;height: 35px;background-color:green;border-left:3px solid blue;border-right:3px solid blue;border-bottom:3px solid blue;color:white;" class="tdColor2">'
 									+ allOverWorkTimeNum
-									+ '"/>' */
-									+ allOverWorkTimeNum
-									
-									+'</td><td class="tdColor2" style="width: 8%; font-size: 12px; height: 35px;color:white;background-color:green;" >'
+									+ '</td><td class="tdColor2" style="width: 8%; font-size: 12px; height: 35px;color:white;background-color:green;" >'
 									+ allAdjustRestTimeNum
 									+ '</td><td style="width: 8%; font-size: 12px; height: 35px;color:white;background-color:green;" class="tdColor2">'
 									+ allFestivalOverWorkTimeNum
 									+ '</td><td style="width: 8%; font-size: 12px; height: 35px;color:white;background-color:green;border-left:3px solid blue;border-right:3px solid blue;border-bottom:3px solid blue;" class="tdColor2">×</td>'
 									+ '<td style="width: 8%; font-size: 12px; height: 35px;color:white;background-color:green" class="tdColor2">×</td>'
 									+ '<td style="width: 8%; font-size: 12px; height: 35px;color:white;background-color:green" class="tdColor2">×</td></tr>'
+
 						}
 						$("#tb").empty();
 						$("#tb").append(str);
-
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
+						closeLoading();
 					}
-				});
+				}, 500);
 	}
 
 	function OnChangeOverWorkTime4H(event) {
@@ -516,8 +431,6 @@ html {
 	}
 
 	function editMonthReport(tid) {
-		//alert(tid);
-		//var mOverWorkTime4H = $("#overWorkTime4H" + tid).val();
 		var mAccumulateOverWorkTime = $("#accumulateOverWorkTime" + tid).val();
 		var mAccumulateYearVacation = $("#accumulateYearVacation" + tid).val();
 		var mOverWorkTime = $("#overWorkTime" + tid).val();
@@ -642,6 +555,27 @@ html {
 		});
 		return uId;
 	}
+
+	function loading() {
+		$('body').loading({
+			loadingWidth : 240,
+			title : '请稍等!',
+			name : 'test',
+			discription : '加载中',
+			direction : 'column',
+			type : 'origin',
+			originDivWidth : 40,
+			originDivHeight : 40,
+			originWidth : 6,
+			originHeight : 6,
+			smallLoading : false,
+			loadingMaskBg : 'rgba(0,0,0,0.2)'
+		});
+	}
+
+	function closeLoading() {
+		removeLoading('test');
+	}
 </script>
 </head>
 
@@ -650,7 +584,9 @@ html {
 		<div class="pageTop">
 			<div class="page">
 				<img src="../image/coin02.png" /><span><a href="#">首页</a>&nbsp;-&nbsp;<a
-					href="#">考勤管理</a>&nbsp;-</span>&nbsp;所有人月统计数据<span style="margin-left:30px;color:red">UPDATE INFORM:2021/10 起15分钟内迟到3次以内不扣款，3次以上每多迟到一次翻倍扣款(-30,-60,-120,...)</span>
+					href="#">考勤管理</a>&nbsp;-</span>&nbsp;所有人月统计数据<span
+					style="margin-left: 30px; color: red">UPDATE INFORM:2021/10
+					起15分钟内迟到3次以内不扣款，3次以上每多迟到一次翻倍扣款(-30,-60,-120,...)</span>
 			</div>
 		</div>
 
@@ -736,15 +672,18 @@ html {
 								class="tdColor">未签到/未签退</td>
 							<td style="width: 8%; font-size: 12px; height: 35px;"
 								class="tdColor">迟到</td>
-							<td style="width: 8%; font-size: 12px; height: 35px;border-left:3px solid blue;border-right:3px solid blue;border-top:3px solid blue;"
+							<td
+								style="width: 8%; font-size: 12px; height: 35px; border-left: 3px solid blue; border-right: 3px solid blue; border-top: 3px solid blue;"
 								class="tdColor">扣款总额</td>
-							<td style="width: 10%; font-size: 12px; height: 35px;border-left:3px solid blue;border-right:3px solid blue;border-top:3px solid blue;"
+							<td
+								style="width: 10%; font-size: 12px; height: 35px; border-left: 3px solid blue; border-right: 3px solid blue; border-top: 3px solid blue;"
 								class="tdColor">可调休加班</td>
 							<td style="width: 8%; font-size: 12px; height: 35px;"
 								class="tdColor">请假</td>
 							<td style="width: 8%; font-size: 12px; height: 35px;"
 								class="tdColor">法定节日加班</td>
-							<td style="width: 8%; font-size: 12px; height: 35px;border-left:3px solid blue;border-right:3px solid blue;border-top:3px solid blue;"
+							<td
+								style="width: 8%; font-size: 12px; height: 35px; border-left: 3px solid blue; border-right: 3px solid blue; border-top: 3px solid blue;"
 								class="tdColor">累计剩余调休</td>
 							<td style="width: 8%; font-size: 12px; height: 35px;"
 								class="tdColor">累计剩余年假</td>

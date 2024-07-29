@@ -8,9 +8,13 @@
 <meta http-equiv="cache-control" content="no-cache" />
 <title>项目信息管理</title>
 <link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
+<link rel="stylesheet" type="text/css"
 	href="${pageContext.request.contextPath}/css/css.css?v=1990" />
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/select4.css?v=1997" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
@@ -33,7 +37,10 @@
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
 <script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
 <script
-	src="${pageContext.request.contextPath}/js/getObjectList.js?v=15"></script>
+	src="${pageContext.request.contextPath}/js/getObjectList.js?v=2024"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=3"></script>
+<script src="${pageContext.request.contextPath}/js/loading.js"></script>
+<script src="${pageContext.request.contextPath}/js/getObject.js?v=0"></script>
 <style type="text/css">
 a:hover {
 	color: #FF00FF
@@ -63,13 +70,10 @@ html {
 	var thisProjectState;//编辑项的项目状态
 	var thisProjectSubState;//编辑项的项目节点
 	var thisProjectType;//编辑项的项目类型
-
-	var previousProjectState;//编辑项当前的项目状态
-	var previousProjectSubState;//编辑项当前的项目节点
-
+	var nextProjectState;
+	var nextProjectSubState;
 	var thisSubStateNum;//当前状态下项目节点个数
 	var stateNeedUpload;
-
 	var chunks;
 	var sliceSize;
 	var currentChunk;
@@ -77,6 +81,10 @@ html {
 	var upNesInfo;
 	var needUpload;
 	var projectManagerArr;
+	var isFmlkShare;
+	var projectSalesBeforeArr;
+	var projectSalesAfterArr;
+	var requestReturn;
 
 	$(document).ready(function() {
 		sId = "${sessionId}";
@@ -86,90 +94,94 @@ html {
 
 	function initialPage() {
 		page = 1;
-		getCompanyList("", 0, 0, 1);
+		var isCheck = document.getElementsByName('field03');
+		isFmlkShare = isCheck[0].checked;
+		getCompanyList("", 0, 0, 1, isFmlkShare);
 		getSalesList(0);
-		getMyProjectList(page);
-		
+		if (isFmlkShare) {
+			getProductStyleList();
+			$("#productStyleView").show();
+			$("#projectTypeView").hide();
+			document.getElementById("columnTitle").innerHTML = "产品类型";
+		} else {
+			getProjectTypeList(0, isFmlkShare);
+			$("#projectTypeView").show();
+			$("#productStyleView").hide();
+			document.getElementById("columnTitle").innerHTML = "项目经理";
+		}
 		$("#companyId").select2({});
 		$("#salesId").select2({});
-		$("#projectManager").select2({});
+		$("#productStyle").select2({});
+		$("#projectType").select2({});
+		getMyProjectList(page);
 		sliceSize = 1 * 1024 * 1024;
 	}
 
 	function getProjectManagerList(mProjectManager, mSalesBeforeUsersArr,
 			mSalesAfterUsersArr) {
-		var today = formatDate(new Date()).substring(0, 10);
-		var xhr = createxmlHttpRequest();
-		xhr.open("GET", host + "/userList?date=" + today
-				+ "&dpartId=102&name=&nickName=&jobId=&isHide=true", true);
-		xhr.onreadystatechange = function() {
-			if (this.readyState == 4) {
-				var str = '<option value="0">请选择...</option>';
-				var str2 = '';
-				var data = eval("(" + xhr.responseText + ")").userlist;
-				for ( var i in data) {
-					str2 += '<option value="' + data[i].UId + '">'
-							+ data[i].name + '</option>';
-				}
-				$("#projectManager").empty();
-				$("#projectManager").append(str + str2);
-				$("#projectManager").find(
-						'option[value="' + mProjectManager + '"]').attr(
-						"selected", true);
-				for (var i = 0; i < projectManagerArr.length; i++) {
-					var pid = projectManagerArr[i].split("#")[0];
-					$("#projectManager" + pid).empty();
-					$("#projectManager" + pid).append(str + str2);
-					$("#projectManager" + pid)
-							.find(
-									'option[value="'
-											+ projectManagerArr[i].split("#")[1]
-											+ '"]').attr("selected", true);
+		var params = {
+			"date" : formatDate(new Date()).substring(0, 10),
+			"dpartId" : 1,
+			"name" : "",
+			"nickName" : "",
+			"jobId" : "",
+			"isHide" : true,
+		}
+		get("userList", params, false)
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			var data = requestReturn.data.userlist
+			var str = '<option value="0">请选择...</option>';
+			for ( var i in data) {
+				str += '<option value="' + data[i].UId + '">' + data[i].name
+						+ '</option>';
+			}
+			for (var i = 0; i < projectManagerArr.length; i++) {
+				var pid = projectManagerArr[i].split("#")[0];
+				$("#projectManager" + pid).empty();
+				$("#projectManager" + pid).append(str);
+				$("#projectManager" + pid).find(
+						'option[value="' + projectManagerArr[i].split("#")[1]
+								+ '"]').attr("selected", true);
+				if (!isPermissionEditArr[i]) {
+					$("#projectManager" + pid).prop('disabled', true);
 				}
 			}
-		};
-		xhr.send();
+		}
 	}
 
-	function changeProjectManager(tId, tProjectState, tSalesId,tManager) {
-		if (sId == getUser(tSalesId).nickName || sId == "super.admin"
-				|| sId == "sun.ke") {
+	function changeProjectManager(tId, tProjectState, tSalesId, tManager) {
+		if (sId == getUser("uId", tSalesId).nickName || sId == "super.admin") {
 			//编辑项目经理
 			var tProjectManager = $("#projectManager" + tId).val();
 			var arrayContact = new Array();
 			arrayContact.push("");
-			$.ajax({
-				url : host + "/editProject",
-				type : 'POST',
-				cache : false,
-				dataType : "json",
-				data : {
-					"projectName" : "",
-					"projectType" : 0,
-					"projectManager" : tProjectManager,
-					"projectState" : tProjectState,
-					"projectFailedReason" : "",
-					"id" : tId,
-					"contactUsers" : "",
-					"salesBeforeUsers" : arrayContact,
-					"salesAfterUsers" : arrayContact,
-					"projectSubState" : 99
-				},
-				traditional : true,
-				success : function(returndata) {
-					//alert(returndata);
-					var data = returndata.errcode;
-					if (data == 0) {
-						alert("更改项目经理成功");
-					} else {
-						alert("更改项目经理失败");
-					}
-					getMyProjectList(page);
-					getProjectManagerList(0, null, null);
-				},
-				error : function(XMLHttpRequest, textStatus, errorThrown) {
-				}
-			});
+			var params = {
+				"id" : tId,
+				"projectName" : "",
+				"projectType" : 0,
+				"projectManager" : tProjectManager,
+				"projectState" : tProjectState,
+				"projectFailedReason" : "",
+				"contactUsers" : arrayContact,
+				"salesBeforeUsers" : arrayContact,
+				"salesAfterUsers" : arrayContact,
+				"productStyle":arrayContact,
+				"startDate":"",
+	            "endDate":"",
+				"projectSubState" : 99
+			}
+			post("editProject", params, true);
+			if (requestReturn.result == "error") {
+				alert(requestReturn.error);
+			} else if (parseInt(requestReturn.code) == 0) {
+				alert("更改项目经理成功");
+			} else {
+				alert("更改项目经理失败");
+			}
+			getMyProjectList(page);
+			getProjectManagerList(0, null, null);
 		} else {
 			alert("你没有权限更改此项目的项目经理");
 			$("#projectManager" + tId).val(tManager);
@@ -177,35 +189,42 @@ html {
 	}
 
 	function getMyProjectList(mPage) {
+		loading();
 		page = mPage;
 		var mCompanyId = $("#companyId").val();
 		var mProjectName = $("#projectName").val().trim();
 		var mSalesId = $("#salesId").val();
-		var mProjectManager = $("#projectManager").val();
+		var projectType = $("#projectType").val();
+		var productStyle = $("#productStyle").val();
 		mCompanyId = (mCompanyId == null || mCompanyId == 0) ? "" : mCompanyId;
 		mSalesId = (mSalesId == null) ? 0 : mSalesId;
-		mProjectManager = (mProjectManager == null) ? 0 : mProjectManager;
-
-		$
-				.ajax({
-					url : host + "/projectList",
-					type : 'GET',
-					data : {
-						"companyId" : mCompanyId,
-						"projectName" : mProjectName,
-						"salesId" : mSalesId,
-						"projectManager" : mProjectManager
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						var data = eval("(" + returndata + ")").projectList;
+		projectType = (projectType == null) ? 0 : projectType;
+		productStyle = (productStyle == null) ? 0 : productStyle;
+		var params = {
+			"companyId" : mCompanyId,
+			"projectName" : mProjectName,
+			"salesId" : mSalesId,
+			"isFmlkShare" : isFmlkShare,
+			"projectType" : projectType,
+			"productStyle" : productStyle
+		}
+		setTimeout(
+				function() {
+					get("projectList", params, false)
+					if (requestReturn.result == "error") {
+						closeLoading();
+						alert(requestReturn.error);
+					} else {
+						var data = requestReturn.data.projectList;
 						var str = "";
 						var num = data.length;
-						var projectArr = new Array();
+						var projectArr = new Array();//项目的销售
 						var projectArr2 = new Array();//这里让项目经理也有权利编辑项目
 						projectTypeArr = new Array();
 						projectManagerArr = new Array();
+						projectSalesBeforeArr = new Array();
+						projectSalesAfterArr = new Array();
+						var mArrProductStyle = getAllProductStyle();
 						if (num > 0) {
 							lastPage = Math.ceil(num / 10);
 							for ( var i in data) {
@@ -214,24 +233,24 @@ html {
 									projectManagerArr.push(data[i].id + "#"
 											+ data[i].projectManager + "#"
 											+ data[i].salesId)
-
 									projectArr.push(data[i].salesId);
+									projectSalesBeforeArr
+											.push(data[i].salesBeforeUsers);
+									projectSalesAfterArr
+											.push(data[i].salesAfterUsers);
 									//这里新加项目经理有权更改项目状态,如果当前登入用户为该项目的项目经理
 									if (data[i].projectManager == 0) {
 										//没有项目经理
 										projectArr2.push(false);
-									} else if (getUser(data[i].projectManager).nickName == sId) {
+									} else if (getUser("uId",
+											data[i].projectManager).nickName == sId) {
 										//项目经理就是本人
 										projectArr2.push(true);
 									} else {
 										projectArr2.push(false);
 									}
 									projectTypeArr.push(data[i].id + "#"
-											+ data[i].projectType)
-									/* var projectManagerStr = (data[i].projectManager == 0) ? '<td style="width:7%;color:red" class="tdColor2">未指派</td>'
-											: '<td style="width:7%" class="tdColor2">'
-													+ getUser(data[i].projectManager).name
-													+ '</td>'; */
+											+ data[i].projectType);
 									var ps;
 									if (data[i].projectState <= 2) {
 										ps = getProjectSubState(
@@ -244,7 +263,7 @@ html {
 										ps = '<span style="color:orange">售前服务</span></br><span style="margin-left:24px;font-size:10px">'
 												+ ps + '</span>';
 									} else if (data[i].projectState == 1) {
-										ps = '<span style="color:blue">项目实施中</span></br><span style="margin-left:24px;font-size:10px">'
+										ps = '<span style="color:blue">项目实施</span></br><span style="margin-left:24px;font-size:10px">'
 												+ ps + '</span>';
 									} else if (data[i].projectState == 2) {
 										ps = '<span style="color:green">售后服务</span></br><span style="margin-left:24px;font-size:10px">'
@@ -264,53 +283,59 @@ html {
 											+ data[i].salesId + "#"
 											+ data[i].projectName + "#"
 											+ data[i].companyId;
-									str += '<tr style="width:1300px"><td style="width:14%" class="tdColor2">'
+									str += '<tr style="width:1300px"><td style="width:14%" class="tdColor2"><a onclick="toEditProjectPage('
+										    + data[i].id
+										    + ')">'
 											+ data[i].projectId
-											+ '</td>'
+											+ '</a></td>'
 											+ '<td style="width:40%" class="tdColor2">'
 											+ data[i].projectName
 											+ '</br><span style="font-size:10px">'
-											+ getCompany(data[i].companyId).companyName
+											+ getCompany("companyId",
+													data[i].companyId).companyName
 											+ '</span></td>'
 											+ '<td style="width:7%" class="tdColor2">'
-											+ getUser(data[i].salesId).name
+											+ getUser("uId", data[i].salesId).name
 											+ '</td>'
-											+ '<td style="width:7%" class="tdColor2">'
-											+ '<select class="selCss" style="width: 100%;border:none" id="projectManager'
-											+ data[i].id
-											+ '" '
-											+ 'onChange="changeProjectManager('
-											+ data[i].id
-											+ ','
-											+ data[i].projectState
-											+ ','
-											+ data[i].salesId
-											+ ','
-											+ data[i].projectManager
-											+ ')"/>'
-											+ '</td>'
-											//+ projectManagerStr
-
+											+ '<td style="width:7%;font-size:12px" class="tdColor2">';
+									if (isFmlkShare) {
+										str += getListItemProductStyle(
+												mArrProductStyle,
+												data[i].productStyle);
+									} else {
+										str += '<select class="selCss" style="width: 100%;border:none" id="projectManager'
+												+ data[i].id
+												+ '" '
+												+ 'onChange="changeProjectManager('
+												+ data[i].id
+												+ ','
+												+ data[i].projectState
+												+ ','
+												+ data[i].salesId
+												+ ','
+												+ data[i].projectManager
+												+ ')"/>';
+									}
+									str += '</td>'
 											+ '<td style="width:18%;" class="tdColor2">'
-											+ '<div>'
-											+ ps
-											+ '<img src="../image/coinL1.png" style="width:14px;float:right;margin-right:10px;margin-top:-8px" title="更改项目状态" onclick="selectProjectState('
-											+ i
-											+ ','
-											+ data[i].id
-											+ ','
-											+ data[i].projectState
-											+ ',\''
-											+ mProjectFailedReason
-											+ '\','
-											+ data[i].projectSubState
-											+ ','
-											+ data[i].projectType
-											+ ',\''
-											+ thisUpNesInfo
-											+ '\''
-											+ ')">'
-											+ '</div>'
+											+ '<div>' + ps;
+									if (data[i].projectState < 3) {
+										str += '<img src="../image/coinL1.png" style="width:14px;float:right;margin-right:10px;margin-top:-8px" title="更改项目状态" onclick="selectProjectState('
+												+ i
+												+ ','
+												+ data[i].id
+												+ ','
+												+ data[i].projectState
+												+ ',\''
+												+ mProjectFailedReason
+												+ '\','
+												+ data[i].projectSubState
+												+ ','
+												+ data[i].projectType
+												+ ',\''
+												+ thisUpNesInfo + '\'' + ')">';
+									}
+									str += '</div>'
 											+ '</td>'
 											+ '<td style="width:7%" class="tdColor2">'
 											+ '<img name="img_edit" title="查看" style="vertical-align:middle;" class="operation" src="../image/update.png" onclick="toEditProjectPage('
@@ -335,154 +360,50 @@ html {
 								+ lastPage;
 						$("#tb").empty();
 						$("#tb").append(str);
-						
-						
-						//getProjectManagerStr(projectManagerArr);
 						//这里给销售和管理员加编辑权限
-						matchUserPremission(projectArr,projectArr2);
-                        
-						//以下是项目基础信息，暂关闭项目经理变更权限
-						/*  for(var k=0;k<isPermissionEditArr.length;k++){
-							if(isPermissionEditArr[k]){
-								document.getElementsByName("img_edit")[k].setAttribute("title", "编辑");
-								document.getElementsByName("a_edit")[k].innerHTML = "编辑";
-							}
-						}  */
+						matchUserPremission(projectArr, projectArr2);
 						getProjectManagerList(0, null, null);
-
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
+						closeLoading();
 					}
-				});
+				}, 500);
 	}
-	
-	
-	function matchUserPremission(objectArr,mProjectArr2) {
+	/* objectArr-项目销售  mProjectArr2-是否是项目经理 */
+	function matchUserPremission(objectArr, mProjectArr2) {
 		if (objectArr.length > 0 && isPermissionEdit) {
 			isPermissionEditArr = new Array();
-			var xhr = createxmlHttpRequest();
-			xhr.open("GET", host + "/getUserByNickName?nickName=" + sId, true);
-			xhr.onreadystatechange = function() {
-				if (this.readyState == 4) {
-					var data = eval("(" + xhr.responseText + ")").user;
-					var tId = data[0].UId;
-					var tRoleId = data[0].roleId;
-					var arrImg = document.getElementsByName("img_edit");
-					for (var j = 0; j < arrImg.length; j++) {
-						if (objectArr[j] == tId || tRoleId == 11) {
-							isPermissionEditArr.push(true);
-							arrImg[j].setAttribute("title", "编辑");
-							document.getElementsByName("a_edit")[j].innerHTML = "编辑";
-						} else if(mProjectArr2[j]){
-							isPermissionEditArr.push(true);
-							arrImg[j].setAttribute("title", "编辑");
-							document.getElementsByName("a_edit")[j].innerHTML = "编辑";
-						} else {
-							isPermissionEditArr.push(false);
-						}
-					}
+			var myUser = getUser("nickName", sId);
+			var tId = myUser.UId;
+			var tRoleId = myUser.roleId;
+			var arrImg = document.getElementsByName("img_edit");
+			for (var j = 0; j < arrImg.length; j++) {
+				if (objectArr[j] == tId || tRoleId == 11 || tRoleId == 3
+						|| tRoleId == 4) {
+					//管理员，销售经理，销售副经理，销售本人
+					isPermissionEditArr.push(true);
+					arrImg[j].setAttribute("title", "编辑");
+					document.getElementsByName("a_edit")[j].innerHTML = "编辑";
+				} else {
+					isPermissionEditArr.push(false);
 				}
-			};
-			xhr.send();
+			}
 		}
-	}
-
-	function getUser(uId) {
-		var user;
-		$.ajax({
-			url : host + "/getUserById",
-			type : 'GET',
-			data : {
-				"uId" : uId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				user = eval("(" + returndata + ")").user[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return user;
-	}
-
-	function getThisUser() {
-		var user;
-		$.ajax({
-			url : host + "/getUserByNickName",
-			type : 'GET',
-			data : {
-				"nickName" : sId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				user = eval("(" + returndata + ")").user[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return user;
-	}
-
-	function getCompany(mCompanyId) {
-		var company;
-		$.ajax({
-			url : host + "/getCompanyByCompanyId",
-			type : 'GET',
-			data : {
-				"companyId" : mCompanyId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				company = eval("(" + returndata + ")").company[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return company;
-	}
-
-	function getProjectSubState(mProjectState, mProjectType, mProjectSubState) {
-		var projectSubStateName;
-		$.ajax({
-			url : host + "/projectSubStateList",
-			type : 'GET',
-			data : {
-				"projectState" : mProjectState,
-				"projectType" : mProjectType
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").projectSubStateList;
-				for ( var i in data) {
-					if (data[i].PId == mProjectSubState) {
-						projectSubStateName = data[i].name;
-					}
-
-				}
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return projectSubStateName;
 	}
 
 	function createProjectStateSelection(projectState) {
 		var selectionArr = new Array();
 		selectionArr.push("售前服务");
-		selectionArr.push("项目实施中");
+		selectionArr.push("项目实施");
 		selectionArr.push("售后服务");
 		selectionArr.push("项目结束关闭");
 		selectionArr.push("项目失败关闭");
 		var opt = "";
 		for (var i = 0; i < 5; i++) {
-			if (i == projectState || i == 3 || i == 4) {
-				opt += "<option value='"+i+"'>" + selectionArr[i] + "</option>";
+			if (i == projectState || i==3 || i==4) {
+				opt += "<option value='"+i+"' style='color:brown'>"
+						+ selectionArr[i] + "</option>";
 			} else {
-				opt += "<optgroup label='"+selectionArr[i]+"' style='color:gray;font-weight:lighter'></optgroup>";
+				opt += "<option value='"+i+"' disabled>" + selectionArr[i]
+						+ "</option>";
 			}
 		}
 		$("#projectState").empty();
@@ -493,55 +414,37 @@ html {
 
 	function selectProjectState(t, id, projectState, projectFailedReason,
 			projectSubState, projectType, mUpNesInfo) {
-		if(isPermissionEditArr[t % 10] || sId=="sun.ke"){
+		if (isPermissionEditArr[t % 10]) {
+			//获取项目状态列表及选中
 			createProjectStateSelection(projectState);
+			//获取项目进度列表及选中
+			getProjectSubStateList(projectState, projectType, projectSubState);
 			upNesInfo = mUpNesInfo;
-			//	alert(mUpNesInfo);
 			$("#progressDiv").hide();
 			$("#myfile").val("");
 			thisProjectState = projectState;
 			thisProjectSubState = projectSubState;
 			thisProjectType = projectType;
-			previousProjectState = projectState;
-			previousProjectSubState = projectSubState;
-			$("#projectState").val(projectState);
-
-			/* if (projectState == 0) {
-				$("#projectState").css("color", "orange");
-			} else if (projectState == 1) {
-				$("#projectState").css("color", "blue");
-			} else if (projectState == 2) {
-				$("#projectState").css("color", "green");
-			} else if (projectState == 3) {
-				$("#projectState").css("color", "black");
-			} else {
-				$("#projectState").css("color", "red");
-			} */
-			//获取节点状态列表
-			getProjectSubStateList(projectState, projectType, projectSubState);
-			//显示隐藏上传div
-			var SubStateText = getProjectSubState(projectState, projectType,
-					projectSubState);
-			if (SubStateText == "需求分析&方案制定" || SubStateText == "招投标&合同签订"
-					|| SubStateText == "到货验收" || SubStateText == "安装调试"
-					|| SubStateText == "项目测试" || SubStateText == "项目实施"
-					|| SubStateText == "项目试运行" || SubStateText == "项目终验") {
+			editId = id;
+			if (projectState == 1) {
 				$("#fileUploadDiv").show();
 			} else {
 				$("#fileUploadDiv").hide();
 			}
-			editId = id;
 			//显示隐藏失败原因div
 			if (projectState == 4) {
-				if (projectFailedReason != null) {
+				if (projectFailedReason != null && projectFailedReason != "") {
 					$("#projectFailedReason").val(projectFailedReason);
 				}
+				//显示失败理由
 				$("#pfr").show();
 			} else {
 				$("#pfr").hide();
 			}
 			if (projectState <= 2) {
+				//显示项目进度及提交按钮
 				$("#pss").show();
+				$("#confirmStateId").show();
 				$("#projectState").css("background-color", "#fff");
 				$("#projectState").removeAttr("disabled");
 			} else {
@@ -551,7 +454,7 @@ html {
 				$("#projectState").attr("disabled", "disabled");
 			}
 			$("#banDel2").show();
-		}else{
+		} else {
 			alert("你没有权限更改此项目状态");
 		}
 	}
@@ -636,112 +539,249 @@ html {
 		}
 	}
 
-	function changeProjectSubState(mProjectSubState) {
-		var SubStateText = getProjectSubState(previousProjectState,
-				thisProjectType, mProjectSubState);
-		if (SubStateText == "需求分析&方案制定" || SubStateText == "招投标&合同签订"
-				|| SubStateText == "到货验收" || SubStateText == "安装调试"
-				|| SubStateText == "项目测试" || SubStateText == "项目实施"
-				|| SubStateText == "项目试运行" || SubStateText == "项目终验") {
-			$("#fileUploadDiv").show();
-		} else {
-			$("#fileUploadDiv").hide();
-		}
-		previousProjectSubState = mProjectSubState;
-	}
-
+	//弹窗更改项目状态
 	function changeProjectState(mProjectState) {
 		//失败原因div显示隐藏
+		if (mProjectState <= 2) {
+			$("#pss").show();
+			if (mProjectState == 1) {
+				$("#fileUploadDiv").show();
+			} else {
+				$("#fileUploadDiv").hide();
+			}
+			document.getElementById("oprText").innerHTML = "进度更新";
+		} else {
+			$("#pss").hide();
+			$("#fileUploadDiv").hide();
+			document.getElementById("oprText").innerHTML = "关闭项目";
+		}
 		if (mProjectState == 4) {
 			$("#pfr").show();
 		} else {
 			$("#pfr").hide();
 			$("#projectFailedReason").val("");
 		}
-		//项目节点div显示隐藏
-		if (mProjectState <= 2) {
-			$("#pss").show();
+		if (mProjectState != thisProjectState) {
+			//更新
+			getProjectSubStateList(mProjectState, thisProjectType, 0);
 		} else {
-			$("#pss").hide();
+			getProjectSubStateList(thisProjectState, thisProjectType,
+					thisProjectSubState);
 		}
-
-		if (mProjectState != previousProjectState) {
-			previousProjectSubState = 0;
-			getProjectSubStateList(mProjectState, thisProjectType,
-					previousProjectSubState);
-			previousProjectState = mProjectState;
-			changeProjectSubState(previousProjectSubState);
-		}
-
 	}
 
-	//检查文件服务器相同文件是否存在
-	function checkFileExist(reportType, fileName) {
-		var isExist = false;
+	function editProjectState() {
+		//当前选择的状态
+		var mProjectState = $("#projectState").val();
+		var mProjectSubState = $("#projectSubState").val();
+		if (mProjectState == 3 || mProjectState == 4) {
+			//项目关闭
+			nextProjectState = mProjectState;
+			nextProjectSubState = 0;
+			var projectFailedReason = $("#projectFailedReason").val().trim();
+			if (mProjectState == 4 && projectFailedReason == "") {
+				alert("请填写项目失败原因");
+				return;
+			}
+		} else {
+			var retData = getNextProjectSubState();
+			nextProjectState = retData.projectState;
+			nextProjectSubState = retData.PId;
+		}
+		if ((nextProjectState == 1 && thisProjectState == 0)
+				|| nextProjectState == 3) {
+			//检查项目合同
+			var existContractUpload = checkProjectContract();
+			if (existContractUpload == "") {
+				alert("更新此状态/进度需要提交此项目的合同文件");
+				return;
+			}
+		}
+		if (thisProjectState == 1) {
+			var myFile = document.getElementById("myfile").files[0];
+			if (myFile != undefined) {
+				if (myFile.size > 1 * 1024 * 1024 * 1024) {
+					alert("单个文件上传不能大于1GB");
+					return;
+				} else {
+					chunks = Math.ceil(myFile.size / sliceSize);
+					$("#progressDiv").show();
+					currentChunk = 0;
+					//先上传文件
+					doUploadFile(myFile);
+				}
+			} else {
+				var alertText;
+				if (thisProjectSubState == 0) {
+					alertText = "货物验收单";
+				} else if (thisProjectSubState == 1) {
+					alertText = "实施安装/投放文件"
+				} else {
+					alertText = "项目验收文件"
+				}
+				alert("更新此状态/进度需要提交" + alertText);
+				return;
+			}
+		} else {
+			editProject(null);
+		}
+	}
+
+	function checkProjectType(type) {
+		//type 1信息2共享陪护
+		isFmlkShare = type == 2;
+		if (isFmlkShare) {
+			getProductStyleList();
+			$("#productStyleView").show();
+			$("#projectTypeView").hide();
+			$("#projectType").val("");
+			document.getElementById("columnTitle").innerHTML = "产品类型";
+		} else {
+			getProjectTypeList(0, isFmlkShare);
+			$("#projectTypeView").show();
+			$("#productStyleView").hide();
+			$("#productStyle").val("");
+			document.getElementById("columnTitle").innerHTML = "项目经理";
+		}
+		getCompanyList("", 0, 0, 1, isFmlkShare);
+		page = 1;
+		getMyProjectList(page)
+	}
+
+	function getAllProductStyle() {
+		var productStyleArr = new Array();
+		var options = document.querySelector('#productStyle').querySelectorAll(
+				'option');
+		for (var i = 0; i < options.length; i++) {
+			productStyleArr[options[i].value] = options[i].text;
+		}
+		return productStyleArr;
+	}
+
+	function getProjectSubState(mProjectState, mProjectType, mProjectSubState) {
+		var projectSubStateName;
 		$.ajax({
-			url : host + "/queryUploadFile",
+			url : host + "/projectSubStateList",
 			type : 'GET',
 			data : {
-				"createYear" : upNesInfo.split("#")[1],
-				"projectId" : upNesInfo.split("#")[0],
-				"reportType" : reportType
+				"projectState" : mProjectState,
+				"projectType" : mProjectType
 			},
 			cache : false,
 			async : false,
 			success : function(returndata) {
-				var data = eval("(" + returndata + ")").fileList;
-				for (var i = 0; i < data.length; i++) {
-					var path = data[i].path;
-					var tFileName = path.substring(path.lastIndexOf("\/") + 1,
-							path.length);
-					if (fileName == tFileName) {
-						isExist = true;
+				var data = eval("(" + returndata + ")").projectSubStateList;
+				for ( var i in data) {
+					if (data[i].PId == mProjectSubState) {
+						projectSubStateName = data[i].name;
+					}
+
+				}
+			},
+			error : function(XMLHttpRequest, textStatus, errorThrown) {
+			}
+		});
+		return projectSubStateName;
+	}
+
+	function getNextProjectSubState() {
+		var isFind = false;
+		var retData = "";
+		$.ajax({
+			url : host + "/projectSubStateList",
+			type : 'GET',
+			data : {
+				"projectState" : 99,
+				"projectType" : thisProjectType
+			},
+			cache : false,
+			async : false,
+			success : function(returndata) {
+				var data = eval("(" + returndata + ")").projectSubStateList;
+				for ( var i in data) {
+					if (isFind) {
+						retData = data[i];
 						break;
+					} else {
+						if (thisProjectSubState == data[i].PId
+								&& thisProjectState == data[i].projectState) {
+							isFind = true;
+						}
 					}
 				}
 			},
 			error : function(XMLHttpRequest, textStatus, errorThrown) {
 			}
 		});
-		return isExist;
+		return retData;
 	}
 
-	function addProjectReport(reportDesc, tProjectState, tProjectFailedReason,
-			tProjectSubState) {
-		var date = formatDate(new Date()).substring(0, 10);
-		var userId = getThisUser().UId;
-		var report = reportDesc + "-文档";
-		var myFile = document.getElementById("myfile").files[0];
-		if(myFile == undefined){
-			alert("必须上传文件才能走到下一步");
-			return;
-		}
-		
-		
-		if (myFile != undefined && myFile.size > 3 * 1024 * 1024 * 1024) {
-			alert("单个文件上传不能大于3GB");
-			return;
-		}
-		if (getThisUser().departmentId == 2) {
-			//销售
-			userReportType = 1;
-		} else {
-			userReportType = 3;
-		}
-		if (myFile != undefined) {
-			//先检查是否有同文件名的文件
-			if (!checkFileExist(userReportType, myFile.name)) {
-				chunks = Math.ceil(myFile.size / sliceSize);
-				$("#progressDiv").show();
-				currentChunk = 0;
-				doUploadFile(myFile, date, userId, report, userReportType,
-						tProjectState, tProjectFailedReason, tProjectSubState);
-			} else {
-				alert("有相同文件名的附件已上传，请修改文件名");
-				return;
+	function checkProjectContract() {
+		var retData = ""
+		$.ajax({
+			url : host + "/projectReportList",
+			type : 'GET',
+			data : {
+				"projectId" : upNesInfo.split("#")[0]
+			},
+			cache : false,
+			async : false,
+			success : function(returndata) {
+				var data2 = eval("(" + returndata + ")").prList;
+				if (data2.length > 0) {
+					for ( var i in data2) {
+						if (data2[i].reportType == 97) {
+							retData = data2[i].projectId;
+							break;
+						}
+					}
+				}
+			},
+			error : function(XMLHttpRequest, textStatus, errorThrown) {
 			}
-		}
 
+		});
+		return retData;
+	}
+
+	function doUploadFile(mFile) {
+		if (currentChunk < chunks) {
+			var formData = new FormData();
+			formData.append('reportType', 2);
+			formData.append('projectId', upNesInfo.split("#")[0]);
+			formData.append('createYear', "");
+			formData.append('fileSize', mFile.size);
+			formData.append('fileName', mFile.name);
+			formData.append('chunks', chunks);
+			formData.append('chunk', currentChunk);
+			formData.append('file', getSliceFile(mFile, currentChunk));
+			//微信推送需要
+			formData.append('salesId', upNesInfo.split("#")[2]);
+			formData.append('userId', getUser("nickName", sId).UId);
+			formData.append('projectName', upNesInfo.split("#")[3]);
+			formData.append('companyName', getCompany("companyId", upNesInfo
+					.split("#")[4]).companyName);
+
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", host + "/addProjectReport");
+			xhr.send(formData);
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState == 4) {
+					var errcode = eval("(" + xhr.responseText + ")").errcode;
+					var info = eval("(" + xhr.responseText + ")").info;
+					if (errcode == 0) {
+						upDateProgress(currentChunk);
+						currentChunk++;
+						doUploadFile(mFile);
+					} else {
+						alert("上传错误，错误信息：" + info);
+						return;
+					}
+				}
+			}
+		} else {
+			editProject(mFile);
+		}
 	}
 
 	//获取分片文件
@@ -761,65 +801,61 @@ html {
 		cont.style.width = percent.toFixed(2) + '%';
 	}
 
-	function doUploadFile(mFile, mDate, mUserId, mReport, mReportType,
-			tProjectState, tProjectFailedReason, tProjectSubState) {
-		if (currentChunk < chunks) {
-			var formData = new FormData();
-			formData.append('reportType', mReportType);
-			formData.append('projectId', upNesInfo.split("#")[0]);
-			formData.append('createYear', upNesInfo.split("#")[1]);
-			formData.append('fileSize', mFile.size);
-			formData.append('fileName', mFile.name);
-			formData.append('chunks', chunks);
-			formData.append('chunk', currentChunk);
-			formData.append('file', getSliceFile(mFile, currentChunk));
-			//微信推送需要
-			formData.append('salesId', upNesInfo.split("#")[2]);
-			formData.append('userId', mUserId);
-			formData.append('projectName', upNesInfo.split("#")[3]);
-			formData.append('companyName',
-					getCompany(upNesInfo.split("#")[4]).companyName);
-
-			var xhr = new XMLHttpRequest();
-			xhr.open("POST", host + "/addProjectReport");
-			xhr.send(formData);
-			xhr.onreadystatechange = function() {
-				if (xhr.readyState == 4) {
-					var errcode = eval("(" + xhr.responseText + ")").errcode;
-					var info = eval("(" + xhr.responseText + ")").info;
-					if (errcode == 0) {
-						upDateProgress(currentChunk);
-						currentChunk++;
-						doUploadFile(mFile, mDate, mUserId, mReport,
-								mReportType, tProjectState,
-								tProjectFailedReason, tProjectSubState);
-					} else {
-						alert("上传错误，错误信息：" + info);
-						return;
-					}
-				}
+	function editProject(mFile) {
+		var array = new Array();
+		array.push("");
+		var params = {
+				"id" : editId,
+				"projectName" : "",
+				"projectType" : 0,
+				"projectManager" : 0,
+				"projectState" : nextProjectState,
+				"projectFailedReason" : $("#projectFailedReason").val().trim(),
+				"contactUsers" : array,
+				"salesBeforeUsers" : array,
+				"salesAfterUsers" : array,
+				"productStyle":array,
+				"startDate":"",
+	            "endDate":"",
+				"projectSubState" : nextProjectSubState
+			}
+		post("editProject", params, true);
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else if (parseInt(requestReturn.code) == 0) {
+			if (thisProjectState == 1) {
+				saveProjectReport(mFile);
+			} else {
+				alert("更新项目进度成功");
+				closeConfirmBox();
+				getMyProjectList(page);
 			}
 		} else {
-			saveReportInfo(mDate, mUserId, mReport, mReportType, mFile.name,
-					tProjectState, tProjectFailedReason, tProjectSubState);
+			alert("更新项目进度失败");
 		}
-
 	}
 
-	function saveReportInfo(mDate, mUserId, mReport, mReportType, mFileName,
-			tProjectState, tProjectFailedReason, tProjectSubState) {
+	function saveProjectReport(tFile) {
+		var reportDesc = isFmlkShare ? "运维实施进展报告" : "售前工程师进展报告"
+		if (thisProjectSubState == 0) {
+			reportDesc += "-货物验收单";
+		} else if (thisProjectSubState == 1) {
+			reportDesc += "-实施安装/投放文件";
+		} else {
+			reportDesc += "-项目验收文件";
+		}
 		setTimeout(function() {
 			//保存到数据库
 			$.ajax({
 				url : host + "/createProjectReport",
 				type : 'POST',
 				data : {
-					"contactDate" : mDate,
-					"userId" : mUserId,
-					"reportDesc" : mReport,
+					"contactDate" : "",
+					"userId" : getUser("nickName", sId).UId,
+					"reportDesc" : reportDesc,
 					"projectId" : upNesInfo.split("#")[0],
-					"reportType" : mReportType,
-					"fileName" : mFileName,
+					"reportType" : 2,
+					"fileName" : tFile.name,
 					"caseId" : ""
 				},
 				cache : false,
@@ -827,9 +863,9 @@ html {
 				success : function(returndata) {
 					var data = eval("(" + returndata + ")").errcode;
 					if (data == 0) {
-						//这里编辑存表
-						Save(tProjectState, tProjectFailedReason,
-								tProjectSubState);
+						alert("更新项目进度成功");
+						closeConfirmBox();
+						getMyProjectList(page);
 					} else {
 						alert("提交失败");
 					}
@@ -840,99 +876,57 @@ html {
 		}, 500);
 	}
 
-	function Save(tProjectState, tProjectFailedReason, tProjectSubState) {
-		//编辑项目状态
-		var arrayContact = new Array();
-		arrayContact.push("");
-
-		$.ajax({
-			url : host + "/editProject",
-			type : 'POST',
-			cache : false,
-			dataType : "json",
-			data : {
-				"projectName" : "",
-				"projectType" : 0,
-				"projectManager" : 0,
-				"projectState" : tProjectState,
-				"projectFailedReason" : tProjectFailedReason,
-				"id" : editId,
-				"contactUsers" : arrayContact,
-				"salesBeforeUsers" : arrayContact,
-				"salesAfterUsers" : arrayContact,
-				"projectSubState" : tProjectSubState
-			},
-			traditional : true,
-			success : function(returndata) {
-				var data = returndata.errcode;
-				if (data == 0) {
-					alert("更改项目状态成功");
-					setTimeout(function() {
-						closeConfirmBox();
-						getMyProjectList(page);
-					}, 500);
-
-				} else {
-					alert("更改项目状态失败");
-				}
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
+	function loading() {
+		$('body').loading({
+			loadingWidth : 240,
+			title : '请稍等!',
+			name : 'test',
+			discription : '加载中',
+			direction : 'column',
+			type : 'origin',
+			originDivWidth : 40,
+			originDivHeight : 40,
+			originWidth : 6,
+			originHeight : 6,
+			smallLoading : false,
+			loadingMaskBg : 'rgba(0,0,0,0.2)'
 		});
-
 	}
 
-	function editProjectState() {
-		var mProjectState = $("#projectState").val();
-		var mProjectSubState = $("#projectSubState").val();
-		//alert(mProjectState);
-		//alert(mProjectSubState);
-		var projectFailedReason = $("#projectFailedReason").val().trim();
-		needUpload = false;
-		var needChangeState = false;
-		if (mProjectState == 4 && projectFailedReason == "") {
-			alert("请填写项目失败原因");
-			return;
-		}
+	function closeLoading() {
+		removeLoading('test');
+	}
 
-		var SubStateText = getProjectSubState(mProjectState, thisProjectType,
-				mProjectSubState);
-		if (SubStateText == "需求分析&方案制定" || SubStateText == "招投标&合同签订"
-				|| SubStateText == "到货验收" || SubStateText == "安装调试"
-				|| SubStateText == "项目测试" || SubStateText == "项目实施"
-				|| SubStateText == "项目试运行" || SubStateText == "项目终验") {
-			needUpload = true;
-		}
-		
-		if (SubStateText == "招投标&合同签订" || SubStateText == "项目交付"
-				|| SubStateText == "售后维护" || SubStateText == "安装调试"
-				|| SubStateText == "项目测试") {
-			needChangeState = true;
-		}
-		
-
-		if (needChangeState) {
-			//状态跳转
-			if (SubStateText == "售后维护") {
-				mProjectState = 3;
-			} else {
-				mProjectState = parseInt(mProjectState) + 1;
+	function getListItemProductStyle(productStyleArr, mProductStyle) {
+		var retProductStyle = "";
+		if (mProductStyle.indexOf(",") > -1) {
+			var arr = mProductStyle.split(",");
+			for (var i = 0; i < arr.length; i++) {
+				retProductStyle += (i == arr.length - 1) ? productStyleArr[arr[i]]
+						: productStyleArr[arr[i]] + ",";
 			}
-			mProjectSubState = 0;
+			retProductStyle = retProductStyle.trim();
+		} else if (mProductStyle == 0) {
+			retProductStyle = "————";
 		} else {
-			mProjectSubState = parseInt(mProjectSubState) + 1;
+			retProductStyle = productStyleArr[mProductStyle];
 		}
-		
-		//alert(mProjectState);
-		//alert(mProjectSubState);
-		
-		//alert(needUpload);
-
-		if (needUpload) {
-			addProjectReport(SubStateText, mProjectState, projectFailedReason,
-					mProjectSubState);
+		return retProductStyle;
+	}
+	
+	function getProductStyleList() {
+		get("productStyleList", {"isFmlkShare":isFmlkShare}, false)
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
 		} else {
-			Save(mProjectState, projectFailedReason, mProjectSubState);
+			var data = requestReturn.data.pslist;
+			var str = '<option value="0">请选择...</option>';
+			for ( var i in data) {
+				str += '<option value="' + data[i].id + '">'
+						+ data[i].styleName + '</option>';
+			}
+			$("#productStyle").empty();
+			$("#productStyle").append(str);
 		}
 	}
 </script>
@@ -958,16 +952,24 @@ html {
 								style="width: 23%" id="companyId" /></select> <label
 								style="margin-right: 10px">项目名称：</label><input type="text"
 								class="input3" placeholder="输入项目名称" style="width: 23%"
-								id="projectName" />
-
+								id="projectName" /> <label style="margin-right: 10px">销售人员：</label><select
+								class="selCss" style="width: 10%" id="salesId"></select>
 						</div>
 						<div class="cfD" style="width: 100%">
-							<label style="margin-left: 114px; margin-right: 10px">销售人员：</label><select
-								class="selCss" style="width: 10%" id="salesId"></select> <label
-								style="margin-right: 10px;">项目经理：</label><select class="selCss"
-								style="width: 10%" id="projectManager" /></select> <a class="addA"
-								onclick="toCreateProjectPage()" href="#"
-								style="margin-left: 30px">新建项目信息+</a> <a class="addA"
+							<input type="radio" name="field03" value="2" checked="checked"
+								onclick="checkProjectType(2)" style="margin-left: 125px;" /> <label
+								style="margin-left: 10px">共享陪护</label> <input type="radio"
+								name="field03" value="1" onclick="checkProjectType(1)"
+								style="margin-left: 20px;" /> <label style="margin-left: 10px">信息</label>
+							<span id="productStyleView"> <label
+								style="margin-right: 10px; margin-left: 40px">产品类型：</label><select
+								class="selCss" style="width: 150px" id="productStyle" /></select>
+							</span> <span id="projectTypeView"> <label
+								style="margin-right: 10px; margin-left: 40px">项目类型：</label><select
+								class="selCss" style="width: 150px%; display: none"
+								id="projectType" /></select>
+							</span> <a class="addA" onclick="toCreateProjectPage()" href="#"
+								style="margin-left: 260px">新建项目信息+</a> <a class="addA"
 								onClick="getMyProjectList(1)">搜索</a>
 						</div>
 
@@ -980,7 +982,7 @@ html {
 							<td style="width: 14%" class="tdColor">项目编号</td>
 							<td style="width: 40%" class="tdColor">项目名称 / 客户名称</td>
 							<td style="width: 7%" class="tdColor">销售人员</td>
-							<td style="width: 7%" class="tdColor">项目经理</td>
+							<td style="width: 7%" class="tdColor" id="columnTitle">项目经理</td>
 							<td style="width: 18%" class="tdColor">项目状态</td>
 							<td style="width: 14%" class="tdColor">操作</td>
 						</tr>
@@ -1038,9 +1040,8 @@ html {
 				</select>
 			</p>
 			<p class="delP2" style="padding-bottom: 30px" id="pss">
-				<label style="font-size: 16px; margin-left: -28px">项目节点状态：</label> <select
+				<label style="font-size: 16px;">项目进度：</label> <select
 					id="projectSubState" disabled="disabled"
-					onChange="changeProjectSubState(this.options[this.options.selectedIndex].value)"
 					style="width: 220px; height: 26px; border-bottom: 1px dashed #78639F; background: none; border-left: none; border-right: none; border-top: none; padding: 4px 2px 3px 2px; padding-left: 10px">
 				</select>
 			</p>
@@ -1064,18 +1065,9 @@ html {
 					style="display: inline-block; height: 20px; background-color: orange; line-height: 20px; text-align: left; float: left"></span>
 			</div>
 			</p>
-
-			<!--
-			<p class="delP2" style="text-align: left; margin-left: 32px">
-				<label style="font-size: 16px; color: brown">项目实施中：包含签订合同，采购下单，项目实施等。</label><br />
-				<label style="font-size: 16px;margin-left:80px"></label>
-			</p>
-			<p class="delP2" style="text-align: left; margin-left: 48px">
-				<label style="font-size: 16px; color: brown">售后服务：包含维保服务，其他服务等。</label>
-			</p> -->
 			<div class="cfD" id="confirmStateId" style="padding-bottom: 30px;">
 				<a class="addA" href="#" onclick="editProjectState()"
-					style="margin-left: 0px;">下一状态</a> <a class="addA"
+					style="margin-left: 0px;" id="oprText">进度更新</a> <a class="addA"
 					onclick="closeConfirmBox()">取消</a>
 			</div>
 		</div>

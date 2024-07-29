@@ -28,10 +28,8 @@ public class MyTimerTask {
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		//更改派工状态至超时
 		String jsonStr = mProjectService.editAllProjectCase();	
-		//System.out.println("状态更改       "+jsonStr);
 		//获取超时派工
 		String jsonStr2 = mProjectService.getProjectCaseUnClosedList(2);
-		//System.out.println("超时       "+jsonStr2);
 		String mErrcode = (String) new Gson().fromJson(jsonStr2, Map.class).get("errcode");
 		if (mErrcode.equals("0")) {
 			JSONArray myArrayList = new JSONObject().fromObject(jsonStr2).getJSONArray("pclist");
@@ -57,11 +55,11 @@ public class MyTimerTask {
 				//技术
 				List<User> userList2 = new ArrayList<User>();
 				if ((uid != 3) && (uid != 4)) {
-					userList = mUserService.getUserList(pc.getSalesId() + ",2,3,4");
+					userList = mUserService.getUserListByIds(pc.getSalesId() + ",2,3,4");
 				} else {
-					userList = mUserService.getUserList("2,3,4");
+					userList = mUserService.getUserListByIds("2,3,4");
 				}
-				userList2 = mUserService.getUserList(pc.getServiceUsers());
+				userList2 = mUserService.getUserListByIds(pc.getServiceUsers());
 
 				String projectJSONStr = mProjectService.getProjectByProjectId(pc.getProjectId());
 				String errcode2 = (String) new Gson().fromJson(projectJSONStr, Map.class).get("errcode");

@@ -31,7 +31,6 @@ public class WebController implements ApplicationContextAware{
 	public String jobPositionList(HttpServletRequest request) {
 		mWserService = new WebService();
 		String jsonStr = mWserService.getJobPositionList();
-		//System.out.println(jsonStr);
 		return jsonStr;
 	}
 }

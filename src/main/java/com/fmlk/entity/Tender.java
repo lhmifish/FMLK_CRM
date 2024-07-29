@@ -28,8 +28,10 @@ public class Tender implements Serializable{
 	private int tenderResult;//投标结果1.中标2.投标未中3.未投标/弃标
 	private int tenderGuaranteeFee;//投标保证金
 	private boolean isUploadTender;//已上传标书
-	
+	private boolean isFmlkShare;//共享陪护客户
+	private String updateDate;//更新日期
 	private int tenderState;//标书状态 0.待审核 1.拒绝2.同意
+	private int tenderAmount;//中标金额
 	
 	public int getId() {
 		return this.id;
@@ -221,5 +223,29 @@ public class Tender implements Serializable{
 
 	public void setIsUploadTender(boolean isUploadTender) {
 		this.isUploadTender = isUploadTender;
+	}
+	
+	public boolean getIsFmlkShare() {
+		return this.isFmlkShare;
+	}
+
+	public void setIsFmlkShare(boolean isFmlkShare) {
+		this.isFmlkShare = isFmlkShare;
+	}
+	
+	public String getUpdateDate() {
+		return this.updateDate;
+	}
+
+	public void setUpdateDate(String updateDate) {
+		this.updateDate = updateDate;
+	}
+	
+	public int getTenderAmount() {
+		return this.tenderAmount;
+	}
+
+	public void setTenderAmount(int tenderAmount) {
+		this.tenderAmount = tenderAmount;
 	}
 }

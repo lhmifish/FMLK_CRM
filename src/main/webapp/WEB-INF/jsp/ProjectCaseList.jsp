@@ -8,9 +8,13 @@
 <meta http-equiv="cache-control" content="no-cache" />
 <title>派工单管理</title>
 <link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
+<link rel="stylesheet" type="text/css"
 	href="${pageContext.request.contextPath}/css/css.css?v=1990" />
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/select4.css?v=1997" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
@@ -18,6 +22,9 @@
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
 <script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
 <script src="${pageContext.request.contextPath}/js/getObjectList.js"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=3"></script>
+<script src="${pageContext.request.contextPath}/js/loading.js"></script>
+<script src="${pageContext.request.contextPath}/js/getObject.js?v=2"></script>
 <style type="text/css">
 a:hover {
 	color: #FF00FF
@@ -41,6 +48,7 @@ html {
 	var host;
 	var isPermissionEdit;
 	var isPermissionEditArr;
+	var requestReturn;
 
 	$(document).ready(function() {
 		sId = "${sessionId}";
@@ -53,13 +61,14 @@ html {
 		getSalesList(0);
 		getServiceUsersList(0);
 		getCompanyList("", 0, 0, 1);
-		getProjectCaseList(page);
 		$("#salesId").select2({});
 		$("#serviceUsers").select2({});
 		$("#companyId").select2({});
+		getProjectCaseList(page);
 	}
 
 	function getProjectCaseList(mPage) {
+		loading();
 		page = mPage;
 		var mProjectName = $("#projectName").val().trim();
 		var mSalesId = $("#salesId").val();
@@ -69,21 +78,20 @@ html {
 		mServiceUserId = (mServiceUserId == null || mServiceUserId == 0) ? ""
 				: mServiceUserId;
 		mSalesId = (mSalesId == null) ? 0 : mSalesId;
-		$
-				.ajax({
-					url : host + "/projectCaseList",
-					type : 'GET',
-					data : {
-						"projectName" : mProjectName,
-						"salesId" : mSalesId,
-						"companyId" : mCompanyId,
-						"serviceUsers" : mServiceUserId
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-					//	alert(returndata);
-						var data = eval("(" + returndata + ")").pclist;
+		var params = {
+			"projectName" : mProjectName,
+			"salesId" : mSalesId,
+			"companyId" : mCompanyId,
+			"serviceUsers" : mServiceUserId
+		}
+		setTimeout(
+				function() {
+					get("projectCaseList", params, false)
+					if (requestReturn.result == "error") {
+						closeLoading();
+						alert(requestReturn.error);
+					} else {
+						var data = requestReturn.data.pclist;
 						var str = "";
 						var num = data.length;
 						var projectCaseArr = new Array();
@@ -93,35 +101,39 @@ html {
 								if (i >= 10 * (mPage - 1)
 										&& i <= 10 * mPage - 1) {
 									projectCaseArr.push(data[i].salesId);
-									str += '<tr style="width: 100%"><td style="width: 5%" class="tdColor2">'
-											+ getUser(data[i].salesId).name
+									str += '<tr style="width: 100%;"><td style="width: 5%;font-size:14px" class="tdColor2">'
+											+ getUser("uId", data[i].salesId).name
 											+ '</td>'
 											+ '<td style="width:30%" class="tdColor2">'
-											+ getProject(data[i].projectId).projectName
-											+ '</br>'
-											+ getCompany(data[i].projectId).companyName
-											+ '</td>'
+											+ getProject("projectId",
+													data[i].projectId).projectName
+											+ '</br><span style="font-size:10px">'
+											+ getCompany("projectId",
+													data[i].projectId).companyName
+											+ '</span></td>'
 											+ getServiceType(data[i].serviceType)
-											+ '<td style="width:6%" class="tdColor2">'
-											+ getCaseType(data[i].caseType
-													.split("#")[1]).typeName 
+											+ '<td style="width:6%;font-size:14px" class="tdColor2">'
+											+ getCaseType(
+													"typeId",
+													data[i].caseType.split("#")[1]).typeName
 											+ '</td>'
-											+ '<td style="width:8%" class="tdColor2">'
+											+ '<td style="width:8%;font-size:14px" class="tdColor2">'
 											+ data[i].serviceDate.substring(0,
 													10)
-											+ '</br>'
+											+ '</br><span style="font-size:12px">'
 											+ data[i].serviceDate.substring(11,
 													16)
-											+ '</td>'
+											+ '</span></td>'
 											+ '<td style="width:12%" class="tdColor2">'
 											+ getServiceUsers(data[i].serviceUsers)
 											+ '</td>'
 											+ getIsChecked(data[i].isChecked,
 													data[i].serviceUsers,
-													data[i].isRejected)
+													data[i].isRejected,data[i].rejectReason)
 											+ getCaseState(data[i].caseState,
-													data[i].id, i)
-											+ '<td style="width:8%" class="tdColor2">'
+													data[i].id, i,
+													data[i].salesId,data[i].isChecked,data[i].cancelReason,data[i].rejectReason)
+											+ '<td style="width:8%;font-size:14px" class="tdColor2">'
 											+ data[i].createDate.substring(0,
 													10)
 											+ '</td><td style="width:8%" class="tdColor2">'
@@ -141,88 +153,9 @@ html {
 						$("#tb").empty();
 						$("#tb").append(str);
 						matchUserPremission(projectCaseArr);
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
+						closeLoading();
 					}
-				});
-	}
-
-	function getUser(uId) {
-		var user;
-		$.ajax({
-			url : host + "/getUserById",
-			type : 'GET',
-			data : {
-				"uId" : uId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				user = eval("(" + returndata + ")").user[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return user;
-	}
-	
-	function getProject(mProjectId) {
-		var project;
-		$
-				.ajax({
-					url : host + "/getProjectByProjectId",
-					type : 'GET',
-					data : {
-						"projectId" : mProjectId
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						project = eval("(" + returndata + ")").project[0];
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
-		return project;
-	}
-
-	function getCompany(mProjectId) {
-		var company;
-		$
-				.ajax({
-					url : host + "/getCompanyByProjectId",
-					type : 'GET',
-					data : {
-						"projectId" : mProjectId
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						company = eval("(" + returndata + ")").company[0];
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
-		return company;
-	}
-
-	function getCaseType(typeId) {
-		var type;
-		$.ajax({
-			url : host + "/getCaseTypeByTypeId",
-			type : 'GET',
-			data : {
-				"typeId" : typeId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				type = eval("(" + returndata + ")").caseType[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return type;
+				}, 500);
 	}
 
 	function getServiceUsers(mServiceUsers) {
@@ -232,10 +165,11 @@ html {
 		} else {
 			if (mServiceUsers.indexOf(",") == -1) {
 				//单个
-				tServiceUsers = getUser(mServiceUsers).name.trim();
+				tServiceUsers = getUser("uId", mServiceUsers).name.trim();
 			} else {
 				for (var i = 0; i < mServiceUsers.split(",").length; i++) {
-					tServiceUsers += getUser(mServiceUsers.split(",")[i]).name + ",";
+					tServiceUsers += getUser("uId", mServiceUsers.split(",")[i]).name
+							+ ",";
 				}
 				tServiceUsers = tServiceUsers.substr(0, tServiceUsers
 						.lastIndexOf(','));
@@ -243,36 +177,48 @@ html {
 		}
 		return tServiceUsers;
 	}
-	
-	function getIsChecked(mIsChecked, mServiceUsers, mIsRejected) {
+
+	function getIsChecked(mIsChecked, mServiceUsers, mIsRejected,mRejectReason) {
 		var isCheckedSales;
 		var isCheckedTech;
-		if (mIsRejected) {
-			return '<td style="width:8%" class="tdColor2"><span style="color:green">审核未通过</span></td>';
-		} else {
-			if (!mIsChecked) {
-				isCheckedSales = '<span style="color:brown">销售未审核</span>';
-			} else {
-				isCheckedSales = '<span>销售已通过</span>';
+
+		if (!mIsChecked) {
+			isCheckedSales = '<span style="color:brown;font-size:14px">销售未审核</span>';
+			isCheckedTech = '<span style="color:brown;font-size:14px">技术未审核</span>'
+		} else if(mRejectReason != ""){
+			if(mRejectReason.indexOf("@")>-1 && mRejectReason.split("@")[1]==2){
+				isCheckedSales = '<span style="font-size:14px">销售已通过</span>';
+				isCheckedTech = '<span style="font-size:14px;color:green;">技术已驳回</span>';
+			}else{
+				isCheckedSales = '<span style="font-size:14px;color:green;">销售已驳回</span>';
+				isCheckedTech = '<span style="color:brown;font-size:14px">技术未审核</span>'
 			}
-			if (mServiceUsers != "") {
-				isCheckedTech = '<span>技术已派工</span>';
-			} else {
-				isCheckedTech = '<span style="color:brown">技术未审核</span>';
+		} else{
+			isCheckedSales = '<span style="font-size:14px">销售已通过</span>';
+			//未被驳回
+			if(mServiceUsers != ""){
+				isCheckedTech = '<span style="font-size:14px">技术已派工</span>';
+			}else{
+				isCheckedTech = '<span style="color:brown;font-size:14px">技术未审核</span>';
 			}
-			return '<td style="width:8%" class="tdColor2">' + isCheckedSales
-					+ "</br>" + isCheckedTech + '</td>';
 		}
+		return '<td style="width:8%" class="tdColor2">' + isCheckedSales
+				+ "</br>" + isCheckedTech + '</td>';
 	}
-	
-	function getCaseState(mCaseState, mId, i) {
+
+	function getCaseState(mCaseState, mId, i, tSalesId,tIsChecked,tCancelReason,tRejectReason) {
 		// 0.待审批 1.处理中 2.已超时 3.已取消 4.超时完成    5.正常完成
 		var str;
 		var color;
 		var text;
+		var tUser = getUser("nickName", sId);
+		var permitChangeState = (tUser.UId == tSalesId || tUser.roleId == 3 || tUser.roleId == 11);
 		if (mCaseState == 0) {
 			color = "brown";
 			text = "待审核";
+			if(tIsChecked){
+				permitChangeState = false;
+			}
 		} else if (mCaseState == 1) {
 			color = "blue";
 			text = "处理中";
@@ -282,16 +228,45 @@ html {
 		} else if (mCaseState == 3) {
 			color = "green";
 			text = "已取消";
+			permitChangeState = false;
 		} else if (mCaseState == 4) {
 			color = "green";
 			text = "超时完成";
+			permitChangeState = false;
 		} else if (mCaseState == 5) {
 			color = "green";
 			text = "正常完成";
+			permitChangeState = false;
+		} else if (mCaseState == 6) {
+			color = "green";
+			text = "被驳回";
 		}
-		str = '<td style="width:10%" class="tdColor2"><div><span style="margin-left:8px;color:'+ color +'">'+ text +'</span>';
-		str += '<img src="../image/coinL1.png" title="更改派工单状态" style="width:14px;float:right;margin-right:5px"  onclick="selectCaseState('
-				+ i + ',' + mId + ',\'' + mCaseState + '\'' + ')"></div></td>';
+		if(mCaseState == 3 && tCancelReason != ""){
+			str = '<td style="width:10%" class="tdColor2" title="取消理由：' + tCancelReason +'"><div><span style="margin-left:8px;color:'+ color +'">'
+			+ text + '</span>';
+		}else if(mCaseState == 6){
+			if(tRejectReason.indexOf("@") != -1){
+				tRejectReason = tRejectReason.split("@")[0];
+			}
+			str = '<td style="width:10%" class="tdColor2" title="驳回理由：' + tRejectReason +'"><div><span style="margin-left:8px;color:'+ color +'">'
+			+ text + '</span>';
+		}else{
+			str = '<td style="width:10%" class="tdColor2"><div><span style="margin-left:8px;color:'+ color +'">'
+			+ text + '</span>';
+		}
+		
+		if (permitChangeState) {
+			str += '<img src="../image/coinL1.png" title="更改派工单状态" style="width:14px;float:right;margin-right:5px"  onclick="selectCaseState('
+					+ i
+					+ ','
+					+ mId
+					+ ',\''
+					+ mCaseState
+					+ '\''
+					+ ')"></div></td>';
+		}else{
+			str += '<img src="../image/coinL1.png" style="width:14px;float:right;margin-right:5px;visibility:hidden"></div></td>';
+		}
 		return str;
 	}
 
@@ -300,16 +275,25 @@ html {
 			alert("你没有权限更改此派工状态");
 		} else {
 			$('#caseState').val(tCaseState);
-			if (tCaseState == 0) {
-				$("#caseState").css("color", "brown");
-			} else if (tCaseState == 1) {
-				$("#caseState").css("color", "blue");
-			} else if (tCaseState == 2) {
-				$("#caseState").css("color", "red");
-			} else {
-				$("#caseState").css("color", "green");
-			}
+			var str = ""
+			$("#caseState").css("color", "green");
 			editId = id;
+			if(tCaseState == 0 || tCaseState == 6){
+				str += '<option value="3" style="color: green">取消派工</option>';
+			}else if (tCaseState == 1) {
+				str += '<option value="3" style="color: green">取消派工</option>';
+				str += '<option value="5" style="color: green">正常完成</option>';
+			}else if(tCaseState == 2){
+				str += '<option value="3" style="color: green">取消派工</option>';
+				str += '<option value="4" style="color: green">超时完成</option>';
+			}
+			$("#caseState").empty();
+			$("#caseState").append(str);
+			if($("#caseState").val()==3){
+				$("#cancelReason").show();
+			}else{
+				$("#cancelReason").hide();
+			}
 			$("#banDel2").show();
 		}
 	}
@@ -366,10 +350,10 @@ html {
 			getProjectCaseList(page);
 		}
 	}
-	
+
 	function changeCaseState() {
 		var selCaseState = $("#caseState").val();
-		if (selCaseState == 0) {
+		/* if (selCaseState == 0) {
 			$("#caseState").css("color", "brown");
 		} else if (selCaseState == 1) {
 			$("#caseState").css("color", "blue");
@@ -377,38 +361,61 @@ html {
 			$("#caseState").css("color", "red");
 		} else {
 			$("#caseState").css("color", "green");
+		} */
+		$("#cancelReason").val("");
+		if(selCaseState==3){
+			$("#cancelReasonView").show();
+		}else{
+			$("#cancelReasonView").hide();
 		}
 	}
 
 	function editProjectCase() {
 		var caseState = $("#caseState option:selected").val();
-		$.ajax({
-			url : host + "/editProjectCase",
-			type : 'POST',
-			data : {
+		var cancelReason = $("#cancelReason").val();
+		if(caseState==3 && cancelReason==""){
+			alert("请填写取消理由");
+			return;
+		}
+		var params = {
 				"id" : editId,
-				"caseState" : caseState
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").errcode;
-				if (data == 0) {
-					alert("更改派工状态成功");
-					setTimeout(function() {
-						closeConfirmBox();
-						getProjectCaseList(page);
-						parent.leftFrame.location.reload();
-					}, 500);
+				"caseState" : caseState	,
+				"cancelReason":cancelReason
+		}
+		post("editProjectCase",params,false);
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else if(parseInt(requestReturn.code)==0){
+			alert("更改派工状态成功");
+			setTimeout(function() {
+				closeConfirmBox();
+				getProjectCaseList(page);
+				parent.leftFrame.location.reload();
+			}, 500);
+		}else {
+			alert("更改派工状态失败");
+		}
+	}
 
-				} else {
-					alert("更改派工状态失败");
-				}
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
+	function loading() {
+		$('body').loading({
+			loadingWidth : 240,
+			title : '请稍等!',
+			name : 'test',
+			discription : '加载中',
+			direction : 'column',
+			type : 'origin',
+			originDivWidth : 40,
+			originDivHeight : 40,
+			originWidth : 6,
+			originHeight : 6,
+			smallLoading : false,
+			loadingMaskBg : 'rgba(0,0,0,0.2)'
 		});
+	}
 
+	function closeLoading() {
+		removeLoading('test');
 	}
 </script>
 </head>
@@ -436,12 +443,13 @@ html {
 								id="projectName" />
 						</div>
 						<div class="cfD" style="width: 100%">
-							<label style="margin-left: 114px; margin-right: 10px">销售人员：</label><select
+							<label style="margin-left: 124px; margin-right: 10px">销售人员：</label><select
 								class="selCss" style="width: 10%" id="salesId"></select> <label
 								style="margin-right: 10px;">工程师：</label><select class="selCss"
 								id="serviceUsers" style="width: 10%;"></select> <a class="addA"
-								href="#" onclick="toCreateProjectCasePage()" style="margin-left: 30px">新建派工单+</a>
-							<a class="addA" onClick="getProjectCaseList(1)">搜索</a>
+								href="#" onclick="toCreateProjectCasePage()"
+								style="margin-left: 30px">新建派工单+</a> <a class="addA"
+								onClick="getProjectCaseList(1)">搜索</a>
 						</div>
 					</form>
 				</div>
@@ -493,14 +501,11 @@ html {
 			<p class="delP2" style="margin-top: 20px;">
 				<label style="font-size: 16px;">请选择：</label> <select id="caseState"
 					onChange="changeCaseState(this.options[this.options.selectedIndex].value)"
-					style="width: 180px; height: 26px; border-bottom: 1px dashed #78639F; background: none; border-left: none; border-right: none; border-top: none; padding: 4px 2px 3px 2px; padding-left: 10px">
-					<option value="0" style="color: brown">待审批</option>
-					<option value="1" style="color: blue">处理中</option>
-					<option value="2" style="color: red">已超时</option>
-					<option value="3" style="color: green">已取消</option>
-					<option value="4" style="color: green">超时完成</option>
-					<option value="5" style="color: green">正常完成</option>
+					style="width: 190px; height: 26px; border-bottom: 1px dashed #78639F; background: none; border-left: none; border-right: none; border-top: none; padding: 4px 2px 3px 2px; padding-left: 10px">
 				</select>
+			</p>
+			<p class="delP2" style="margin-top: 20px;" id="cancelReasonView">
+			    <textarea style="font-size: 16px;width:240px;height:100px;resize:none;padding:10px" placeholder="请填写取消理由" id="cancelReason"></textarea>
 			</p>
 			<div class="cfD" style="margin-top: 30px">
 				<a class="addA" href="#" onclick="editProjectCase()"

@@ -93,7 +93,6 @@ p {
 			data : {"date" :  $('#date').val()},
 			cache : false,
 			success : function(returndata) {
-				alert(returndata);
 				var str = '';
 				var data = eval("(" + returndata + ")").dailywechatlist;
 				 for ( var i in data) {

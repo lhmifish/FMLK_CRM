@@ -16,14 +16,14 @@ public class CompanyService {
 		return dao.editCompany(c, arrayContact);
 	}
 
-	public String deleteCompany(int id) {
+	public String deleteCompany(int id,String updateDate) {
 		dao = new CompanyDao();
-		return dao.deleteCompany(id);
+		return dao.deleteCompany(id,updateDate);
 	}
 
-	public String getCompanyList(int salesId, String companyName) {
+	public String getCompanyList(int salesId, String companyName,boolean isFmlkShare) {
 		dao = new CompanyDao();
-		return dao.getCompanyList(salesId, companyName);
+		return dao.getCompanyList(salesId, companyName,isFmlkShare);
 	}
 
 	public String getCompanyByCompanyId(String companyId) {

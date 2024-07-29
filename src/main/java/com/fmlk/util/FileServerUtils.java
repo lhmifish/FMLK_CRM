@@ -34,10 +34,12 @@ public class FileServerUtils {
 	private static String folderNamePurchase = "/采购";
 	private static String folderNameADM = "/行政";
 	private static String folderNameOther = "/其他";
+	private static String folderNameCompanyRecord = "/客户拜访记录";
 	private static String folderProjectReport = "/LanstarNet/FileData/Group/public/home/项目文档/";
 	private static String folderProjectCase = "/LanstarNet/FileData/Group/public/home/Case文档/";
 	private static String folderTender = "/LanstarNet/FileData/Group/public/home/投标文档/";
 	private static String folderContract = "/LanstarNet/FileData/Group/public/home/合同文档/";
+	private static String folderCompanyRecord = "/LanstarNet/FileData/Group/public/home/客户拜访记录/";
 
 	public static JSONObject get(String url) {
 		JSONObject jb = null;
@@ -167,7 +169,9 @@ public class FileServerUtils {
 			} else if (reportType == 5){
 				//行政进展报告
 				folderName = folderNameADM;
-			} else {
+			} else if (reportType == 92) {
+				folderName = folderNameCompanyRecord;
+		    } else {
 				//其他
 				folderName = folderNameOther;
 			}
@@ -179,6 +183,8 @@ public class FileServerUtils {
 				folderPath = folderTender  + projectId;
 			}else if(reportType == 97) {
 				folderPath = folderContract  + projectId;
+			}else if(reportType == 92) {
+				folderPath = folderCompanyRecord + projectId;
 			}else {
 				folderPath = folderProjectReport + createYear + "年/" + projectId
 						+ folderName;
@@ -215,7 +221,9 @@ public class FileServerUtils {
 				folderName = folderNameAfterSales;
 			} else if (reportType == 4) {
 				folderName = folderNamePurchase;
-			} else if (reportType == 5){
+			} else if (reportType == 92) {
+				folderName = folderNameCompanyRecord;
+		    } else if (reportType == 5){
 				folderName = folderNameADM;
 			} else {
 				folderName = folderNameOther;
@@ -227,6 +235,8 @@ public class FileServerUtils {
 				filePath = folderTender  + projectId + "/";
 			}else if(reportType == 97) {
 				filePath = folderContract  + projectId + "/";
+			}else if(reportType == 92) {
+				filePath = folderCompanyRecord + projectId + "/";
 			}else {
 				filePath = folderProjectReport + createYear + "年/" + projectId
 						+ folderName + "/";
@@ -235,7 +245,6 @@ public class FileServerUtils {
 					"http://" + server + "/?explorer/fileUpload&accessToken=%s&upload_to=%s&chunks=%s&chunk=%s&size=%s",
 					accessToken, URLEncoder.encode(filePath, "UTF-8"), chunks, chunk, fileSize);
 			JSONObject jb = post(url, uploadFile, fileName, boundary);
-			System.out.println(jb.toString());
 			
 			if (jb.getBoolean("code") && jb.getString("data").equals("upload_success")) {
 				if (jb.getString("info") == null) {
@@ -319,6 +328,8 @@ public class FileServerUtils {
 				folderName = folderNameAfterSales;
 			} else if (reportType == 4) {
 				folderName = folderNamePurchase;
+			} else if (reportType == 92) {
+				folderName = folderNameCompanyRecord;
 			} else {
 				folderName = folderNameOther;
 			}
@@ -329,6 +340,8 @@ public class FileServerUtils {
 				filePath = folderTender + projectId + "/" + fileName;
 			}else if(reportType == 97) {
 				filePath = folderContract + projectId + "/" + fileName;
+			}else if(reportType == 92) {
+				filePath = folderCompanyRecord + projectId + "/" + fileName;
 			}else {
 				filePath = folderProjectReport + createYear + "年/" + projectId
 						+ folderName + "/" + fileName;

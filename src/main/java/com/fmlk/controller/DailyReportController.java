@@ -193,7 +193,6 @@ public class DailyReportController implements ApplicationContextAware {
 		String date = request.getParameter("date");
 		int dept = Integer.parseInt(request.getParameter("department"));
 		String jsonStr = service.getAllCheckList(date, dept);
-		//System.out.println(jsonStr);
 		return jsonStr;
 	}
 
@@ -239,7 +238,6 @@ public class DailyReportController implements ApplicationContextAware {
 	@ResponseBody
 	public String saveCheck(HttpServletRequest request) throws ParseException {
 		service = new Service();
-		// System.out.println("step1 "+request.getParameterValues("arr").length);
 		String date = request.getParameter("date");
 		String[] arr = request.getParameterValues("arr");
 		ArrayList<WechatCheck> list = new ArrayList<WechatCheck>();
@@ -366,7 +364,7 @@ public class DailyReportController implements ApplicationContextAware {
 		service = new Service();
 		String companyId = request.getParameter("companyId");
 		String jsonStr = service.getProjectList(companyId);
-	    return jsonStr;
+		return jsonStr;
 	}
 	
 	/**
@@ -563,6 +561,7 @@ public class DailyReportController implements ApplicationContextAware {
 	    dur.setCrmNum(request.getParameter("crmNum"));
 		dur.setJobContent(request.getParameter("jobContent"));
 	    dur.setTime(request.getParameter("time"));
+	    dur.setIsFmlkShare(Boolean.parseBoolean(request.getParameter("isFmlkShare")));
 		String jsonStr = service.createDailyUploadReport(dur);
 		return jsonStr;
 	}
@@ -739,9 +738,22 @@ public class DailyReportController implements ApplicationContextAware {
 		service = new Service();
 		String startDate = request.getParameter("startDate");
 		String endDate = request.getParameter("endDate");
-		String jsonStr = service.getAllWeekUploadReportList(startDate,endDate);
-		System.out.println(jsonStr);
-	    return jsonStr;
+	    String jsonStr = service.getAllWeekUploadReportList(startDate,endDate);
+		return jsonStr;
+	}
+	
+	/**
+	 * 获取员工周报列表
+	 * 2019.10.30修改
+	 */
+	@RequestMapping(value = "/getSalesWeekUploadReportList", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getSalesWeekUploadReportList(HttpServletRequest request) {
+		service = new Service();
+		String startDate = request.getParameter("startDate");
+		String endDate = request.getParameter("endDate");
+	    String jsonStr = service.getSalesWeekUploadReportList(startDate,endDate);
+		return jsonStr;
 	}
 	
 	/**
@@ -755,7 +767,6 @@ public class DailyReportController implements ApplicationContextAware {
 		int year = Integer.parseInt(request.getParameter("year"));
 		String userNickName = request.getParameter("nickName");
 		String jsonStr = service.getUserYearUploadReportList(year,userNickName);
-		System.out.println(jsonStr);
 		return jsonStr;
 	}
 	

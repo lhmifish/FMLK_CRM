@@ -11,6 +11,8 @@
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/public.js"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=4"></script>
+<script src="${pageContext.request.contextPath}/js/getObject.js?v=5"></script>
 </head>
 
 <style type="text/css">
@@ -33,6 +35,7 @@ a:hover {
 	var sId;
 	var uId;
 	var host;
+	var requestReturn;
 
 	$(document)
 			.ready(
@@ -42,35 +45,16 @@ a:hover {
 						if (sId == null || sId == "") {
 							window.location.href = host + "/page/login";
 						} else {
-							var tName = getUserInfo(sId);
-							document.getElementById('p1').innerHTML = tName;
+							var user = getUser("nickName",sId);
+							uId = user.UId;
+							document.getElementById('p1').innerHTML = user.name;
 							updateTime();
-
 						}
 					});
 	
 	function updateTime() {
 		document.getElementById('label').innerHTML = formatDate(new Date());
 		setTimeout("updateTime()", 1000);
-	}
-	
-	function getUserInfo(uName) {
-		var mUserName = "";
-		$.ajax({
-			url : "${pageContext.request.contextPath}/getUserByNickName",
-			type : 'GET',
-			async : false,
-			data : {
-				"nickName" : uName
-			},
-			cache : false,
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").user;
-				mUserName = data[0].name;
-				uId = data[0].UId;
-			}
-		});
-		return mUserName;
 	}
 
 	function formatDate(date) {
@@ -109,12 +93,11 @@ a:hover {
 				src="${pageContext.request.contextPath}/assets/images/logo_new_2020_11_9.png" style="width:230px"/>
 		</div>
 		<div style="width: 400px; height: 100%; float: left;">
-			<p
-				style="padding-top: 30px; margin-left:30px;font-size: 32px; font-family: Microsoft YaHei; font-weight: bold;">飞默利凯服务平台</p>
+			<p style="padding-top: 30px; margin-left:30px;font-size: 32px; font-family: Microsoft YaHei; font-weight: bold;">飞默利凯服务平台</p>
 		</div>
 		<div class="headR" style="padding-top: 20px">
 			<p class="p1">
-				<label style="color: black;">欢迎您, <strong id="p1"
+			    <label style="color: black;">欢迎您, <strong id="p1"
 					style="font-size: 16px; color: brown"></strong></label><a
 					style="font-size: 12px; margin-left: 20px; text-decoration: underline;color: black;"
 					onClick="logOut()">退出</a><a
@@ -123,7 +106,8 @@ a:hover {
 			</p>
 			<br/>
 			<p class="p2">
-				<label style="color: black">当前时间：</label><label
+			    <label style="color: brown;font-weight: bold;">version:20240729</label>
+				<label style="color: black;margin-left:20px;">当前时间：</label><label
 					style="color: black; font-size: 12px;" id="label"></label>
 			</p>
 		</div>

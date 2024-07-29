@@ -29,7 +29,8 @@
 <script src="${pageContext.request.contextPath}/js/checkPermission.js"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
 <script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
-<script src="${pageContext.request.contextPath}/js/getObjectList.js"></script>
+<script src="${pageContext.request.contextPath}/js/getObjectList.js?v=2023"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=2"></script>
 <style type="text/css">
 a:hover {
 	color: #FF00FF
@@ -40,26 +41,28 @@ a:hover {
 	var sId;
 	var host;
 	var isPermissionView;
+	var isFmlkShare;
+	var requestReturn;
 
 	$(document).ready(function() {
 		sId = "${sessionId}";
-		//alert(sId);
 		host = "${pageContext.request.contextPath}";
 		checkViewPremission(32);
 	});
 
 	function initialPage() {
+		isFmlkShare = true;
 		var today = formatDate(new Date()).substring(0, 10);
 		$('#dateForBuy').val(today);
 		$('#dateForSubmit').val(today);
 		$('#dateForOpen').val(today);
 		initDate();
-		getCompanyList("", 0, 0, 1);
+		getCompanyList("", 0, 0, 1,isFmlkShare);
 		getAgencyList(0);
 		getSalesList(0);
 		getTenderStyleList(0);
 		getProductBrandList(0);
-		getProductStyleList(0);
+		getProductStyleList(0,isFmlkShare);
 		tenderIntent = 1;
 		$("#companyId").select2({});
 		$("#tenderAgency").select2({});
@@ -110,29 +113,13 @@ a:hover {
 	}
 
 	function getSalesByCompanyId(companyId) {
-		var mSalesId;
-		$.ajax({
-			url : host + "/getCompanyByCompanyId",
-			type : 'GET',
-			data : {
-				"companyId" : companyId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").company;
-				mSalesId = data[0].salesId;
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return mSalesId;
-	}
-
-	function changeCompany(tCompanyId) {
-		var salesId = getSalesByCompanyId(tCompanyId);
-		getSalesList(salesId);
-		getProjectList(tCompanyId, 0);
+		get("getCompanyByCompanyId",{"companyId" : companyId},false);
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else{
+			var mSalesId = requestReturn.data.company[0].salesId;
+			return mSalesId;
+		}
 	}
 
 	function changeProject() {
@@ -153,30 +140,19 @@ a:hover {
 			alert("招标代理机构名不能为空");
 			return;
 		}
-		
-		$.ajax({
-			url : host + "/createAgency",
-			type : 'POST',
-			cache : false,
-			data : {
-				"agencyName" : newAgency
-			},
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").errcode;
-				if (data == 0) {
-					alert("输入成功");
-					getAgencyList(0);
-					$("#newAgencyName").val("");
-					closeConfirmBox();
-				} else if (data == 3) {
-					alert("有相同或类似的招标代理机构名存在，请检查");
-				} else {
-					alert("输入失败");
-				}
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
+		post("createAgency",{"agencyName" : newAgency},false);
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else if(parseInt(requestReturn.code)==0){
+			alert("新建代理机构成功");
+			getAgencyList(0);
+			$("#newAgencyName").val("");
+			closeConfirmBox();
+		}else if(parseInt(requestReturn.code) == 3){
+			alert("有相同或类似的招标代理机构名存在，请检查");
+		}else {
+			alert("新建招标代理机构失败,错误编号:"+requestReturn.code);
+		}
 	}
 
 	function createNewTender() {
@@ -209,11 +185,6 @@ a:hover {
 
 		if (tenderCompany == 0) {
 			alert("请选择招标单位");
-			return;
-		}
-
-		if (tenderAgency == 0) {
-			alert("请选择招标代理机构");
 			return;
 		}
 
@@ -254,10 +225,7 @@ a:hover {
 			return;
 		}
 
-		if (tenderGuaranteeFee == "") {
-			alert("投标保证金不能为空");
-			return;
-		} else if (!r.test(tenderGuaranteeFee)) {
+		if (tenderGuaranteeFee != "" && !r.test(tenderGuaranteeFee)) {
 			alert("投标保证金有误，请重新输入");
 			return;
 		}
@@ -271,52 +239,67 @@ a:hover {
 			alert("产品类别不能为空");
 			return;
 		}
-
-		if (productBrand == 0) {
-			alert("产品品牌不能为空");
-			return;
+		var params = {
+				"tenderNum" : tenderNum,
+				"tenderCompany" : tenderCompany,
+				"tenderAgency" : tenderAgency,
+				"projectId" : projectId,
+				"saleUser" : saleUser,
+				"dateForBuy" : dateForBuy,
+				"dateForSubmit" : dateForSubmit,
+				"dateForOpen" : dateForOpen,
+				"tenderStyle" : tenderStyle,
+				"tenderExpense" : tenderExpense,
+				"tenderIntent" : tenderIntent,
+				"productStyle" : productStyle,
+				"productBrand" : productBrand,
+				"enterpriseQualificationRequirment" : enterpriseQualificationRequirment,
+				"technicalRequirment" : technicalRequirment,
+				"remark" : remark,
+				"tenderGuaranteeFee" : tenderGuaranteeFee,
+				"isFmlkShare":isFmlkShare	
 		}
-
-		$
-				.ajax({
-					url : host + "/createNewTender",
-					type : 'POST',
-					cache : false,
-					data : {
-						"tenderNum" : tenderNum,
-						"tenderCompany" : tenderCompany,
-						"tenderAgency" : tenderAgency,
-						"projectId" : projectId,
-						"saleUser" : saleUser,
-						"dateForBuy" : dateForBuy,
-						"dateForSubmit" : dateForSubmit,
-						"dateForOpen" : dateForOpen,
-						"tenderStyle" : tenderStyle,
-						"tenderExpense" : tenderExpense,
-						"tenderIntent" : tenderIntent,
-						"productStyle" : productStyle,
-						"productBrand" : productBrand,
-						"enterpriseQualificationRequirment" : enterpriseQualificationRequirment,
-						"technicalRequirment" : technicalRequirment,
-						"remark" : remark,
-						"tenderGuaranteeFee" : tenderGuaranteeFee
-					},
-					success : function(returndata) {
-						//alert(returndata);
-						var data = eval("(" + returndata + ")").errcode;
-						if (data == 0) {
-							alert("新建标书成功");
-							toReloadPage();
-						} else if (data == 3) {
-							alert("你已经录入这份标书，请勿重复录入");
-						} else {
-							alert("新建失败");
-						}
-
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
+		post("createNewTender",params,false);
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else if(parseInt(requestReturn.code)==0){
+			alert("新建标书成功");
+			setTimeout(function() {
+				toTenderListPage();
+			}, 500);
+		}else if(parseInt(requestReturn.code) == 3){
+			alert("你已经录入这份标书，请勿重复录入");
+		}else {
+			alert("新建标书失败,错误编号:"+requestReturn.code);
+		}
+	}
+	
+	function checkTenderType(id){
+		isFmlkShare = id==2;
+		getCompanyList("", 0, 0, 1,isFmlkShare);
+		$("#projectId").empty();
+		$("#projectId").append("<option value='0'>请选择...</option>");
+		getProductStyleList(0,isFmlkShare);
+	}
+	
+	function changeCompany(tCompanyId) {
+		var salesId = getSalesByCompanyId(tCompanyId);
+		getSalesList(salesId);
+		getProjectList(tCompanyId, 0,isFmlkShare);
+	}
+	
+	function changeProject(tProjectId){
+		getProductStyleList(getProjectStyle(tProjectId),isFmlkShare);
+	}
+	
+	function getProjectStyle(mProjectId) {
+		get("getProjectByProjectId",{"projectId" : mProjectId},false);
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else{
+			var productStyle = requestReturn.data.project[0].productStyle;
+			return productStyle;
+		}
 	}
 </script>
 
@@ -326,7 +309,7 @@ a:hover {
 		<div class="pageTop">
 			<div class="page">
 				<img src="../image/coin02.png" /><span><a href="#">首页</a>&nbsp;-&nbsp;<a
-					href="#">招标管理</a>&nbsp;-</span>&nbsp;新建标书信息
+					href="#">招投标管理</a>&nbsp;-</span>&nbsp;新建招投标信息
 			</div>
 		</div>
 
@@ -334,6 +317,12 @@ a:hover {
 			<div class="banneradd bor">
 				<div class="baTopNo">
 					<span>标书基本信息</span>
+					<input type="radio" name="field03" value="2" checked="checked"
+						onclick="checkTenderType(2)"
+						style="margin-left: 50px; margin-right: 5px;" /> <label>共享陪护</label>
+					<input type="radio" name="field03" value="1" 
+						onclick="checkTenderType(1)"
+						style="margin-left: 50px; margin-right: 5px;" /> <label>信息</label>
 				</div>
 				<div class="baBody">
 					<div class="bbD">
@@ -355,7 +344,7 @@ a:hover {
 
 					<div class="bbD">
 						<label>项目名称：</label><select class="selCss" id="projectId"
-							style="margin-right: 10px; width: 290px;">
+							style="margin-right: 10px; width: 290px;" onChange="changeProject(this.options[this.options.selectedIndex].value)">
 							<option value="0">请选择...</option>
 						</select> <label style="margin-left: 40px">销售人员：</label><select
 							class="selCss" id="salesId" style="width: 290px;" /></select>
@@ -363,17 +352,17 @@ a:hover {
 
 					<div class="bbD">
 						<label style="margin-left: -12px;">购标申请日期：</label><input
-							class="input3" type="text" id="dateForBuy" style="width: 158px;">
+							class="input3" type="text" id="dateForBuy" style="width: 156px;">
 						<span id="dd"></span> <label>投标日期：</label><input class="input3"
-							type="text" id="dateForSubmit" style="width: 158px;"> <span
+							type="text" id="dateForSubmit" style="width: 156px;"> <span
 							id="dd2"></span> <label>开标日期：</label><input class="input3"
-							type="text" id="dateForOpen" style="width: 158px;"> <span
+							type="text" id="dateForOpen" style="width: 156px;"> <span
 							id="dd3"></span>
 					</div>
 
 					<div class="bbD">
 						<label>投标类型：</label><select class="selCss" id="tenderStyle"
-							style="margin-right: 10px; width: 168px;" /></select> <label
+							style="margin-right: 10px; width: 166px;" /></select> <label
 							style="margin-left: 15px">购标费用：&nbsp;￥</label><input
 							type="text" class="input3" id="tenderExpense"
 							style="width: 140px;" placeholder="0" /><label>投标保证金：&nbsp;￥</label><input
@@ -415,7 +404,7 @@ a:hover {
 					</div>
 
 					<div class="bbD">
-						<label style="margin-left: 44px;float:left">备注：</label>
+						<label style="margin-left: 44px;float:left">&ensp;备注：</label>
 						<textarea id="remark"
 							style="width: 700px; resize: none; height: 80px; margin-right: 10px;"
 							class="input3"></textarea>

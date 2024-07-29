@@ -10,6 +10,10 @@ function toReloadPage() {
 	window.location.reload();
 }
 
+function toErrorPage(){
+	window.location.href = host + "/page/error";
+}
+
 function toCreateCompanyPage() {
 	window.location.href = host + "/page/createCompany";
 }
@@ -38,7 +42,7 @@ function toCreateProjectCasePage(){
 	window.location.href = host + "/page/createProjectCase";
 }
 
-function toProjectCaseListPage(){
+function toProjectCaseListPage(type){
 	if(type==0){
 		window.location.href = host + "/page/projectCaseList";
 	}else if(type==1){

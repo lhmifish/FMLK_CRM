@@ -356,8 +356,7 @@ function getThisArrangementList(){
 			+ "&dpartId=99&name=&nickName=&jobId=&isHide=true", true);
 	xhr.onreadystatechange = function() {
 		if (this.readyState == 4) {
-		//	alert(xhr.responseText);
-			var data2 = eval("(" + xhr.responseText + ")").userlist;
+		  var data2 = eval("(" + xhr.responseText + ")").userlist;
 			$
 					.ajax({
 						url : host + "/getAllWeekPlan",
@@ -377,7 +376,7 @@ function getThisArrangementList(){
 								
 								arrayDur = new Array();
 								for ( var i in data) {
-									if(sId=="lv.zhong" || sId=="sun.ke" || sId=="yang.huifang" || sId=="gong.zhiping"|| sId=="lu.haiming" || sId=="wang.fan"){
+									if(sId=="lv.zhong" || sId=="sun.ke" || sId=="yang.huifang" || sId=="lu.haiming"){
 										if (data[i].userId == uUid) {
 											arrayDur.push(data[i]);
 										}

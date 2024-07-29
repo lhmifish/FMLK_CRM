@@ -15,7 +15,6 @@
 <script type="text/javascript">
 $(document).ready(function() {
 	var uID = "${mUserId}";
-	alert(uID);
 });
 </script>
 </head>

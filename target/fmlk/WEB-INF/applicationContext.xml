@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+           http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+           http://www.springframework.org/schema/context 
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/aop 
+           http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+           http://www.springframework.org/schema/tx 
+           http://www.springframework.org/schema/tx/spring-tx.xsd
+           http://www.springframework.org/schema/mvc   
+           http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd">
+
+	<context:component-scan base-package="com.fmlk.service" />
+	<context:component-scan base-package="com.fmlk.dao" />
+
+
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+		<property name="entityManagerFactory" ref="entityManagerFactory" />
+	</bean>
+
+	<bean id="entityManagerFactory"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="jpaVendorAdapter">
+			<bean
+				class="org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter">
+				<property name="generateDdl" value="true" />
+				<property name="showSql" value="true" />
+			</bean>
+		</property>
+
+		<!-- 集成persistence.xml开始 -->
+		<!-- persistence.xml中的实体扫描 -->
+		
+		<property name="persistenceXmlLocation" value="/WEB-INF/persistence.xml" />
+		<property name="persistenceUnitName" value="fmlk" />
+		<!-- persistence.xml中的框架属性 -->
+		<property name="jpaProperties">
+			<props>
+				<prop key="eclipselink.orm.throw.exceptions">true</prop>
+				<prop key="eclipselink.ddl-generation">create-tables</prop>
+				<prop key="eclipselink.ddl-generation.output-mode">database</prop>
+				<prop key="eclipselink.weaving">false</prop>
+			</props>
+		</property>
+		<!-- 集成persistence.xml结束 -->
+	</bean>
+
+	<bean id="validator"
+		class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"></bean>
+
+<!-- 定时器设置开始 -->
+
+	<bean id="SpringQtzJob" class="com.fmlk.util.MyTimerTask" />
+	<bean id="SpringQtzJob2" class="com.fmlk.util.MyTimerTask2" />
+	<bean id="SpringQtzJob3" class="com.fmlk.util.MyTimerTask3" />
+	<bean id="SpringQtzJob4" class="com.fmlk.util.MyTimerTask4" />
+
+	<bean id="SpringQtzJobMethod"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="SpringQtzJob" />
+		</property>
+		<property name="targetMethod">  <!-- 要执行的方法名称 -->
+			<value>execute</value>
+		</property>
+	</bean>
+
+	<bean id="SpringQtzJobMethod2"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="SpringQtzJob2" />
+		</property>
+		<property name="targetMethod">  <!-- 要执行的方法名称 -->
+			<value>execute2</value>
+		</property>
+	</bean>
+	
+	<bean id="SpringQtzJobMethod3"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="SpringQtzJob3" />
+		</property>
+		<property name="targetMethod">  <!-- 要执行的方法名称 -->
+			<value>execute3</value>
+		</property>
+	</bean>
+	
+	<bean id="SpringQtzJobMethod4"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="SpringQtzJob4" />
+		</property>
+		<property name="targetMethod">  <!-- 要执行的方法名称 -->
+			<value>execute4</value>
+		</property>
+	</bean>
+
+    <bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations" value="/property/timejob.properties"/>
+	</bean>
+	
+	<!-- ======================== 调度触发器 ======================== -->
+	<bean id="CronTriggerBean"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="SpringQtzJobMethod"></property>
+		<property name="cronExpression" value="${timejob.time1}"></property>
+	</bean>
+
+	<bean id="CronTriggerBean2"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="SpringQtzJobMethod2"></property>
+		<property name="cronExpression" value="${timejob.time2}"></property>
+	</bean>
+
+    <bean id="CronTriggerBean3"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="SpringQtzJobMethod3"></property>
+		<property name="cronExpression" value="${timejob.time3}"></property>
+	</bean>
+	
+	<bean id="CronTriggerBean4"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="SpringQtzJobMethod4"></property>
+		<property name="cronExpression" value="${timejob.time4}"></property>
+	</bean>
+
+	<!-- ======================== 调度工厂 ======================== -->
+	<bean id="SpringJobSchedulerFactoryBean" lazy-init="false" autowire="no" 
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="CronTriggerBean" />
+				<ref bean="CronTriggerBean2" />
+				<ref bean="CronTriggerBean3" />
+				<ref bean="CronTriggerBean4" />
+			</list>
+		</property>
+	</bean>
+</beans>           

@@ -16,6 +16,9 @@ public class Company implements Serializable {
 	private String createDate;//创建日期
 	private boolean isDelete;//已删除
 	private boolean isFmlkShare;//共享陪护客户
+	private String updateDate;//更新日期
+	private int fieldLevel;//行业等级
+	private String hospitalDataInfo;//床位数+住院人数+陪夜人数+门诊量
 	
 	public int getId() {
 		return this.id;
@@ -111,5 +114,29 @@ public class Company implements Serializable {
 
 	public void setIsFmlkShare(boolean isFmlkShare) {
 		this.isFmlkShare = isFmlkShare;
+	}
+	
+	public String getUpdateDate() {
+		return this.updateDate;
+	}
+
+	public void setUpdateDate(String updateDate) {
+		this.updateDate = updateDate;
+	}
+	
+	public int getFieldLevel() {
+		return this.fieldLevel;
+	}
+
+	public void setFieldLevel(int fieldLevel) {
+		this.fieldLevel = fieldLevel;
+	}
+	
+	public String getHospitalDataInfo() {
+		return this.hospitalDataInfo;
+	}
+
+	public void setHospitalDataInfo(String hospitalDataInfo) {
+		this.hospitalDataInfo = hospitalDataInfo;
 	}
 }

@@ -16,9 +16,9 @@ public class ContractService {
 		return dao.getContractList(contract);
 	}
 
-	public String deleteContract(int id) {
+	public String deleteContract(int id,String updateDate) {
 		dao = new ContractDao();
-		return dao.deleteContract(id);
+		return dao.deleteContract(id,updateDate);
 	}
 	
 	

@@ -306,7 +306,6 @@
 			try {
 				emptyFile = new Blob([ "" ], "filename");
 			} catch (exception) {
-				alert("unable to create empty file");
 				return;
 			}
 		}

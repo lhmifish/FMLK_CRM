@@ -302,8 +302,6 @@ select::-ms-expand {
 	}
 	
 	function updateUserList(){
-		alert("1");
-		alert($("#date").val());
 	}
 
 	function formatDate(date) {

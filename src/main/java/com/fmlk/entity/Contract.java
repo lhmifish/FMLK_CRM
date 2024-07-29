@@ -11,12 +11,13 @@ public class Contract implements Serializable {
 	private int saleUser;//销售人员
 	private String projectId;//项目编号
 	private String dateForContract;// 合同实施日期
-	private long contractAmount;//合同金额（含税）
+	private String contractAmount;//合同金额（含税）
 	private int taxRate;//税率
 	private String serviceDetails;//服务内容说明
 	private boolean isDelete;//已删除
 	private String createDate;//创建日期
-	
+	private boolean isFmlkShare;//共享陪护客户
+	private String updateDate;//更新日期
 	private String purchaseDetails;//采购说明
 	private String deliveryDetails;//合同交货说明
 	private String dateForRequirementDelivery;// 合同要求交货日期
@@ -73,11 +74,11 @@ public class Contract implements Serializable {
 		this.companyId = companyId;
 	}
 	
-	public long getContractAmount() {
+	public String getContractAmount() {
 		return this.contractAmount;
 	}
 
-	public void setContractAmount(long contractAmount) {
+	public void setContractAmount(String contractAmount) {
 		this.contractAmount = contractAmount;
 	}
 	
@@ -143,5 +144,21 @@ public class Contract implements Serializable {
 
 	public void setIsUploadContract(boolean isUploadContract) {
 		this.isUploadContract = isUploadContract;
+	}
+	
+	public boolean getIsFmlkShare() {
+		return this.isFmlkShare;
+	}
+
+	public void setIsFmlkShare(boolean isFmlkShare) {
+		this.isFmlkShare = isFmlkShare;
+	}
+	
+	public String getUpdateDate() {
+		return this.updateDate;
+	}
+
+	public void setUpdateDate(String updateDate) {
+		this.updateDate = updateDate;
 	}
 }

@@ -28,6 +28,7 @@ import com.fmlk.entity.ProjectReport;
 import com.fmlk.entity.Role;
 import com.fmlk.entity.Tender;
 import com.fmlk.entity.User;
+import com.fmlk.entity.VisitRecord;
 import com.fmlk.service.CompanyService;
 import com.fmlk.service.ContractService;
 import com.fmlk.service.ProjectService;
@@ -68,8 +69,10 @@ public class CreateObjectController implements ApplicationContextAware {
 		Company c = new Company();
 		c.setCompanyName(request.getParameter("companyName"));
 		c.setAbbrCompanyName(request.getParameter("abbrCompanyName"));
+		c.setSalesId(Integer.parseInt(request.getParameter("salesId")));
 		c.setFieldId(Integer.parseInt(request.getParameter("fieldId")));
-	    c.setSalesId(Integer.parseInt(request.getParameter("salesId")));
+		c.setFieldLevel(Integer.parseInt(request.getParameter("fieldLevel")));
+		c.setHospitalDataInfo(request.getParameter("hospitalDataInfo"));
 		c.setAddress(request.getParameter("address"));
 		c.setAreaId(Integer.parseInt(request.getParameter("areaId")));
 		c.setCompanySource(request.getParameter("companySource"));
@@ -78,9 +81,8 @@ public class CreateObjectController implements ApplicationContextAware {
 		String[] arrayContact = request.getParameterValues("arrayContact");
 		String randNum = String.valueOf(Math.round((Math.random()*9+1)*100000));
 		c.setCompanyId("C"+new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())+randNum);
-		//System.out.println(request.getParameter("isFmlkShare"));
 		String jsonStr = mCompanyService.createCompany(c,arrayContact);
-		return jsonStr;
+        return jsonStr;
 	}
 	
 	/**
@@ -96,26 +98,46 @@ public class CreateObjectController implements ApplicationContextAware {
 		p.setCompanyId(request.getParameter("companyId"));
 		p.setSalesId(Integer.parseInt(request.getParameter("salesId")));
 		p.setProjectType(Integer.parseInt(request.getParameter("projectType")));
-		int projectManager = Integer.parseInt(request.getParameter("projectManager"));
-		p.setProjectManager(projectManager);
-		if(projectManager != 0 ) {
-			p.setSalesBeforeUsers(projectManager+"");
-			p.setSalesAfterUsers(projectManager+"");
-		}
-		else {
-			p.setSalesBeforeUsers("");
-			p.setSalesAfterUsers("");
-		}
-		p.setCreateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
 		String[] arrayContactUsers = request.getParameterValues("contactUsers");
 		String contactUsers="";
 		for(int i=0;i<arrayContactUsers.length;i++) {
 			contactUsers += arrayContactUsers[i] + ",";
 		}
-		contactUsers = contactUsers.substring(0, contactUsers.length()-1);
+		if(!contactUsers.equals("")) {
+			contactUsers = contactUsers.substring(0, contactUsers.length()-1);
+		}
 		p.setContactUsers(contactUsers);
+		String[] arrayProductStyle = request.getParameterValues("productStyle");
+		String productStyle = "";
+		for(int i=0;i<arrayProductStyle.length;i++) {
+			productStyle += arrayProductStyle[i] + ",";
+		}
+		if(!productStyle.equals("")) {
+			productStyle = productStyle.substring(0, productStyle.length()-1);
+		}
+		p.setProductStyle(productStyle);
+		int projectManager = Integer.parseInt(request.getParameter("projectManager"));
+		p.setProjectManager(projectManager);
+		boolean isFmlkShare = Boolean.parseBoolean(request.getParameter("isFmlkShare"));
+		p.setIsFmlkShare(isFmlkShare);
+		p.setStartDate(request.getParameter("startDate"));
+		p.setEndDate(request.getParameter("endDate"));
+		p.setProjectState(Integer.parseInt(request.getParameter("projectState")));
+		p.setCreateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
+		if(projectManager != 0 ) {
+			p.setSalesBeforeUsers(projectManager+"");
+			p.setSalesAfterUsers(projectManager+"");
+		}else {
+			p.setSalesBeforeUsers("");
+			p.setSalesAfterUsers("");
+		}
 		String randNum = String.valueOf(Math.round((Math.random()*9+1)*10));
-		p.setProjectId("P" + new SimpleDateFormat("yyMMddHHmmss").format(new Date())+randNum);
+		randNum = new SimpleDateFormat("yyMMddHHmmss").format(new Date())+randNum;
+		if(isFmlkShare) {
+			p.setProjectId("CP" + randNum);
+		}else {
+			p.setProjectId("P" + randNum);
+		}
 		String jsonStr = mProjectService.createProject(p);
 		return jsonStr;
 	}
@@ -145,8 +167,14 @@ public class CreateObjectController implements ApplicationContextAware {
 		tender.setProductStyle(Integer.parseInt(request.getParameter("productStyle")));
 		tender.setProductBrand(Integer.parseInt(request.getParameter("productBrand")));
 		tender.setRemark(request.getParameter("remark"));
-		tender.setTenderGuaranteeFee(Integer.parseInt(request.getParameter("tenderGuaranteeFee")));
+		String tenderGuaranteeFee = request.getParameter("tenderGuaranteeFee");
+		if(tenderGuaranteeFee == null || tenderGuaranteeFee.equals("")) {
+			tender.setTenderGuaranteeFee(0);
+		}else {
+			tender.setTenderGuaranteeFee(Integer.parseInt(request.getParameter("tenderGuaranteeFee")));
+		}
 		tender.setCreateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
+		tender.setIsFmlkShare(Boolean.parseBoolean(request.getParameter("isFmlkShare")));
 		String jsonStr = mTservice.createTender(tender);
 		return jsonStr;
 	}
@@ -179,9 +207,15 @@ public class CreateObjectController implements ApplicationContextAware {
 		contract.setSaleUser(Integer.parseInt(request.getParameter("salesId")));
 		contract.setProjectId(request.getParameter("projectId"));
 		contract.setDateForContract(request.getParameter("dateForContract"));
-		contract.setContractAmount(Long.parseLong(request.getParameter("contractAmount")));
-		contract.setTaxRate(Integer.parseInt(request.getParameter("taxRate")));
+		contract.setContractAmount(request.getParameter("contractAmount"));
+		String taxRate = request.getParameter("taxRate");
+		if(taxRate.equals("")||taxRate==null) {
+			contract.setTaxRate(-1);
+		}else {
+			contract.setTaxRate(Integer.parseInt(taxRate));
+		}
 		contract.setServiceDetails(request.getParameter("serviceDetails"));
+		contract.setIsFmlkShare(Boolean.parseBoolean(request.getParameter("isFmlkShare")));
 		String[] paymentInfo = request.getParameterValues("paymentInfo");
 		contract.setCreateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
 		String jsonStr = mContractService.createContract(contract,paymentInfo);
@@ -225,7 +259,6 @@ public class CreateObjectController implements ApplicationContextAware {
 		pc.setServiceType(Integer.parseInt(request.getParameter("serviceType")));
 		pc.setServiceContent(request.getParameter("serviceContent"));
 		pc.setDeviceInfo(request.getParameter("deviceInfo"));
-		pc.setCasePeriod(request.getParameter("casePeriod"));
 		pc.setCreateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
 		pc.setServiceEndDate(request.getParameter("serviceEndDate"));
 		String[] arrayContact = request.getParameterValues("arrayContact");
@@ -234,34 +267,43 @@ public class CreateObjectController implements ApplicationContextAware {
 			contactUsers += arrayContact[i] + ",";
 		}
 		contactUsers = contactUsers.substring(0, contactUsers.length()-1);
+		pc.setContactUsers(contactUsers);
 		String randNum = String.valueOf(Math.round((Math.random()*9+1)*100000));
 		pc.setCaseId("PC"+new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())+randNum);
-		pc.setContactUsers(contactUsers);
 		String jsonStr = mProjectService.createProjectCase(pc);
-		
-		String projectJSONStr = mProjectService.getProjectCaseByCaseId(pc.getCaseId());
-		String errcode2 = (String) new Gson().fromJson(projectJSONStr, Map.class).get("errcode");
-		if(errcode2.equals("0")) {
-			JSONArray myProjectCaseArr = new JSONObject().fromObject(projectJSONStr).getJSONArray("projectCase");
-			ProjectCase projectCase = (ProjectCase) JSONObject.toBean((JSONObject) myProjectCaseArr.get(0), ProjectCase.class);
-			pc.setId(projectCase.getId());
+		boolean errcode2 = ((String) new Gson().fromJson(jsonStr, Map.class).get("errcode")).equals("0");
+		if(errcode2) {
+			//获取派工id
+			String projectJSONStr = mProjectService.getProjectCaseByCaseId(pc.getCaseId());
+			errcode2 = ((String) new Gson().fromJson(projectJSONStr, Map.class).get("errcode")).equals("0");
+			if(errcode2) {
+				JSONArray myArr = new JSONObject().fromObject(projectJSONStr).getJSONArray("projectCase");
+				ProjectCase projectCase = (ProjectCase) JSONObject.toBean((JSONObject) myArr.get(0), ProjectCase.class);
+				pc.setId(projectCase.getId());
+				// 新建派工通知
+				String companyName = request.getParameter("companyName");
+				String projectName = request.getParameter("projectName");
+				mUserService = new UserService();
+				List<User> userList = new ArrayList<User>();
+				String userJsonStr = mUserService.getUserById(pc.getSalesId());
+				String salesName = "";
+				errcode2 = ((String) new Gson().fromJson(userJsonStr, Map.class).get("errcode")).equals("0");
+				if(errcode2) {
+					myArr = new JSONObject().fromObject(userJsonStr).getJSONArray("user");
+					User mUser = (User) JSONObject.toBean((JSONObject) myArr.get(0), User.class);
+					salesName = mUser.getName();
+					//通知到销售部经理和销售本人
+					if(mUser.getRoleId() != 3) {
+						userList = mUserService.getUserListByIds(pc.getSalesId() + ",3");
+					}else {
+						userList = mUserService.getUserListByIds("3");
+					}
+					String accessToken = WeChatEnterpriseUtils.getAccessToken();
+					WeChatEnterpriseUtils.sendProjectCaseInform(accessToken,pc,userList, companyName, projectName,salesName,false);
+				}
+			}
 		}
-		
-		// 新建派工通知
-		String companyName = request.getParameter("companyName");
-		String projectName = request.getParameter("projectName");
-		mUserService = new UserService();
-		List<User> userList = new ArrayList<User>();
-		int uid = pc.getSalesId();		
-		if((uid != 3) && (uid != 4)) {
-			userList = mUserService.getUserList(pc.getSalesId() + ",3,4");
-		}else {
-			userList = mUserService.getUserList("3,4");
-		}
-		String accessToken = WeChatEnterpriseUtils.getAccessToken();
-		WeChatEnterpriseUtils.sendProjectCaseInform(accessToken,pc,userList, companyName, projectName);
 		return jsonStr;
-		
 	}
 	
 	
@@ -313,7 +355,6 @@ public class CreateObjectController implements ApplicationContextAware {
 		DailyReport dr = new DailyReport();
 		dr.setDate(request.getParameter("date"));
 		dr.setName(request.getParameter("name"));
-		System.out.println(request.getParameter("name"));
 		dr.setSchedule(request.getParameter("schedule"));
 		dr.setDailyReport(request.getParameter("dailyReport"));
 		dr.setWeekReport("");
@@ -381,7 +422,6 @@ public class CreateObjectController implements ApplicationContextAware {
 	@RequestMapping(value = "/createTextInformation", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
 	@ResponseBody
 	public String createTextInformation(HttpServletRequest request) {
-		System.out.println("controller");
 		Inform inf= new Inform();
 		inf.setTitle(request.getParameter("title"));
 		inf.setContent(request.getParameter("informContent"));
@@ -427,11 +467,26 @@ public class CreateObjectController implements ApplicationContextAware {
 		inf.setInformType(Integer.parseInt(request.getParameter("informType")));
 		inf.setInformDate(request.getParameter("informDate"));
 		String uploadResult = WeChatEnterpriseUtils.uploadInformImage(uploadFile); 
-		
-		
-		
 		String result = null;
-	    
 		return result;
+	}
+	
+	/**
+	 * 创建拜访记录
+	 * 
+	 */
+	@RequestMapping(value = "/createVisitRecord", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String createVisitRecord(HttpServletRequest request) {
+		mService = new Service();
+		VisitRecord vr = new VisitRecord();
+		vr.setCompanyId(request.getParameter("companyId"));
+		vr.setVisitDate(request.getParameter("visitDate"));
+		vr.setSalesId(Integer.parseInt(request.getParameter("salesId")));
+		vr.setVisitDesc(request.getParameter("desc"));
+		vr.setCreateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
+		vr.setIsFmlkShare(Boolean.parseBoolean(request.getParameter("isFmlkShare")));
+		String jsonStr = mService.createVisitRecord(vr);
+        return jsonStr;
 	}
 }

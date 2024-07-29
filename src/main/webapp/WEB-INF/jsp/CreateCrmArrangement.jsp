@@ -44,9 +44,6 @@ $(document)
 			if (sId == null || sId == "") {
 				parent.location.href = "${pageContext.request.contextPath}/page/login";
 			} else {
-				alert(sId);
-				//getUserPermissionList();
-				
 			}
 		});
 

@@ -17,9 +17,9 @@ public class TenderService {
 		return dao.editTender(tender);
 	}
 
-	public String deleteTender(int id) {
+	public String deleteTender(int id,String updateDate) {
 		dao = new TenderDao();
-		return dao.deleteTender(id);
+		return dao.deleteTender(id,updateDate);
 	}
 
 	public String getTenderList(Tender tender, String date1, String date2) {

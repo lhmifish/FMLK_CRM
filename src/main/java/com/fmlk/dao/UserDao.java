@@ -49,7 +49,7 @@ public class UserDao {
 			} else if (dpartId == 100) {// 技术和销售
 				sql += " and departmentId = 1 or departmentId = 2";
 			} else if (dpartId == 101) {// 技术和销售和开发
-				sql += " and departmentId = 1 or departmentId = 2 or departmentId = 4";
+				sql += " and departmentId != 3 and departmentId != 5 and departmentId != 6";
 			} else if (dpartId == 102) {
 				sql += " and departmentId = 1 or departmentId = 4 or departmentId = 7";
 			} else if (dpartId != 0) {
@@ -68,7 +68,6 @@ public class UserDao {
 				sql += " and jobId = '" + jobId + "'";
 			}
 			sql += " order by departmentId,id";
-		//	con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			res = pre.executeQuery();
 			uList = new ArrayList<User>();
@@ -205,6 +204,7 @@ public class UserDao {
 				cu.setTel(res.getString("tel"));
 				cu.setEmail(res.getString("email"));
 				cu.setUserName(res.getString("userName"));
+				cu.setWechatNo(res.getString("wechatNo"));
 				cuList.add(cu);
 			}
 			jsonObject = new JSONObject();
@@ -223,62 +223,82 @@ public class UserDao {
 	}
 
 	// cuList数据库中有，但arrayContact中没有
-	public List<ContactUser> checkNonExistContactUser(String companyId, String[] arrayContact,
-			List<ContactUser> cuList) {
+	public List<ContactUser> checkNonExistContactUser(String companyId, String[] arrayContact) {
 		List<ContactUser> newList = new ArrayList<ContactUser>();
-		for (int i = 0; i < cuList.size(); i++) {
-			boolean isFind = false;
-			String userName = cuList.get(i).getUserName();
-			for (int j = 0; j < arrayContact.length; j++) {
-				if (arrayContact[j].split("#")[0].equals(userName)) {
-					isFind = true;
-					break;
+		String userName = null;
+		String tel = null;
+		String email = null;
+		String dept = null;
+		String position = null;
+		String wechat = null;
+		String id = null;
+		String createDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+		if(arrayContact != null) {
+			for(int i = 0;i<arrayContact.length;i++) {
+				userName = arrayContact[i].split("#")[0];
+				tel = arrayContact[i].split("#")[1];
+				email = arrayContact[i].split("#")[2];
+				dept = arrayContact[i].split("#")[3]; 
+				position = arrayContact[i].split("#")[4]; 
+				wechat = arrayContact[i].split("#")[5];
+				id = arrayContact[i].split("#")[6]; 
+				if(id.equals("null")) {
+					ContactUser cu = new ContactUser();
+					cu.setUserName(userName);
+					cu.setTel(tel);
+					cu.setEmail(email);
+					cu.setDepartment(dept);
+					cu.setPosition(position);
+					cu.setCompanyId(companyId);
+					cu.setCreateDate(createDate);
+					cu.setUpdateDate(createDate);
+					cu.setWechatNo(wechat);
+					newList.add(cu);
 				}
-			}
-			if (!isFind) {
-				newList.add(cuList.get(i));
 			}
 		}
 		return newList;
 	}
 
 	// 数据库和arrayContact中都有
-	public List<ContactUser> checkExistContactUser(String companyId, String[] arrayContact, List<ContactUser> cuList) {
-		List<ContactUser> newList = new ArrayList<ContactUser>();
-		for (int i = 0; i < cuList.size(); i++) {
-			boolean isFind = false;
-			int id = 0;
-			String tel = null;
-			String email = null;
-			String dept = null;
-			String position = null;
-			String userName = cuList.get(i).getUserName();
-			for (int j = 0; j < arrayContact.length; j++) {
-				if (arrayContact[j].split("#")[0].equals(userName)) {
-					id = cuList.get(i).getId();
-					tel = arrayContact[j].split("#")[1];
-					email = arrayContact[j].split("#")[2];
-					dept = arrayContact[j].split("#")[3];
-					position = arrayContact[j].split("#")[4];
-					isFind = true;
-					break;
+	public List<ContactUser> checkExistContactUser(String companyId, String[] arrayContact) {
+		List<ContactUser> existList = new ArrayList<ContactUser>();
+		String userName = null;
+		String tel = null;
+		String email = null;
+		String dept = null;
+		String position = null;
+		String id = null;
+		String wechat = null;
+		String updateDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+		if(arrayContact != null) {
+			for(int i = 0;i<arrayContact.length;i++) {
+				userName = arrayContact[i].split("#")[0];
+				tel = arrayContact[i].split("#")[1];
+				email = arrayContact[i].split("#")[2];
+				dept = arrayContact[i].split("#")[3]; 
+				position = arrayContact[i].split("#")[4]; 
+				wechat = arrayContact[i].split("#")[5];
+				id = arrayContact[i].split("#")[6]; 
+				if(!id.equals("null")) {
+					ContactUser cu = new ContactUser();
+					cu.setId(Integer.parseInt(id));
+					cu.setUserName(userName);
+					cu.setTel(tel);
+					cu.setEmail(email);
+					cu.setDepartment(dept);
+					cu.setPosition(position);
+					cu.setCompanyId(companyId);
+					cu.setUpdateDate(updateDate);
+					cu.setWechatNo(wechat);
+					existList.add(cu);
 				}
 			}
-			if (isFind) {
-				ContactUser cu = new ContactUser();
-				cu.setId(id);
-				cu.setTel(tel);
-				cu.setEmail(email);
-				cu.setDepartment(dept);
-				cu.setPosition(position);
-				newList.add(cu);
-			}
 		}
-		return newList;
+		return existList;
 	}
 
-	// 数据库中没有，但arrayContact中有
-	public List<ContactUser> checkNonExistContactUser2(String companyId, String[] arrayContact,
+/*	public List<ContactUser> checkNonExistContactUser2(String companyId, String[] arrayContact,
 			List<ContactUser> cuList) {
 		List<ContactUser> newList = new ArrayList<ContactUser>();
 		for (int i = 0; i < arrayContact.length; i++) {
@@ -303,12 +323,13 @@ public class UserDao {
 			}
 		}
 		return newList;
-	}
+	}*/
 
-	public void createContactUser(List<ContactUser> contactUserList) {
+	public String createContactUser(List<ContactUser> contactUserList) {
+		String retCode = "0";
 		for (int i = 0; i < contactUserList.size(); i++) {
 			try {
-				sql = "insert into contactuser (companyId,userName,tel,email,department,position,createDate) values (?,?,?,?,?,?,?)";
+				sql = "insert into contactuser (companyId,userName,tel,email,department,position,createDate,updateDate,wechatNo) values (?,?,?,?,?,?,?,?,?)";
 				con = DBConnection.getConnection_Mysql();
 				pre = con.prepareStatement(sql);
 				pre.setString(1, contactUserList.get(i).getCompanyId());
@@ -318,14 +339,19 @@ public class UserDao {
 				pre.setString(5, contactUserList.get(i).getDepartment());
 				pre.setString(6, contactUserList.get(i).getPosition());
 				pre.setString(7, contactUserList.get(i).getCreateDate());
+				pre.setString(8, contactUserList.get(i).getUpdateDate());
+				pre.setString(9, contactUserList.get(i).getWechatNo());
 				pre.executeUpdate();
 			} catch (Exception e) {
+				retCode = "5";
 				e.printStackTrace();
+				break;
 			} finally {
 				DBConnection.closeCon(con);
 				DBConnection.closePre(pre);
 			}
 		}
+		return retCode;
 	}
 
 	public void deleteContactUser(List<ContactUser> deletecuList) {
@@ -349,14 +375,18 @@ public class UserDao {
 	public void updateContactUser(List<ContactUser> updatecuList) {
 		for (int i = 0; i < updatecuList.size(); i++) {
 			try {
-				sql = "update contactuser set tel = ?,email = ?,department = ?,position = ? where id = ? and isDeleted = 0";
+				sql = "update contactuser set tel = ?,email = ?,department = ?,position = ?,userName = ?,updateDate = ?,wechatNo = ? where id = ? and companyId = ?";
 				con = DBConnection.getConnection_Mysql();
 				pre = con.prepareStatement(sql);
 				pre.setString(1, updatecuList.get(i).getTel());
 				pre.setString(2, updatecuList.get(i).getEmail());
 				pre.setString(3, updatecuList.get(i).getDepartment());
 				pre.setString(4, updatecuList.get(i).getPosition());
-				pre.setInt(5, updatecuList.get(i).getId());
+				pre.setString(5, updatecuList.get(i).getUserName());
+				pre.setString(6, updatecuList.get(i).getUpdateDate());
+				pre.setString(7, updatecuList.get(i).getWechatNo());
+				pre.setInt(8, updatecuList.get(i).getId());
+				pre.setString(9, updatecuList.get(i).getCompanyId());
 				int j = pre.executeUpdate();
 				if (j > 0) {
 				}
@@ -466,34 +496,24 @@ public class UserDao {
 		int roleId = user.getRoleId();
 		String nickName = user.getNickName();
 		try {
-			sql = "update user set ";
+			sql = "update user set updateDate = '" + user.getUpdateDate() + "',";
 			con = DBConnection.getConnection_Mysql();
-			if (userName != null) {
-				if (!userName.equals("")) {
-					sql += "name = '" + userName + "',";
-				}
+			if (userName != null && !userName.equals("")) {
+				sql += "name = '" + userName + "',";
 			}
-			if (psd != null) {
-				if (!psd.equals("")) {
-					sql += "psd = '" + psd + "',";
-				}
+			if (psd != null && !psd.equals("")) {
+				sql += "psd = '" + psd + "',";
 			}
-			if (email != null) {
-				if (!email.equals("")) {
-					sql += "email = '" + email + "',";
-				}
+			if (email != null && !email.equals("")) {
+				sql += "email = '" + email + "',";
 			}
 
-			if (tel != null) {
-				if (!tel.equals("")) {
-					sql += "tel = '" + tel + "',";
-				}
+			if (tel != null && !tel.equals("")) {
+				sql += "tel = '" + tel + "',";
 			}
 
-			if (state != null) {
-				if (!state.equals("")) {
-					sql += "state = '" + state + "',";
-				}
+			if (state != null && !state.equals("")) {
+				sql += "state = '" + state + "',";
 			}
 
 			if (departmentId != 0) {
@@ -504,10 +524,8 @@ public class UserDao {
 				sql += "roleId = " + roleId + ",";
 			}
 
-			if (nickName != null) {
-				if (!nickName.equals("")) {
-					sql += "nickName = '" + nickName + "'";
-				}
+			if (nickName != null && !nickName.equals("")) {
+				sql += "nickName = '" + nickName + "'";
 			}
 			sql += " where id = ?";
 			pre = con.prepareStatement(sql);
@@ -557,14 +575,52 @@ public class UserDao {
 
 	public List<User> getUserList(String userIdStr) {
 		uList = new ArrayList<User>();
-		for (int i = 0; i < userIdStr.split(",").length; i++) {
-			String mJsonStr = getUserById(Integer.parseInt(userIdStr.split(",")[i]));
+		if(userIdStr.indexOf(",") != -1) {
+			for (int i = 0; i < userIdStr.split(",").length; i++) {
+				String mJsonStr = getUserById(Integer.parseInt(userIdStr.split(",")[i]));
+				JSONArray jsonArray = new JSONObject().fromObject(mJsonStr).getJSONArray("user");
+				User user = ((List<User>) JSONArray.toCollection(jsonArray, User.class)).get(0);
+				uList.add(user);
+			}
+		}else {
+			String mJsonStr = getUserById(Integer.parseInt(userIdStr));
 			JSONArray jsonArray = new JSONObject().fromObject(mJsonStr).getJSONArray("user");
 			User user = ((List<User>) JSONArray.toCollection(jsonArray, User.class)).get(0);
 			uList.add(user);
 		}
-		// System.out.println(uList.size());
 		return uList;
+	}
+	
+	public List<User> getUserListByRoleId(int roleId) {
+		uList = new ArrayList<User>();
+		try {
+			sql = "select * from user where roleId = ?";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setInt(1, roleId);
+			res = pre.executeQuery();
+			while (res.next()) {
+				User user = new User();
+				user.setUId(res.getInt("id"));
+				user.setName(res.getString("name"));
+				user.setNickName(res.getString("nickName"));
+				user.setState(res.getString("state"));
+				user.setDepartmentId(res.getInt("departmentId"));
+				user.setJobId(res.getString("jobId"));
+				user.setEmail(res.getString("email"));
+				user.setTel(res.getString("tel"));
+				user.setRoleId(res.getInt("roleId"));
+				uList.add(user);
+			}
+            return uList;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
 	}
 
 }

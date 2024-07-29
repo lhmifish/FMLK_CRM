@@ -26,6 +26,8 @@
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
 <script
 	src="${pageContext.request.contextPath}/js/jquery.table2excel.js"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=3"></script>
+<script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
 <style type="text/css">
 a:hover {
 	color: #FF00FF
@@ -45,13 +47,17 @@ html {
 	var queryType;
 	var isPermissionEdit;
 	var mRoleId;
+	var host;
+	var requestReturn;
+	var list;//数据列表
 
 	$(document)
 			.ready(
 					function() {
 						sId = "${sessionId}";
+						host = "${pageContext.request.contextPath}";
 						if (sId == null || sId == "") {
-							parent.location.href = "${pageContext.request.contextPath}/page/login";
+							parent.location.href = host+"/page/login";
 						} else {
 							mRoleId = null;
 							getUserPermissionList();
@@ -73,340 +79,285 @@ html {
 					});
 
 	function getUserPermissionList() {
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/getUserPermissionList",
-					type : 'GET',
-					data : {
-						"nickName" : sId
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						var data = eval("(" + returndata + ")").permissionSettingList;
-						isPermissionEdit = false;
-						for ( var i in data) {
-							if (data[i].permissionId == 74 ||  data[i].permissionId == 79) {
-								mRoleId = data[i].permissionId == 79?data[i].roleId:null;
-								isPermissionEdit = true;
-								break;
-							}
-						}
-						if (!isPermissionEdit) {
-							window.location.href = "${pageContext.request.contextPath}/page/error";
-						} else {
-							$('#body').show();
-						}
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
+		var params = {"nickName" : sId}
+		get("getUserPermissionList",params,false)
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else{
+			var data = requestReturn.data.permissionSettingList;
+			isPermissionEdit = false;
+			for ( var i in data) {
+				if (data[i].permissionId == 74 ||  data[i].permissionId == 79) {
+					//查看所有人&查看部门
+					isPermissionEdit = true;
+					break;
+				}
+			}
+			if (!isPermissionEdit) {
+				toErrorPage();
+			} else {
+				$('#body').show();
+			}
+		}
+	}
+	
+	function getUser() {
+		var user;
+		var params = {"nickName" : sId}
+		get("getUserByNickName",params,false)
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else{
+			user = requestReturn.data.user[0];
+		}
+		return user;
 	}
 
 	function getUserList(mIsHide) {
-		$.ajax({
-			url : "${pageContext.request.contextPath}/userList",
-			type : 'GET',
-			data : {
-				"dpartId" : 99,
+		mRoleId = getUser().roleId;
+		var dpartId = 99;
+		if(mRoleId==3 || mRoleId==4){
+			//销售部经理&副经理
+			dpartId = 2
+		}else if(mRoleId==19){
+			//客服部经理
+			dpartId = 9
+		}else if(mRoleId==14){
+			//运维部经理
+			dpartId = 8
+		}	
+		var params = {
+				"dpartId" : dpartId,
 				"date" : "",
 				"name" : "",
 				"nickName" : "",
 				"jobId" : "",
 				"isHide" : mIsHide
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var str = '';
-				var data2 = eval("(" + returndata + ")").userlist;
-				for ( var i in data2) {
-					if(mRoleId == null){
-						str += '<option value="'+data2[i].nickName+'">'
-						+ data2[i].name + '</option>';
-					}else if(mRoleId==3 && data2[i].roleId>=3 && data2[i].roleId<=5){
-						str += '<option value="'+data2[i].nickName+'">'
-						+ data2[i].name + '</option>';
-					}else if(mRoleId==14 && (data2[i].roleId==14 || data2[i].roleId==17)){
-						str += '<option value="'+data2[i].nickName+'">'
-						+ data2[i].name + '</option>';
-					}else if(mRoleId==19 && (data2[i].roleId==19 || data2[i].roleId==18)){
-						str += '<option value="'+data2[i].nickName+'">'
-						+ data2[i].name + '</option>';
-					}else if(mRoleId==10 && data2[i].roleId<=2){
-						str += '<option value="'+data2[i].nickName+'">'
-						+ data2[i].name + '</option>';
-					}
+		}		
+		get("userList",params,false)
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else{
+			var str = '';
+			var data2 = requestReturn.data.userlist;
+			for ( var i in data2) {
+				//if((mRoleId==3 || mRoleId==4)&&)
+				if((mRoleId==3 || mRoleId==4) && data2[i].departmentId==2){
+					//销售
+					str += '<option value="'+data2[i].nickName+'">'+ data2[i].name + '</option>';
+				}else if(mRoleId==19 && data2[i].departmentId==9){
+					//客服
+					str += '<option value="'+data2[i].nickName+'">'+ data2[i].name + '</option>';
+				}else if(mRoleId==14 && data2[i].departmentId==8){
+					//运维
+					str += '<option value="'+data2[i].nickName+'">'+ data2[i].name + '</option>';
+				}else if(mRoleId==10 && data2[i].departmentId==1){
+					//技术
+					str += '<option value="'+data2[i].nickName+'">'+ data2[i].name + '</option>';
+				}else if(mRoleId==9 || mRoleId==11 || mRoleId==12 || mRoleId==13){
+					//总经理，管理员，副总，行政主管
+					str += '<option value="'+data2[i].nickName+'">'+ data2[i].name + '</option>';
 				}
-				$("#userId").empty();
-				$("#userId").append(str);
-
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
 			}
-		});
+			$("#userId").empty();
+			$("#userId").append(str);
+		}
 	}
 
 	function getUserWorkAttendanceList() {
 		var date2;
-		if ($("#mSpan2").css("display") == 'none') {
-			queryType = 2;
-			date2 = "";
-		} else {
-			queryType = 1;
+		if(queryType == 1){
 			date2 = $('#mmDate').val();
+		}else{
+			date2 = "";
+		}		
+		var params={
+				"date" : $("#year").val() + "/" + $("#month").val(),
+				"nickName" : $("#userId").val(),
+				"date2" : date2	
 		}
-		//alert($("#userId").val())
-		$.ajax({
-					url : "${pageContext.request.contextPath}/getUserWorkAttendanceList",
-					type : 'GET',
-					data : {
-						"date" : $("#year").val() + "/" + $("#month").val(),
-						"nickName" : $("#userId").val(),
-						"date2" : date2
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						//alert(returndata);
-						var str = "";
-						var data = eval("(" + returndata + ")").dailylist;
-						if (data.length == 0) {
-							str += '<tr style="width: 100%"><td style="width: 100%;color:red;font-size: 12px; height: 35px;">月数据还没有录入</td></tr>';
-						} else {
-							for ( var i in data) {
-								var schedule = data[i].schedule;
-								var dailyReport = data[i].dailyReport;
-								var weekReport = data[i].weekReport;
-								var nextWeekPlan = data[i].nextWeekPlan;
-								var projectReport = data[i].projectReport;
-								var sign = data[i].sign;
-								var remark = data[i].remark;
-								var overWorkTime = data[i].overWorkTime;
-								var adjustRestTime = data[i].adjustRestTime;
-								var festivalOverWorkTime = data[i].festivalOverWorkTime;
-								var isLate = data[i].isLate;
-								var roleId = data[i].roleId;
-                                
-								//过滤有roleId的不可见用户
-								var isSalesManager = mRoleId==3 && roleId>=3 && roleId<=5
-								var isTechManager = mRoleId==10 && roleId<=2
-                                var isYunwei = mRoleId==14 && (roleId==17 || roleId==14)
-								var isKeFu = mRoleId==19 && (roleId==19 || roleId==18)
-								if(mRoleId==null || isSalesManager || isTechManager || isYunwei || isKeFu){
-                                	var scheduleTd = "";
-    								var dailyReportTd = "";
-    								var weekReportTd = "";
-    								var nextWeekPlanTd = "";
-    								var projectReportTd = "";
-    								var signTd = "";
-    								var remarkTd = "";
-    								var overWorkTimeTd = "";
-    								var adjustRestTimeTd = "";
-    								var festivalOverWorkTimeTd = "";
-    								var isLateTd = "";
-    								var first_column = "";
-
-    								if (queryType == 1) {
-    									first_column = '<td style="width:7%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text"  id="name'
-    											+ i
-    											+ '" style="font-size: 12px;border:none;width:98%;text-align:center;background-color:#fff" '
-    											+ 'value="'
-    											+ data[i].name
-    											+ '" disabled="disabled"/></td>';
-    									$("#coloum_name").show();
-    									$("#coloum_date").hide();
-    								} else {
-    									first_column = '<td style="width:7%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text"  id="date'
-    											+ i
-    											+ '" style="font-size: 12px;border:none;width:98%;text-align:center;background-color:#fff" '
-    											+ 'value="'
-    											+ data[i].date
-    											+ '" disabled="disabled"/></td>';
-    									$("#coloum_date").show();
-    									$("#coloum_name").hide();
-    								}
-
-    								if (schedule == "未发") {
-    									scheduleTd = '<td style="width:14%; height: 50px;" class="tdColor2">'
-    											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red;resize:none;height:50px;" id="schedule'
-    											+ i
-    											+ '">'
-    											+ schedule
-    											+ '</textarea></td>';
-    								} else {
-    									scheduleTd = '<td style="width:14%; height: 50px;" class="tdColor2">'
-    											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="schedule'
-    											+ i
-    											+ '">'
-    											+ schedule
-    											+ '</textarea></td>';
-    								}
-
-    								if (dailyReport == "未发") {
-    									dailyReportTd = '<td style="width:4%; height: 50px" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="dailyReport'
-    											+ i
-    											+ '" value="'
-    											+ dailyReport
-    											+ '" /></td>';
-    								} else {
-    									dailyReportTd = '<td style="width:4%; height: 50px" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="dailyReport'
-    											+ i
-    											+ '" value="'
-    											+ dailyReport
-    											+ '" /></td>';
-    								}
-
-    								if (weekReport == "未发") {
-    									weekReportTd = '<td style="width:4%;height: 50px" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="weekReport'
-    											+ i
-    											+ '" value="'
-    											+ weekReport
-    											+ '" /></td>';
-    								} else {
-    									weekReportTd = '<td style="width:4%;height: 50px" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="weekReport'
-    											+ i
-    											+ '" value="'
-    											+ weekReport
-    											+ '" /></td>';
-    								}
-
-    								if (nextWeekPlan == "未发") {
-    									nextWeekPlanTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="nextWeekPlan'
-    											+ i
-    											+ '" value="'
-    											+ nextWeekPlan
-    											+ '" /></td>';
-    								} else {
-    									nextWeekPlanTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="nextWeekPlan'
-    											+ i
-    											+ '" value="'
-    											+ nextWeekPlan
-    											+ '" /></td>';
-    								}
-
-    								if (projectReport == "未发") {
-    									projectReportTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="projectReport'
-    											+ i
-    											+ '" value="'
-    											+ projectReport
-    											+ '" /></td>';
-    								} else {
-    									projectReportTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="projectReport'
-    											+ i
-    											+ '" value="'
-    											+ projectReport
-    											+ '" /></td>';
-    								}
-
-    								if (new RegExp('未签到').test(sign)
-    										|| new RegExp('未签退').test(sign)) {
-    									signTd = '<td style="width:40%;height: 50px;" class="tdColor2">'
-    											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red;resize:none;height:50px;" id="sign'
-    											+ i
-    											+ '">'
-    											+ sign
-    											+ '</textarea></td>';
-    								} else {
-    									signTd = '<td style="width:40%;height: 50px;" class="tdColor2">'
-    											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="sign'
-    											+ i
-    											+ '">'
-    											+ sign
-    											+ '</textarea></td>';
-    								}
-
-    								remarkTd = '<td style="width:15%;height:50px;" class="tdColor2">'
-    										+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="remark'
-    										+ i
-    										+ '">'
-    										+ remark
-    										+ '</textarea></td>';
-
-    								if (overWorkTime != 0) {
-    									overWorkTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:blue" id="overWorkTime'
-    											+ i
-    											+ '" value="'
-    											+ overWorkTime
-    											+ '" /></td>';
-    								} else {
-    									overWorkTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="overWorkTime'
-    											+ i + '"/></td>';
-    								}
-
-    								if (adjustRestTime != 0) {
-    									adjustRestTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="adjustRestTime'
-    											+ i
-    											+ '" value="'
-    											+ adjustRestTime
-    											+ '" /></td>';
-    								} else {
-    									adjustRestTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="adjustRestTime'
-    											+ i + '"/></td>';
-    								}
-
-    								if (festivalOverWorkTime != 0) {
-    									festivalOverWorkTimeTd = '<td style="width:4%;font-size: 12px; height: 50px;color:red" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:blue" id="festivalOverWorkTime'
-    											+ i
-    											+ '" value="'
-    											+ festivalOverWorkTime
-    											+ '" /></td>';
-    								} else {
-    									festivalOverWorkTimeTd = '<td style="width:4%;font-size: 12px; height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="festivalOverWorkTime'
-    											+ i + '"/></td>';
-    								}
-
-    								if (isLate == 1) {
-    									isLateTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="isLate'
-    											+ i + '" value="迟到"/></td>';
-    								} else {
-    									isLateTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="isLate'
-    											+ i + '"/></td>';
-    								}
-
-    								str += '<tr style="width:100%">'
-    										+ first_column
-    										+ scheduleTd
-    										+ dailyReportTd
-    										//	+ weekReportTd
-    										//	+ nextWeekPlanTd
-    										//	+ projectReportTd
-    										+ signTd
-    										+ remarkTd
-    										+ overWorkTimeTd
-    										+ adjustRestTimeTd
-    										+ festivalOverWorkTimeTd
-    										+ isLateTd
-    										+ '<td style="width:4%;font-size: 12px; height: 50px;" class="tdColor2">'
-    										+ '<img title="编辑" style="vertical-align:middle" class="operation" src="../image/update.png" onclick="editWorkAttendance('
-    										+ i + ')"/></td></tr>';
-                                }
-							}
-						}
-						$("#tb").empty();
-						$("#tb").append(str);
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
+		list = new Array();
+		get("getUserWorkAttendanceList",params,false)		
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else{
+			var str = "";
+			var data = requestReturn.data.dailylist;
+			if (data.length == 0) {
+				str += '<tr style="width: 100%"><td style="width: 100%;color:red;font-size: 12px; height: 35px;">月数据还没有录入</td></tr>';
+			} else {
+				for (var i in data) {
+					if((mRoleId==3 || mRoleId==4) && data[i].roleId>=3 && data[i].roleId<=5){
+						list.push(data[i]);
+					}else if(mRoleId==19 && (data[i].roleId==18 || data[i].roleId==19)){
+						list.push(data[i]);
+					}else if(mRoleId==14 && (data[i].roleId==14 || data[i].roleId==17)){
+						list.push(data[i]);
+					}else if(mRoleId==10 && data[i].roleId <= 2){
+						list.push(data[i]);
+					}else if(mRoleId==9 || mRoleId==11 || mRoleId==12 || mRoleId==13){
+						list.push(data[i]);
 					}
-				});
+				}
+				if(list.length == 0){
+					str += '<tr style="width: 100%"><td style="width: 100%;color:red;font-size: 12px; height: 35px;">月数据还没有录入</td></tr>';
+				}else{
+					var first_column = "";
+					for(var i in list){
+						if (queryType == 1) {
+							first_column = '<td style="width:7%;height: 50px;" class="tdColor2">'
+									+ '<input type="text"  id="name'
+									+ i
+									+ '" style="font-size: 12px;border:none;width:98%;text-align:center;background-color:#fff" '
+									+ 'value="'
+									+ list[i].name
+									+ '" disabled="disabled"/></td>';
+							$("#coloum_name").show();
+							$("#coloum_date").hide();
+						} else {
+							first_column = '<td style="width:7%;height: 50px;" class="tdColor2">'
+									+ '<input type="text"  id="date'
+									+ i
+									+ '" style="font-size: 12px;border:none;width:98%;text-align:center;background-color:#fff" '
+									+ 'value="'
+									+ list[i].date
+									+ '" disabled="disabled"/></td>';
+							$("#coloum_date").show();
+							$("#coloum_name").hide();
+						}
+						
+						var scheduleTd = "";
+						if (list[i].schedule == "未发") {
+							scheduleTd = '<td style="width:14%; height: 50px;" class="tdColor2">'
+									+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red;resize:none;height:50px;" id="schedule'
+									+ i
+									+ '">未发</textarea></td>';
+						} else {
+							scheduleTd = '<td style="width:14%; height: 50px;" class="tdColor2">'
+									+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="schedule'
+									+ i
+									+ '">'
+									+ list[i].schedule
+									+ '</textarea></td>';
+						}
+						
+						var dailyReportTd = "";
+						if (list[i].dailyReport == "未发") {
+							dailyReportTd = '<td style="width:4%; height: 50px" class="tdColor2">'
+									+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="dailyReport'
+									+ i
+									+ '" value="未发" /></td>';
+						} else {
+							dailyReportTd = '<td style="width:4%; height: 50px" class="tdColor2">'
+									+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="dailyReport'
+									+ i
+									+ '" value="'
+									+ list[i].dailyReport
+									+ '" /></td>';
+						}
+						
+						var signTd = "";
+						if (new RegExp('未签到').test(list[i].sign)
+								|| new RegExp('未签退').test(list[i].sign)) {
+							signTd = '<td style="width:40%;height: 50px;" class="tdColor2">'
+									+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red;resize:none;height:50px;" id="sign'
+									+ i
+									+ '">'
+									+ list[i].sign
+									+ '</textarea></td>';
+						} else {
+							signTd = '<td style="width:40%;height: 50px;" class="tdColor2">'
+									+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="sign'
+									+ i
+									+ '">'
+									+ list[i].sign
+									+ '</textarea></td>';
+						}
+						
+						var remarkTd = '<td style="width:15%;height:50px;" class="tdColor2">'
+							+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="remark'
+							+ i
+							+ '">'
+							+ list[i].remark
+							+ '</textarea></td>';
+						
+						var overWorkTimeTd = "";
+						if (data[i].overWorkTime != 0) {
+							overWorkTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+									+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:blue" id="overWorkTime'
+									+ i
+									+ '" value="'
+									+ data[i].overWorkTime
+									+ '" /></td>';
+						} else {
+							overWorkTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+									+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="overWorkTime'
+									+ i + '"/></td>';
+						}
+
+                        var adjustRestTimeTd = "";
+						if (data[i].adjustRestTime != 0) {
+							adjustRestTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+									+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="adjustRestTime'
+									+ i
+									+ '" value="'
+									+ data[i].adjustRestTime
+									+ '" /></td>';
+						} else {
+							adjustRestTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+									+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="adjustRestTime'
+									+ i + '"/></td>';
+						}
+						
+						var festivalOverWorkTimeTd = "";
+						if (data[i].festivalOverWorkTime != 0) {
+							festivalOverWorkTimeTd = '<td style="width:4%;font-size: 12px; height: 50px;color:red" class="tdColor2">'
+									+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:blue" id="festivalOverWorkTime'
+									+ i
+									+ '" value="'
+									+ data[i].festivalOverWorkTime
+									+ '" /></td>';
+						} else {
+							festivalOverWorkTimeTd = '<td style="width:4%;font-size: 12px; height: 50px;" class="tdColor2">'
+									+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="festivalOverWorkTime'
+									+ i + '"/></td>';
+						}
+						
+						
+						
+						var isLateTd = "";
+						if (data[i].isLate == 1) {
+							isLateTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+									+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="isLate'
+									+ i + '" value="迟到"/></td>';
+						} else {
+							isLateTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+									+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="isLate'
+									+ i + '"/></td>';
+						}
+						var operationTd = "";
+						if(sId=="super.admin"){
+							operationTd = '<img title="编辑" style="vertical-align:middle" class="operation" src="../image/update.png" onclick="editWorkAttendance('+ i + ')"/>';
+						}
+						str += '<tr style="width:100%">'
+							+ first_column
+							+ scheduleTd
+							+ dailyReportTd
+							+ signTd
+							+ remarkTd
+							+ overWorkTimeTd
+							+ adjustRestTimeTd
+							+ festivalOverWorkTimeTd
+							+ isLateTd
+							+ '<td style="width:4%;font-size: 12px; height: 50px;" class="tdColor2">'
+							+ operationTd
+							+ '</td></tr>';
+					}
+				}
+			}
+			$("#tb").empty();
+			$("#tb").append(str);
+		}
 	}
 
 	function printTable() {
@@ -416,44 +367,40 @@ html {
 	function dlDailyUploadReport() {
 		var tYear = $("#year").val();
 		var nickName = $("#userId").val();
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/getUserYearUploadReportList",
-					type : 'GET',
-					data : {
-						"nickName" : nickName,
-						"year" : tYear
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						var data = eval("(" + returndata + ")").yearuploadreportlist;
-						if (data.length > 0) {
-							var tab_text = "<table style='display:none' id='table1'>";
-							for ( var i in data) {
-								tab_text += "<tr>"
-								tab_text += "<td>" + data[i].date + "</td>";
-								tab_text += "<td>" + data[i].time + "</td>";
-								tab_text += "<td>" + data[i].client + "</td>";
-								tab_text += "<td>" + data[i].crmNum + "</td>";
-								tab_text += "<td>" + data[i].jobContent
-										+ "</td>";
-								tab_text += "</tr>";
-							}
-							tab_text += "</table>";
-							$("#div2").append(tab_text);
+		var params = {
+				"nickName" : nickName,
+				"year" : tYear	
+		}
+		get("getUserYearUploadReportList",params,false)
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else{
+			var data = requestReturn.data.yearuploadreportlist;
+			if (data.length > 0) {
+				var tab_text = "<table style='display:none' id='table1'>";
+				for ( var i in data) {
+					tab_text += "<tr>"
+					tab_text += "<td>" + data[i].date + "</td>";
+					tab_text += "<td>" + data[i].time + "</td>";
+					tab_text += "<td>" + data[i].client + "</td>";
+					tab_text += "<td>" + data[i].crmNum + "</td>";
+					tab_text += "<td>" + data[i].jobContent
+							+ "</td>";
+					tab_text += "</tr>";
+				}
+				tab_text += "</table>";
+				$("#div2").append(tab_text);
 
-							$('#table1').table2excel(
-									{
-										filename : nickName + "_" + tYear + "_"
-												+ ".xls"
-									});
-							$("#div2").empty();
-						} else {
-							alert("当年没有该员工的日报数据");
-						}
-					}
-				});
+				$('#table1').table2excel(
+						{
+							filename : nickName + "_" + tYear + "_"
+									+ ".xls"
+						});
+				$("#div2").empty();
+			}else{
+				alert("当年没有该员工的日报数据");
+			}
+		}
 	}
 
 	function formatDate(date) {
@@ -486,6 +433,7 @@ html {
 	}
 
 	function changeQueryType(type) {
+		queryType = type;
 		if (type == 1) {
 			$("#mSpan2").show();
 			$("#mSpan1").hide();
@@ -499,19 +447,14 @@ html {
 
 	function getUserName(tNickName) {
 		var uName = "";
-		$.ajax({
-			url : "${pageContext.request.contextPath}/getUserByNickName",
-			type : 'GET',
-			async : false,
-			data : {
-				"nickName" : tNickName
-			},
-			cache : false,
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").user;
-				uName = data[0].name;
-			}
-		});
+		var params = {"nickName" : tNickName}
+		get("getUserByNickName",params,false)
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else{
+			var data = requestReturn.data.user;
+			uName = data[0].name;
+		}
 		return uName;
 	}
 
@@ -598,7 +541,7 @@ html {
 		getUserList(!isChecked);
 		getUserWorkAttendanceList();
 	}
-	
+
 </script>
 </head>
 
@@ -649,6 +592,16 @@ html {
 									<option value="2038">2038年</option>
 									<option value="2039">2039年</option>
 									<option value="2040">2040年</option>
+									<option value="2031">2041年</option>
+									<option value="2032">2042年</option>
+									<option value="2033">2043年</option>
+									<option value="2034">2044年</option>
+									<option value="2035">2045年</option>
+									<option value="2036">2046年</option>
+									<option value="2037">2047年</option>
+									<option value="2038">2048年</option>
+									<option value="2039">2049年</option>
+									<option value="2040">2050年</option>
 							</select><a style="margin-right: 20px"></a><select class="selCss"
 								style="width: 80px;" id="month">
 									<option value="01">1月</option>
@@ -678,7 +631,7 @@ html {
 				</div>
 				<!-- vip 表格 显示 -->
 				<div class="conShow" style="margin-bottom: 30px" id="div1">
-					<table border="1" style="width: 100%">
+					<table border="1" style="width: 100%" id="titleTab">
 						<tr style="width: 100%">
 							<td style="width: 7%; font-size: 12px; height: 35px;"
 								class="tdColor" id="coloum_name">姓名</td>

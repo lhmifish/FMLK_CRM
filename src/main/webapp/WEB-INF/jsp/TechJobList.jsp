@@ -7,6 +7,10 @@
 <meta http-equiv="pragma" content="no-cache" />
 <meta http-equiv="cache-control" content="no-cache" />
 <title>技术工作表</title>
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/showbox.css" />
 <link rel="stylesheet" type="text/css"
@@ -25,6 +29,8 @@
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/xcConfirm.js"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
+<script src="${pageContext.request.contextPath}/js/loading.js"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=2"></script>
 <style type="text/css">
 a:link {
 	color: #000
@@ -32,9 +38,7 @@ a:link {
 a:hover {
 	color: #FF00FF
 } /* 鼠标移动到链接上 */
-
 </style>
-
 <script type="text/javascript">
 	var userNum;
 	var dayNum;
@@ -49,75 +53,182 @@ a:hover {
 	var timer;
 	var len;//滚轮长度
 	var sId;
+	var host;
+	var requestReturn;
+	var arrCompany;
+	
 	$(document)
-			.ready(
-					function() {
-						sId = "${sessionId}";
-						if(sId == null || sId == ""){
-							parent.location.href = "${pageContext.request.contextPath}/page/login";
-						}else{
-							var w = document.documentElement.clientWidth;
-							document.getElementById('scrollBody').style.width = (w - 200)
-									+ "px";
-							var da = new Date();
-							year = da.getFullYear();
-							month = da.getMonth() + 1;
-							dayNum = new Date(year, month, 0).getDate();//当月天数
-							DayOfWeek = (da.getDay() == 0) ? 7 : da.getDay();
-							startWeekStr = formatDate(
-									new Date(year, month - 1, da.getDate()
-											- DayOfWeek + 1)).substring(0, 10);//当前周第一天
-
-							$("#year").val(year);
-							month = month < 10 ? "0" + month : month;
-							$("#month").val(month);
-							getUserList(year, month);
-							getTableList();
-							getJobList();
-							if (parseInt(startWeekStr.split("/")[1]) == month) {
-								var position = (startWeekStr.split("/")[2] - 1) * 140 - 1;
-								$('#scrollBody').scrollLeft(position);
-							}
-							$("#year").select2({});
-							$("#month").select2({});
-						}
-					});
-
-	function getUserList(year, month) {
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/userList",
-					type : 'GET',
-					data : {
-						"dpartId" : 101,
-						"date" : year + "/" + month + "/1",
-						"name" : "",
-						"nickName" : "",
-						"jobId" : "",
-						"isHide" : true
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						userArr = new Array();
-						var str = '<tr id="corner" style="height:25px;color: #a10333;width: 140px;"><td><Strong>姓名/日期</Strong></td></tr>';
-						var data2 = eval("(" + returndata + ")").userlist;
-						userNum = data2.length;
-						//alert(userNum);
-						for ( var i in data2) {
-							str += '<tr style="width: 140px;height:38px;" id="tr_'+i+'" ><td><strong>'
-									+ data2[i].name + '</strong></td></tr>';
-							userArr.push(data2[i].UId + "#" + data2[i].name);
-						}
-						$("#tb1").empty();
-						$("#tb1").append(str);
-
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
+	.ready(
+			function() {
+				sId = "${sessionId}";
+				host = "${pageContext.request.contextPath}";
+				if (sId == null || sId == "") {
+					parent.location.href = host + "/page/login";
+				} else {
+					var w = document.documentElement.clientWidth;
+					document.getElementById('scrollBody').style.width = (w - 200)
+							+ "px";
+					getYearList();
+					arrCompany = new Array();
+					getArrCompany(true)
+					getUserList(year, month);
+					if (parseInt(startWeekStr.split("/")[1]) == month) {
+						var position = (startWeekStr.split("/")[2] - 1) * 140 - 1;
+						$('#scrollBody').scrollLeft(position);
 					}
-				});
+					$("#year").select2({});
+					$("#month").select2({});
+				}
+			});
+	
+	function getYearList(){
+    	var yearStr = ""
+    	var monthStr = ""
+    	for(var i=2019;i<2050;i++){
+    		yearStr+='<option value="'+i+'">'+i+'年</option>';
+    	}
+    	$("#year").empty();
+		$("#year").append(yearStr);
+		for(var i=1;i<13;i++){
+			i=i<10?"0"+i:i;
+			monthStr+='<option value="'+i+'">'+parseInt(i)+'月</option>'
+    	}
+		$("#month").empty();
+		$("#month").append(monthStr);
+    	var da = new Date();
+		year = da.getFullYear();
+		month = da.getMonth() + 1;
+		dayNum = new Date(year, month, 0).getDate();//当月天数
+		DayOfWeek = (da.getDay() == 0) ? 7 : da.getDay();
+		startWeekStr = formatDate(
+				new Date(year, month - 1, da.getDate()
+						- DayOfWeek + 1)).substring(0, 10);//当前周第一天
+		$("#year").val(year);
+		month = month < 10 ? "0" + month : month;
+		$("#month").val(month);
+    }
+	
+	function getUserList(year, month) {
+		var params = {
+			"dpartId" : 101,
+			"date" : year + "/" + month + "/1",
+			"name" : "",
+			"nickName" : "",
+			"jobId" : "",
+			"isHide" : true
+		}
+		get("userList", params, false);
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			var str = '<tr id="corner" style="height:25px;color: #a10333;width: 120px;"><td><Strong>姓名/日期</Strong></td></tr>';
+			var data2 = requestReturn.data.userlist;
+			userNum = data2.length;
+			userArr = new Array();
+			for ( var i in data2) {
+				str += '<tr style="width: 140px;height:38px;" id="tr_'+i+'" ><td><strong>'
+						+ data2[i].name + '</strong></td></tr>';
+				userArr.push(data2[i].UId + "#" + data2[i].name);
+			}
+			$("#tb1").empty();
+			$("#tb1").append(str);
+			getTableList();
+		}
 	}
 
+	function formatDate(date) {
+		var myyear = date.getFullYear();
+		var mymonth = date.getMonth() + 1;
+		var myweekday = date.getDate();
+		var hour = date.getHours();
+		var minute = date.getMinutes();
+		if (mymonth < 10) {
+			mymonth = "0" + mymonth;
+		}
+		if (myweekday < 10) {
+			myweekday = "0" + myweekday;
+		}
+		return (myyear + "/" + mymonth + "/" + myweekday + " " + hour + ":" + minute);
+	}
+
+	function getList() {
+		year = $("#year").val();
+		month = $("#month").val();
+		dayNum = new Date(year, month, 0).getDate();
+		getUserList(year, month);
+		var da = new Date();
+		var thisMonth = da.getMonth() + 1;
+		var thisYear = da.getFullYear();
+		if (thisMonth == month && thisYear == year) {
+			var position = (startWeekStr.split("/")[2] - 1) * 140 - 1;
+			$('#scrollBody').scrollLeft(position);
+		} else {
+			$('#scrollBody').scrollLeft(1);
+		}
+	}
+
+	function updateNewArr(arr) {
+		jobArrA = new Array();
+		for (var i = 0; i < arr.length; i++) {
+			var isExist = false;
+			for (var j = 0; j < jobArrA_previous.length; j++) {
+				if (arr[i] == jobArrA_previous[j]) {
+					isExist = true;
+					break;
+				}
+			}
+			if (!isExist) {
+				jobArrA.push(arr[i]);
+			}
+		}
+		return jobArrA;
+	}
+	
+	function loading() {
+		$('body').loading({
+			loadingWidth : 160,
+			title : '请稍等!',
+			name : 'test',
+			discription : '加载中',
+			direction : 'column',
+			type : 'origin',
+			originDivWidth : 30,
+			originDivHeight : 30,
+			originWidth : 6,
+			originHeight : 6,
+			smallLoading : false,
+			loadingMaskBg : 'rgba(0,0,0,0.2)'
+		});
+	}
+
+	function closeLoading() {
+		removeLoading('test');
+	}
+	
+	/* 获取客户 */
+	function getArrCompany(isFmlkShare) {
+		var params = {
+			"salesId" : 0,
+			"companyName" : "",
+			"isFmlkShare" : isFmlkShare
+		}
+		get("companyList", params, false)
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			var data = requestReturn.data.companylist;
+			if (data.length > 0) {
+				for ( var i in data) {
+					arrCompany[data[i].companyId] = data[i].companyName;
+				}
+				if (isFmlkShare) {
+					isFmlkShare = false;
+					getArrCompany(isFmlkShare);
+				}
+			}
+		}
+	}
+	
 	function getTableList() {
 		var str = '<tr style="width: 100%; float: left; height: 25px;background-color: #eee;">';
 		for (var i = 0; i < dayNum; i++) {
@@ -153,226 +264,107 @@ a:hover {
 		document.getElementById("tb2").style.width = dayNum * 140 + 'px';
 		$("#tb2").empty();
 		$("#tb2").append(str);
-
+		loading();
+		setTimeout(function() {
+			getJobList();
+		}, 500);
 	}
-
-	function formatDate(date) {
-		var myyear = date.getFullYear();
-		var mymonth = date.getMonth() + 1;
-		var myweekday = date.getDate();
-		var hour = date.getHours();
-		var minute = date.getMinutes();
-		if (mymonth < 10) {
-			mymonth = "0" + mymonth;
-		}
-		if (myweekday < 10) {
-			myweekday = "0" + myweekday;
-		}
-		return (myyear + "/" + mymonth + "/" + myweekday + " " + hour + ":" + minute);
-	}
-
-	function getList() {
-		year = $("#year").val();
-		month = $("#month").val();
-		dayNum = new Date(year, month, 0).getDate();
-		getUserList(year, month);
-		getTableList();
-		getJobList();
-		var da = new Date();
-		var thisMonth = da.getMonth() + 1;
-		var thisYear = da.getFullYear();
-		if (thisMonth == month && thisYear == year) {
-			var position = (startWeekStr.split("/")[2] - 1) * 140 - 1;
-			$('#scrollBody').scrollLeft(position);
-		} else {
-			$('#scrollBody').scrollLeft(1);
-		}
-	}
-	
-	function updateNewArr(arr){
-		jobArrA = new Array();
-		for(var i=0;i<arr.length;i++){
-			var isExist = false;
-			for(var j=0;j<jobArrA_previous.length;j++){
-				if(arr[i] == jobArrA_previous[j]){
-					isExist = true;
-					break;
-				}
-			}
-			if(!isExist){
-				jobArrA.push(arr[i]);
-			}
-		}
-		return jobArrA;
-	}
-
-	function save() {
-		jobArrA = new Array();
-		for (var i = 0; i < userNum; i++) {
-			for (var j = 0; j < dayNum; j++) {
-				var userId = userArr[i].split("#")[0];
-				var day = j+1;
-				day = day<10?"0"+day:day;
-				var mDate = year + "/" + month + "/" + day
-				var id2 = i + "_" + j + "_2";
-				var id2_1 = i + "_" + j + "_2_1";
-				var jobDescA = $("#" + id2).val().trim() + "%"
-						+ $("#" + id2_1).val().trim();
-				var newData = userId + "#" + mDate + "#" + jobDescA;
-				jobArrA.push(newData);
-			}
-		}
-		jobArrA = updateNewArr(jobArrA);
-		$.ajax({
-				url : "${pageContext.request.contextPath}/editJob",
-				type : 'POST',
-				cache : false,
-				dataType : "json",
-				data : {
-					"mJobArrA" : jobArrA
-				},
-				traditional : true,
-				success : function(returndata) {
-					var data = returndata.errcode;
-					if (data == 0) {
-						alert("保存成功");
-						setTimeout(function() {
-							location.reload();
-						}, 500);
-					} else {
-						alert("保存失败");
-					}
-				},
-				error : function(XMLHttpRequest, textStatus, errorThrown) {
-				}
-			});
-		} 
 	
 	function getJobList() {
-		$.ajax({
-			url : "${pageContext.request.contextPath}/getJobList",
-			type : 'GET',
-			data : {
+		var params = {
 				"year" : year,
 				"month" : month,
 				"userId" : 0
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				//alert(returndata);
-				var data2 = eval("(" + returndata + ")").joblist;
-				jobArrA_previous = new Array();
+			}
+		get("getJobList", params, false);
+		if (requestReturn.result == "error") {
+			closeLoading();
+			alert(requestReturn.error);
+		} else {
+			var data2 = requestReturn.data.joblist;
+			params.companyId = "";
+			get("visitRecordList", params, false);
+			if (requestReturn.result == "error") {
+				closeLoading();
+				alert(requestReturn.error);
+			} else {
 				
-				
-				for ( var i in data2) {
-					var jobDescriptionP = data2[i].jobDescriptionP;
-					var jobDescriptionA = data2[i].jobDescriptionA;
-					var time = data2[i].time;
-					var day = parseInt(data2[i].date.split("/")[2]) - 1;
-					var line = 1000;//设置一个较大的值
-					for ( var j in userArr) {
-						//userlist的userId跟job的userId对的上
-						
-						
-						if (data2[i].userId == userArr[j].split("#")[0]) {
-							line = j;
-						}
-					}
-					if (line != 1000) {
-						var mId = line + "_" + day + "_1";
-						var tId = line + "_" + day + "_2";
-						/* var mId_1 = line + "_" + day + "_1_1";
-						var mId2 = line + "_" + day + "_2";
-						var mId2_1 = line + "_" + day + "_2_1"; */
-						var mTd = line + "_" + day;
-
-						var mTitle = userArr[line].split("#")[1]
-								+ parseInt(month) + "月" + parseInt(day + 1)
-								+ "日计划\n";
-
-						if (jobDescriptionP != "") {
-							var previousValue = $("#" + mId).val();
-							var newValue;
-							
-							if(previousValue != "" && previousValue !=null){
-							  newValue = previousValue+";"+jobDescriptionP;
-							}else{
-								newValue = jobDescriptionP;
-							}
-							$("#" + mId).val(newValue);
-						}
-						
-				//		$("#" + tId).val(time.split(";")[0])
-
-						/* if (jobDescriptionA != "%" && jobDescriptionA != "") {
-							var mon2 = jobDescriptionA.split("%")[0];
-							var aft2 = jobDescriptionA.split("%")[1];
-							$("#" + mId2).val(mon2);
-							if (aft2 == "") {
-								$("#" + mId2_1).val(mon2);
-							} else {
-								$("#" + mId2_1).val(aft2);
-							}
-						} */
-						
-						/* jobArrA_previous.push(data2[i].userId + "#"
-								+ data2[i].date + "#"
-								+ $("#" + mId2).val().trim() + "%"
-								+ $("#" + mId2_1).val().trim()); */
-						
-					
-
-						if (time != "") {
-							
-							if (time.split(";")[0] != "00:00-00:00") {
-								var previousDesc = $("#" + tId).val();
-								if(previousDesc !="" && previousDesc != null){
-									$("#" + tId).val(previousDesc + time.split(";")[0] + "#" + jobDescriptionP.split("%")[0] + "#");
-								}else{
-									$("#" + tId).val(time.split(";")[0] + "#" + jobDescriptionP.split("%")[0] + "#");
-								}
-							//	mTitle += $("#" + tId).val().replace(",","\n");
-							}
-							/* if (time.split(";")[1] != "00:00-00:00") {
-								mTitle += time.split(";")[1] + "\n";
-								mTitle += jobDescriptionP.split("%")[1] + "\n";
-							} */
-						}
-								var reg = new RegExp("#","g")
-								var tTitle = $("#" + tId).val().replace(reg,'\n');
-								mTitle = mTitle + tTitle;
-								
-
-						$("#" + mId).val() != "" ? $("#" + mId).css({
-							"background-color" : "green",
-							"color" : "white"
-						}) : "";
-						/* $("#" + mId_1).val() != "" ? $("#" + mId_1).css({
-							"background-color" : "green",
-							"color" : "white"
-						}) : "";
-						$("#" + mId2).val() != "" ? $("#" + mId2).css({
-							"background-color" : "red",
-							"color" : "white"
-						}) : "";
-						$("#" + mId2_1).val() != "" ? $("#" + mId2_1).css({
-							"background-color" : "red",
-							"color" : "white"
-						}) : "";
- */
-						document.getElementById(mTd).setAttribute("title",
-								mTitle);
+				var data = requestReturn.data.visitRecordList;
+				//合并
+				if (data.length > 0) {
+					for ( var t in data) {
+					    job = {}
+						job.jobDescriptionP = arrCompany[data[t].companyId];
+						job.date = data[t].visitDate;
+						job.userId = data[t].salesId;
+						job.time = "";
+						data2.push(job);
 					}
 				}
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-	};
-	
-</script>
+				if (data2.length > 0) {
+					for ( var i in data2) {
+						    var jobDescriptionP = data2[i].jobDescriptionP;
+							var time = data2[i].time;
+							var date = data2[i].date;
+							var day;
+							if(date.indexOf(".")>-1){
+								day = parseInt(date.split(".")[2]) - 1;
+							}else{
+								day = parseInt(date.split("/")[2]) - 1;
+							}
+							var isFind = false;
+							var line;
+							for ( var j in userArr) {
+								if (data2[i].userId == userArr[j].split("#")[0]) {
+									isFind = true;
+									line = j;
+									break;
+								}
+							}
+							if (isFind) {
+								var mId = line + "_" + day + "_1";
+								var tId = line + "_" + day + "_2";
+								var mTd = line + "_" + day;
+								var mTitle = userArr[line].split("#")[1]+" "
+										+ parseInt(month) + "月" + parseInt(day + 1)
+										+ "日\n";
+								if (jobDescriptionP != "" && jobDescriptionP != undefined) {
+									var previousValue = $("#" + mId).val();
+									var newValue;
+									if (previousValue != ""
+											&& previousValue != null && previousValue.indexOf(jobDescriptionP) == -1) {
+										newValue = previousValue + ";"+ jobDescriptionP;
+									} else {
+										newValue = jobDescriptionP;
+									}
+									if(newValue.indexOf("%") != -1){
+										if(newValue.split("%")[0]==newValue.split("%")[1]){
+											newValue = newValue.split("%")[0].trim() + ";"
+										}else{
+											newValue = newValue.replace("%",";").trim()
+										}
+									}
+									$("#" + mId).val(newValue==";"?"":newValue);
+								}
+								$("#" + tId).val($("#" + mId).val().replace(";", "#").trim());
+								var tTitle = $("#" + tId).val().replace(
+										new RegExp("#", "g"), '\n');
+								mTitle = mTitle + tTitle;
 
+								$("#" + mId).val() != "" ? $("#" + mId).css({
+									"background-color" : "green",
+									"color" : "white"
+								}) : "";
+								document.getElementById(mTd).setAttribute("title",
+										mTitle);
+							}
+					}
+				}
+				closeLoading();
+			}
+		}
+	}
+</script>
 </head>
 <body>
 	<div id="pageAll" style="margin-bottom: 30px;">
@@ -380,61 +372,24 @@ a:hover {
 		<div style="width: 100%; margin: 10px">
 			<Strong
 				style="text-align: center; margin-left: 50px; width: 150px; margin-right: 50px">查询：</Strong>
-			<select class="selCss" style="width: 100px;" id="year">
-				<option value="2019">2019年</option>
-				<option value="2020">2020年</option>
-				<option value="2021">2021年</option>
-				<option value="2022">2022年</option>
-				<option value="2023">2023年</option>
-				<option value="2024">2024年</option>
-				<option value="2025">2025年</option>
-				<option value="2026">2026年</option>
-				<option value="2027">2027年</option>
-				<option value="2028">2028年</option>
-				<option value="2029">2029年</option>
-				<option value="2030">2030年</option>
-				<option value="2031">2031年</option>
-				<option value="2032">2032年</option>
-				<option value="2033">2033年</option>
-				<option value="2034">2034年</option>
-				<option value="2035">2035年</option>
-				<option value="2036">2036年</option>
-				<option value="2037">2037年</option>
-				<option value="2038">2038年</option>
-				<option value="2039">2039年</option>
-				<option value="2040">2040年</option>
-			</select><span style="margin-right: 30px"></span><select class="selCss"
-				style="width: 80px;" id="month">
-				<option value="01">1月</option>
-				<option value="02">2月</option>
-				<option value="03">3月</option>
-				<option value="04">4月</option>
-				<option value="05">5月</option>
-				<option value="06">6月</option>
-				<option value="07">7月</option>
-				<option value="08">8月</option>
-				<option value="09">9月</option>
-				<option value="10">10月</option>
-				<option value="11">11月</option>
-				<option value="12">12月</option>
-			</select> <a class="addA" onClick="getList()">跳转</a> <a class="addA"
-				onClick="save()" style="float: right; margin-right: 50px;display:none" >保存</a>
+			<select class="selCss" style="width: 100px;" id="year"></select>
+			<span style="margin-right: 30px"></span>
+			<select class="selCss" style="width: 80px;" id="month"></select> 
+			<a class="addA" onClick="getList()">跳转</a>
 		</div>
 
 		<div
-			style="width: 140px; float: left; background-color: #eee; height: auto; margin-top: 10px; margin-left: 20px; margin-bottom: 20px;">
+			style="width: 120px; float: left; background-color: #eee; height: auto; margin-top: 10px; margin-left: 20px; margin-bottom: 20px;">
 			<table id="tb1"
 				style="width: 100%; text-align: center; height: auto;" border="1">
 			</table>
 		</div>
 		<div id="scrollBody"
-			style="overflow: auto;float: left; height: auto; margin-top: 10px; margin-right: 20px; margin-bottom: 20px;">
-
+			style="overflow: auto; float: left; height: auto; margin-top: 10px; margin-right: 20px; margin-bottom: 20px;">
 			<table id="tb2"
 				style="width: 6200px; text-align: center; overflow: auto;">
 			</table>
 		</div>
 	</div>
-	
 </body>
 </html>

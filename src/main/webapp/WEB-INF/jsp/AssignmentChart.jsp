@@ -22,10 +22,6 @@
 <script type="text/javascript">
 	gvChartInit();
 	$(document).ready(function() {
-		/* var h = document.documentElement.clientWidth;
-		alert(h);
-		document.getElementById('myTable5').style.width = h / 2 + "px"; */
-
 		$('#myTable1').gvChart({
 			chartType : 'AreaChart',
 			gvSettings : {

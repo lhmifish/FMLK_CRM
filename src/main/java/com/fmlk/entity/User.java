@@ -15,6 +15,7 @@ public class User implements Serializable {
 	private String psd;
 	private String createDate;
 	private int roleId;
+	private String updateDate;
 	
 	public String getName() {
 		return this.name;
@@ -102,5 +103,13 @@ public class User implements Serializable {
 
 	public void setRoleId(int roleId) {
 		this.roleId = roleId;
+	}
+	
+	public String getUpdateDate() {
+		return this.updateDate;
+	}
+
+	public void setUpdateDate(String updateDate) {
+		this.updateDate = updateDate;
 	}
 }

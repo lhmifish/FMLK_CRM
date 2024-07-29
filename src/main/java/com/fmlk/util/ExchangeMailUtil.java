@@ -668,7 +668,6 @@ public class ExchangeMailUtil {
 			store.connect(mail, psd);
 			IMAPFolder folder = (IMAPFolder) store.getFolder("INBOX");
 			folder.open(Folder.READ_WRITE);
-		//	System.out.println("新邮件数量    " + folder.getNewMessageCount());
 			if(folder.getNewMessageCount() !=0) {
 				Message[] messages = folder.getMessages(folder.getMessageCount()-folder.getNewMessageCount()+1,folder.getMessageCount());
 				for (int i = 0; i < messages.length; i++) {

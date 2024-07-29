@@ -79,8 +79,6 @@ public class CommonController implements ApplicationContextAware {
 		
 		// 获取accessToken
 		String accessToken = FileServerUtils.getAccessToken();
-		//System.out.println(accessToken);
-
 		jsonObject = new JSONObject();
 		if (!accessToken.equals("")) {
 			if (chunk == 0) {
@@ -91,7 +89,6 @@ public class CommonController implements ApplicationContextAware {
 					jsonObject.put("errmsg", "创建文件夹失败");
 					return jsonObject.toString();
 				}
-				System.out.println("创建文件夹                "+createFolder);
 			}
 			
 			// 传数据
@@ -106,29 +103,27 @@ public class CommonController implements ApplicationContextAware {
 				jsonObject.put("errmsg", "第" + (chunk + 1) + "分片上传成功");
 				jsonObject.put("info", transferFile);
 				// 最后一个分片上传完通知
-				if (chunks == (chunk + 1)  && reportType != 99) {
-					System.out.println("附件上传通知");
+				if (chunks == (chunk + 1)  && reportType < 4) {
 					List<User> userList = new ArrayList<User>();
 					mUserService = new UserService();
-					userList = mUserService.getUserList("15");
+					userList = mUserService.getUserListByIds("15");
 					if (salesId == userId) {
 						if ((salesId != 3)) {
-							userList = mUserService.getUserList(salesId + ",3");
+							userList = mUserService.getUserListByIds(salesId + ",3");
 						} else {
-							userList = mUserService.getUserList("3");
+							userList = mUserService.getUserListByIds("3");
 						}
 					} else {
 						if (salesId != 3) {
-							userList = mUserService.getUserList(salesId + "," + userId + ",3");
+							userList = mUserService.getUserListByIds(salesId + "," + userId + ",3");
 						} else {
-							userList = mUserService.getUserList(userId + ",3");
+							userList = mUserService.getUserListByIds(userId + ",3");
 						}
 					}
 					String accessToken2 = WeChatEnterpriseUtils.getAccessToken();
 					WeChatEnterpriseUtils.sendProjectReportUploadInform(accessToken2, projectName, companyName, userList,
-							salesId, userId, fileName, reportType);
+								salesId, userId, fileName, reportType);
 				}
-				System.out.println("第" + (chunk + 1) + "分片上传成功");
 				return jsonObject.toString();
 			}
 		} else {

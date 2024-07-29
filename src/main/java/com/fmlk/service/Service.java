@@ -3,6 +3,7 @@ package com.fmlk.service;
 import com.fmlk.dao.Dao;
 import com.fmlk.entity.AssignmentOrder;
 import com.fmlk.entity.Client;
+import com.fmlk.entity.ClientDetailInfo;
 import com.fmlk.entity.Contract;
 import com.fmlk.entity.DailyArrangement;
 import com.fmlk.entity.DailyReport;
@@ -12,6 +13,7 @@ import com.fmlk.entity.MonthReport;
 import com.fmlk.entity.PermissionSetting;
 import com.fmlk.entity.Role;
 import com.fmlk.entity.Tender;
+import com.fmlk.entity.VisitRecord;
 import com.fmlk.entity.WechatCheck;
 import com.fmlk.entity.WeekUploadReport;
 import com.fmlk.entity.WorkTimeAdjust;
@@ -245,6 +247,11 @@ public class Service {
 		return dao.getAllWeekUploadReportList(startDate, endDate);
 	}
 	
+	public String getSalesWeekUploadReportList(String startDate, String endDate) {
+		dao = new Dao();
+		return dao.getSalesWeekUploadReportList(startDate, endDate);
+	}
+	
 	public String getUserYearUploadReportList(int year,String userNickName) {
 		dao = new Dao();
 		return dao.getUserYearUploadReportList(year, userNickName);
@@ -310,10 +317,10 @@ public class Service {
 		return dao.getAreaList();
 	}
 
-	/*
-	 * public String createContract(Contract contract) { dao = new Dao(); return
-	 * dao.createContract(contract); }
-	 */
+	public String getFieldLevelList() {
+		dao = new Dao();
+		return dao.getFieldLevelList();
+	}
 
 	public String getClientField(int fieldId) {
 		dao = new Dao();
@@ -335,9 +342,9 @@ public class Service {
 		return dao.getTenderStyleList();
 	}
 
-	public String getProductStyleList() {
+	public String getProductStyleList(boolean isFmlkShare) {
 		dao = new Dao();
-		return dao.getProductStyleList();
+		return dao.getProductStyleList(isFmlkShare);
 	}
 
 	public String getProductBrandList() {
@@ -345,9 +352,9 @@ public class Service {
 		return dao.getProductBrandList();
 	}
 
-	public String getProjectTypeList() {
+	public String getProjectTypeList(boolean isFmlkShare) {
 		dao = new Dao();
-		return dao.getProjectTypeList();
+		return dao.getProjectTypeList(isFmlkShare);
 	}
 
 	public String getCaseTypeList() {
@@ -489,5 +496,35 @@ public class Service {
 	public boolean clearCooperateClient() {
 		dao = new Dao();
 		return dao.clearCooperateClient();
+	}
+	
+	public String getProductStyle(int productId) {
+		dao = new Dao();
+		return dao.getProductStyle(productId);
+	}
+	
+	public String getFieldLevel(int levelId) {
+		dao = new Dao();
+		return dao.getFieldLevel(levelId);
+	}
+	
+	public String getClientDetailInfo(String companyId) {
+		dao = new Dao();
+		return dao.getClientDetailInfo(companyId);
+	}
+	
+	public String getVisitRecordList(String companyId,int userId,String year,String month) {
+		dao = new Dao();
+		return dao.getVisitRecordList(companyId,userId,year,month);
+	}
+
+	public String editClientDetailInfo(ClientDetailInfo cdi) {
+		dao = new Dao();
+		return dao.editClientDetailInfo(cdi);
+	}
+
+	public String createVisitRecord(VisitRecord vr) {
+		dao = new Dao();
+		return dao.createVisitRecord(vr);
 	}
 }

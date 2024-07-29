@@ -25,6 +25,8 @@ public class ProjectCase implements Serializable {
 	private String remark;//备注
 	private int lateTimes;//超时次数
 	private String serviceEndDate;
+	private String updateDate;//更新日期
+	private String cancelReason;//取消理由
 	
 	public int getId() {
 		return this.id;
@@ -192,6 +194,22 @@ public class ProjectCase implements Serializable {
 
 	public void setLateTimes(int lateTimes) {
 		this.lateTimes = lateTimes;
+	}
+	
+	public String getUpdateDate() {
+		return this.updateDate;
+	}
+
+	public void setUpdateDate(String updateDate) {
+		this.updateDate = updateDate;
+	}
+	
+	public String getCancelReason() {
+		return this.cancelReason;
+	}
+
+	public void setCancelReason(String cancelReason) {
+		this.cancelReason = cancelReason;
 	}
 }
 

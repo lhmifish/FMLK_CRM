@@ -654,7 +654,6 @@ select::-ms-expand {
 			cache : false,
 			async : false,
 			success : function(returndata) {
-				//alert(returndata);
 				var data = eval("(" + returndata + ")").joblist;
 				var tMonArr = new Array(),tTueArr = new Array(),tWedArr = new Array(),tThuArr = new Array(),
 				tFirArr = new Array(),tSatArr = new Array(),tSunArr = new Array();

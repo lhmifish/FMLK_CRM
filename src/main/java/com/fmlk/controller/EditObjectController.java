@@ -3,8 +3,12 @@ package com.fmlk.controller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -23,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import com.fmlk.entity.Client;
+import com.fmlk.entity.ClientDetailInfo;
 import com.fmlk.entity.Company;
 import com.fmlk.entity.Contract;
 import com.fmlk.entity.DailyReport;
@@ -42,6 +47,9 @@ import com.fmlk.service.TenderService;
 import com.fmlk.service.UserService;
 import com.fmlk.util.CommonUtils;
 import com.fmlk.util.WeChatEnterpriseUtils;
+import com.google.gson.Gson;
+
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 @Controller
@@ -54,7 +62,6 @@ public class EditObjectController implements ApplicationContextAware {
 	private ContractService mContractService;
 	private UserService mUserService;
 	private Service mService;
-	
 
 	@Override
 	public void setApplicationContext(ApplicationContext arg0) throws BeansException {
@@ -73,6 +80,8 @@ public class EditObjectController implements ApplicationContextAware {
 		c.setCompanyName(request.getParameter("companyName"));
 		c.setAbbrCompanyName(request.getParameter("abbrCompanyName"));
 		c.setFieldId(Integer.parseInt(request.getParameter("fieldId")));
+		c.setFieldLevel(Integer.parseInt(request.getParameter("fieldLevel")));
+		c.setHospitalDataInfo(request.getParameter("hospitalDataInfo"));
 		c.setSalesId(Integer.parseInt(request.getParameter("salesId")));
 		c.setAddress(request.getParameter("address"));
 		c.setAreaId(Integer.parseInt(request.getParameter("areaId")));
@@ -80,6 +89,7 @@ public class EditObjectController implements ApplicationContextAware {
 		String[] arrayContact = request.getParameterValues("arrayContact");
 		c.setId(Integer.parseInt(request.getParameter("id")));
 		c.setCompanyId(request.getParameter("companyId"));
+		c.setUpdateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
 		String jsonStr = mCompanyService.editCompany(c, arrayContact);
 		return jsonStr;
 	}
@@ -93,7 +103,8 @@ public class EditObjectController implements ApplicationContextAware {
 	public String deleteCompany(HttpServletRequest request) {
 		mCompanyService = new CompanyService();
 		int id = Integer.parseInt(request.getParameter("id"));
-		String jsonStr = mCompanyService.deleteCompany(id);
+		String updateDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+		String jsonStr = mCompanyService.deleteCompany(id, updateDate);
 		return jsonStr;
 	}
 
@@ -122,10 +133,13 @@ public class EditObjectController implements ApplicationContextAware {
 		tender.setTechnicalRequirment(request.getParameter("technicalRequirment"));
 		tender.setEnterpriseQualificationRequirment(request.getParameter("enterpriseQualificationRequirment"));
 		tender.setRemark(request.getParameter("remark"));
+		tender.setTenderGuaranteeFee(Integer.parseInt(request.getParameter("tenderGuaranteeFee")));
 		tender.setTenderIntent(Integer.parseInt(request.getParameter("tenderIntent")));
 		tender.setTenderResult(Integer.parseInt(request.getParameter("tenderResult")));
 		tender.setServiceExpense(Integer.parseInt(request.getParameter("serviceExpense")));
+		tender.setTenderAmount(Integer.parseInt(request.getParameter("tenderAmount")));
 		tender.setIsUploadTender(Boolean.parseBoolean(request.getParameter("isUploadTender")));
+		tender.setUpdateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
 		String jsonStr = mTenderService.editTender(tender);
 		return jsonStr;
 	}
@@ -139,7 +153,8 @@ public class EditObjectController implements ApplicationContextAware {
 	public String deleteTender(HttpServletRequest request) {
 		mTenderService = new TenderService();
 		int id = Integer.parseInt(request.getParameter("id"));
-		String jsonStr = mTenderService.deleteTender(id);
+		String updateDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+		String jsonStr = mTenderService.deleteTender(id, updateDate);
 		return jsonStr;
 	}
 
@@ -150,7 +165,6 @@ public class EditObjectController implements ApplicationContextAware {
 	@RequestMapping(value = "/editProject", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
 	@ResponseBody
 	public String editProject(HttpServletRequest request) {
-		System.out.println("start");
 		mProjectService = new ProjectService();
 		Project project = new Project();
 		project.setId(Integer.parseInt(request.getParameter("id")));
@@ -162,25 +176,45 @@ public class EditObjectController implements ApplicationContextAware {
 		String[] arrayContactUsers = request.getParameterValues("contactUsers");
 		String[] arraySalesBeforeUsers = request.getParameterValues("salesBeforeUsers");
 		String[] arraySalesAfterUsers = request.getParameterValues("salesAfterUsers");
+		String[] arrayProductStyle = request.getParameterValues("productStyle");
+		project.setStartDate(request.getParameter("startDate"));
+		project.setEndDate(request.getParameter("endDate"));
 		project.setProjectSubState(Integer.parseInt(request.getParameter("projectSubState")));
-
+		project.setUpdateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
 		String contactUsers = "";
 		for (int i = 0; i < arrayContactUsers.length; i++) {
 			contactUsers += arrayContactUsers[i] + ",";
 		}
+		if (!contactUsers.equals("")) {
+			contactUsers = contactUsers.substring(0, contactUsers.length() - 1);
+		}
+		project.setContactUsers(contactUsers);
+
+		String productStyle = "";
+		for (int i = 0; i < arrayProductStyle.length; i++) {
+			productStyle += arrayProductStyle[i] + ",";
+		}
+		if (!productStyle.equals("")) {
+			productStyle = productStyle.substring(0, productStyle.length() - 1);
+		}
+		project.setProductStyle(productStyle);
+
 		String salesBeforeUsers = "";
 		for (int i = 0; i < arraySalesBeforeUsers.length; i++) {
 			salesBeforeUsers += arraySalesBeforeUsers[i] + ",";
 		}
+		if (!salesBeforeUsers.equals("")) {
+			salesBeforeUsers = salesBeforeUsers.substring(0, salesBeforeUsers.length() - 1);
+		}
+		project.setSalesBeforeUsers(salesBeforeUsers);
+
 		String salesAfterUsers = "";
 		for (int i = 0; i < arraySalesAfterUsers.length; i++) {
 			salesAfterUsers += arraySalesAfterUsers[i] + ",";
 		}
-		contactUsers = contactUsers.substring(0, contactUsers.length() - 1);
-		salesBeforeUsers = salesBeforeUsers.substring(0, salesBeforeUsers.length() - 1);
-		salesAfterUsers = salesAfterUsers.substring(0, salesAfterUsers.length() - 1);
-		project.setContactUsers(contactUsers);
-		project.setSalesBeforeUsers(salesBeforeUsers);
+		if (!salesAfterUsers.equals("")) {
+			salesAfterUsers = salesAfterUsers.substring(0, salesAfterUsers.length() - 1);
+		}
 		project.setSalesAfterUsers(salesAfterUsers);
 		String jsonStr = mProjectService.editProject(project);
 		return jsonStr;
@@ -195,11 +229,11 @@ public class EditObjectController implements ApplicationContextAware {
 	public String deleteProject(HttpServletRequest request) {
 		mProjectService = new ProjectService();
 		int id = Integer.parseInt(request.getParameter("id"));
-		String jsonStr = mProjectService.deleteProject(id);
+		String updateDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+		String jsonStr = mProjectService.deleteProject(id, updateDate);
 		return jsonStr;
 	}
-	
-	
+
 	/**
 	 * 编辑标书
 	 * 
@@ -215,12 +249,19 @@ public class EditObjectController implements ApplicationContextAware {
 		ct.setProjectId(request.getParameter("projectId"));
 		ct.setSaleUser(Integer.parseInt(request.getParameter("saleUser")));
 		ct.setDateForContract(request.getParameter("dateForContract"));
-		ct.setContractAmount(Long.parseLong(request.getParameter("contractAmount")));
-		ct.setTaxRate(Integer.parseInt(request.getParameter("taxRate")));
+		ct.setContractAmount(request.getParameter("contractAmount"));
+		String taxRate = request.getParameter("taxRate");
+		if (taxRate.equals("") || taxRate == null) {
+			ct.setTaxRate(-1);
+		} else {
+			ct.setTaxRate(Integer.parseInt(taxRate));
+		}
 		ct.setServiceDetails(request.getParameter("serviceDetails"));
-		ct.setIsUploadContract(Boolean.parseBoolean(request.getParameter("isUploadContract")));
-		String[] paymentInfo = request.getParameterValues("paymentInfo");	
-		String jsonStr = mContractService.editContract(ct,paymentInfo);
+		boolean isUploadContract = Integer.parseInt(request.getParameter("isUploadContract")) == 1;
+		ct.setIsUploadContract(isUploadContract);
+		ct.setUpdateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
+		String[] paymentInfo = request.getParameterValues("paymentInfo");
+		String jsonStr = mContractService.editContract(ct, paymentInfo);
 		return jsonStr;
 	}
 
@@ -233,7 +274,8 @@ public class EditObjectController implements ApplicationContextAware {
 	public String deleteContract(HttpServletRequest request) {
 		mContractService = new ContractService();
 		int id = Integer.parseInt(request.getParameter("id"));
-		String jsonStr = mContractService.deleteContract(id);
+		String updateDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+		String jsonStr = mContractService.deleteContract(id, updateDate);
 		return jsonStr;
 	}
 
@@ -246,13 +288,15 @@ public class EditObjectController implements ApplicationContextAware {
 	public String deleteProjectCase(HttpServletRequest request) {
 		mProjectService = new ProjectService();
 		int id = Integer.parseInt(request.getParameter("id"));
-		String jsonStr = mProjectService.deleteProjectCase(id);
+		String updateDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+		String jsonStr = mProjectService.deleteProjectCase(id, updateDate);
 		return jsonStr;
 	}
 
 	/**
 	 * 编辑派工单
-	 * @throws IOException 
+	 * 
+	 * @throws IOException
 	 * 
 	 */
 	@RequestMapping(value = "/editCaseRecord", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
@@ -270,89 +314,72 @@ public class EditObjectController implements ApplicationContextAware {
 		pc.setServiceContent(request.getParameter("serviceContent"));
 		pc.setDeviceInfo(request.getParameter("deviceInfo"));
 		pc.setRejectReason(request.getParameter("rejectReason"));
-		pc.setCasePeriod(request.getParameter("casePeriod"));
 		pc.setRemark(request.getParameter("remark"));
 		String contactUsers = "";
 		String[] arrayContactUsers = request.getParameterValues("contactUsers");
-		if (arrayContactUsers != null && arrayContactUsers.length > 0) {
-			for (int i = 0; i < arrayContactUsers.length; i++) {
-				contactUsers += arrayContactUsers[i] + ",";
-			}
-			contactUsers = contactUsers.substring(0, contactUsers.length() - 1);
+		for (int i = 0; i < arrayContactUsers.length; i++) {
+			contactUsers += arrayContactUsers[i] + ",";
 		}
+		contactUsers = contactUsers.substring(0, contactUsers.length() - 1);
 		pc.setContactUsers(contactUsers);
+
 		String serviceUsers = "";
 		String[] arrayServiceUsers = request.getParameterValues("serviceUsers");
-		if (arrayServiceUsers != null && arrayServiceUsers.length > 0) {
-			for (int i = 0; i < arrayServiceUsers.length; i++) {
-				serviceUsers += arrayServiceUsers[i] + ",";
-			}
-			serviceUsers = serviceUsers.substring(0, serviceUsers.length() - 1).trim();
+		for (int i = 0; i < arrayServiceUsers.length; i++) {
+			serviceUsers += arrayServiceUsers[i] + ",";
 		}
+		serviceUsers = serviceUsers.substring(0, serviceUsers.length() - 1).trim();
 		pc.setServiceUsers(serviceUsers);
-		int checkResult = Integer.parseInt(request.getParameter("checkResult"));
+        int checkResult = Integer.parseInt(request.getParameter("checkResult"));
 		int type = Integer.parseInt(request.getParameter("type"));
 		String jsonStr = mProjectService.editCaseRecord(pc, checkResult, type);
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String companyName = request.getParameter("companyName");
 		String projectName = request.getParameter("projectName");
-		// 审核派工通知 type  0.编辑1.销审2.技审
-		if (type != 0) {
-			mUserService = new UserService();
-			List<User> userList = new ArrayList<User>();
-			List<User> userList2 = new ArrayList<User>();
-			if (type == 1) {
-				//userList反馈给销售  userList2通知派工的人
-				int uid = pc.getSalesId();
-				if((uid != 3)&&(uid != 4)) {
-					userList = mUserService.getUserList(pc.getSalesId() + ",3,4");
-				}else {
-					userList = mUserService.getUserList("3,4");
-				}
-				userList2 = mUserService.getUserList("2");
+		// 审核派工通知 type 0.编辑1.销审2.技审
+		mUserService = new UserService();
+		List<User> userList = new ArrayList<User>();// 无论通不通过都通知的人
+		List<User> userList2 = new ArrayList<User>();// 不通过将不会通知的人
+		String userJsonStr = mUserService.getUserById(pc.getSalesId());
+		String salesName = "";
+		String serviceUsersName = "";
+		boolean errcode2 = ((String) new Gson().fromJson(userJsonStr, Map.class).get("errcode")).equals("0");
+		if (errcode2) {
+			JSONArray myArr = new JSONObject().fromObject(userJsonStr).getJSONArray("user");
+			User mUser = (User) JSONObject.toBean((JSONObject) myArr.get(0), User.class);
+			salesName = mUser.getName();
+			if (mUser.getRoleId() != 3) {
+				userList = mUserService.getUserListByIds(pc.getSalesId() + ",3");
 			} else {
-				//userList反馈的人  userList2指派人员
-				int uid2 = pc.getSalesId();
-				if((uid2 != 3)&&(uid2 != 4)) {
-					userList = mUserService.getUserList(pc.getSalesId() + ",2,3,4");
-				}else {
-					userList = mUserService.getUserList("2,3,4");
-				}
-				userList2 = mUserService.getUserList(pc.getServiceUsers());
+				userList = mUserService.getUserListByIds("3");
 			}
-			WeChatEnterpriseUtils.sendProjectCaseInform(accessToken,pc, checkResult, type, userList, userList2,companyName, projectName);
-		}else {
-			//type=0 编辑派工单重新通知
-			//两种情况1.销售审核前2.销售审核后
-			mUserService = new UserService();
-			List<User> userList3 = new ArrayList<User>();
-			List<User> userList4 = new ArrayList<User>();
-			int uid = pc.getSalesId();
-			boolean mIsChecked = Boolean.parseBoolean(request.getParameter("isChecked"));
-			if(mIsChecked) {
-				//销售已审核
-				if(!pc.getServiceUsers().equals("")&&pc.getServiceUsers() != null) {
-					userList4 = mUserService.getUserList(pc.getServiceUsers());
-					if((uid != 3)&&(uid != 4)) {
-						userList3 = mUserService.getUserList(pc.getSalesId() + ",2,3,4,"+pc.getServiceUsers());
-					}else {
-						userList3 = mUserService.getUserList("2,3,4,"+pc.getServiceUsers());
+			if (type > 0) {
+				userList2 = mUserService.getUserListByRoleId(10);
+				if (checkResult == 1) {
+					// 通过
+					userList.addAll(userList2);
+					if (type == 2) {
+						userList2 = mUserService.getUserListByIds(pc.getServiceUsers());
+						userList.addAll(userList2);
+						for (int i = 0; i < userList2.size(); i++) {
+							serviceUsersName += userList2.get(i).getName() + ",";
+						}
+						serviceUsersName = serviceUsersName.substring(0, serviceUsersName.length() - 1).trim();
 					}
-				}else {
-					if((uid != 3)&&(uid != 4)) {
-						userList3 = mUserService.getUserList(pc.getSalesId() + ",2,3,4");
-					}else {
-						userList3 = mUserService.getUserList("2,3,4");
+				} else {
+					// 驳回
+					if (type == 2) {
+						userList.addAll(userList2);
 					}
 				}
-			}else {
-				if((uid != 3)&&(uid != 4)) {
-					userList3 = mUserService.getUserList(pc.getSalesId() + ",3,4");
-				}else {
-					userList3 = mUserService.getUserList("3,4");
-				}
 			}
-			WeChatEnterpriseUtils.sendProjectCaseInform(accessToken,pc,type, userList3,userList4,companyName, projectName,mIsChecked);
+			if (type > 0) {
+				WeChatEnterpriseUtils.sendProjectCaseInform(accessToken, pc, checkResult, type, userList, companyName,
+						projectName, salesName, serviceUsersName);
+			} else {
+				WeChatEnterpriseUtils.sendProjectCaseInform(accessToken, pc, userList, companyName, projectName,
+						salesName, true);
+			}
 		}
 		return jsonStr;
 	}
@@ -368,6 +395,7 @@ public class EditObjectController implements ApplicationContextAware {
 		ProjectCase pc = new ProjectCase();
 		pc.setId(Integer.parseInt(request.getParameter("id")));
 		pc.setCaseState(Integer.parseInt(request.getParameter("caseState")));
+		pc.setCancelReason(request.getParameter("cancelReason"));
 		String jsonStr = mProjectService.editProjectCase(pc);
 		return jsonStr;
 	}
@@ -385,7 +413,7 @@ public class EditObjectController implements ApplicationContextAware {
 		user.setName(request.getParameter("name"));
 		user.setNickName(request.getParameter("nickName").trim());
 		String psd = request.getParameter("psd");
-		
+
 		if (!psd.equals("") && psd != null) {
 			psd = CommonUtils.encryptSHA256(request.getParameter("nickName") + "_" + psd);
 		} else {
@@ -397,10 +425,11 @@ public class EditObjectController implements ApplicationContextAware {
 		user.setTel(request.getParameter("tel"));
 		user.setState(request.getParameter("state"));
 		user.setRoleId(Integer.parseInt(request.getParameter("roleId")));
+		user.setUpdateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
 		String jsonStr = mUserService.editUser(user);
 		return jsonStr;
 	}
-	
+
 	/**
 	 * 修改用户密码
 	 * 
@@ -420,20 +449,20 @@ public class EditObjectController implements ApplicationContextAware {
 		user.setPassword(oldPsd);
 		user.setUId(uId);
 		int result = mUserService.queryUser(user);
-		//System.out.println(result);
-		if(result==0) {
+		if (result == 0) {
 			user.setPassword(newPsd);
 			user.setDepartmentId(0);
 			user.setRoleId(-1);
+			user.setUpdateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
 			String jsonStr = mUserService.editUser(user);
 			return jsonStr;
-		}else {
+		} else {
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("errcode", result);
 			return jsonObject.toString();
 		}
 	}
-	
+
 	/**
 	 * 编辑角色
 	 * 
@@ -497,7 +526,7 @@ public class EditObjectController implements ApplicationContextAware {
 		String jsonStr = mService.editWorkAttendance(dr);
 		return jsonStr;
 	}
-	
+
 	/**
 	 * 编辑用户考勤数据
 	 * 
@@ -523,12 +552,12 @@ public class EditObjectController implements ApplicationContextAware {
 		mr.setName(request.getParameter("userId"));
 		mr.setAccumulateOverWorkTime(Double.parseDouble(request.getParameter("accumulateOverWorkTime")));
 		mr.setAccumulateYearVacation(Double.parseDouble(request.getParameter("accumulateYearVacation")));
-	//	mr.setOverWorkTime4H(Double.parseDouble(request.getParameter("overWorkTime4H")));
+		// mr.setOverWorkTime4H(Double.parseDouble(request.getParameter("overWorkTime4H")));
 		mr.setDate(request.getParameter("date"));
 		String jsonStr = mService.queryMonthAccumulateData(mr);
 		return jsonStr;
 	}
-	
+
 	/**
 	 * 删除招聘职位
 	 * 
@@ -541,7 +570,7 @@ public class EditObjectController implements ApplicationContextAware {
 		String jsonStr = mService.deletePosition(id);
 		return jsonStr;
 	}
-	
+
 	/**
 	 * 编辑招聘职位
 	 * 
@@ -563,7 +592,7 @@ public class EditObjectController implements ApplicationContextAware {
 		String jsonStr = mService.editPosition(jp);
 		return jsonStr;
 	}
-	
+
 	/**
 	 * 编辑公司基本信息
 	 * 
@@ -575,10 +604,10 @@ public class EditObjectController implements ApplicationContextAware {
 		String address = request.getParameter("address");
 		String tel = request.getParameter("tel");
 		String mail = request.getParameter("mail");
-		String jsonStr = mService.editCompanyInfo(address,tel,mail);
+		String jsonStr = mService.editCompanyInfo(address, tel, mail);
 		return jsonStr;
 	}
-	
+
 	/**
 	 * 编辑合作客户
 	 * 
@@ -587,29 +616,26 @@ public class EditObjectController implements ApplicationContextAware {
 	@ResponseBody
 	public String editCooperateClient(HttpServletRequest request) {
 		int opt = Integer.parseInt(request.getParameter("operation"));
-		System.out.println("操作："+opt);
 		mService = new Service();
 		Client c = new Client();
-		if(opt==1) {
-			//添加
+		if (opt == 1) {
+			// 添加
 			c.setClientName(request.getParameter("clientName"));
-			System.out.println(request.getParameter("clientName"));
-		}else {
-			//删除
+		} else {
+			// 删除
 			c.setClientId(Integer.parseInt(request.getParameter("clientId")));
-			System.out.println(request.getParameter("clientId"));
 		}
-		String jsonStr = mService.editCooperateClient(c,opt);
+		String jsonStr = mService.editCooperateClient(c, opt);
 		return jsonStr;
 	}
-	
+
 	/**
 	 * 更改所有合作客户
 	 * 
 	 */
 	@RequestMapping(value = "/editAllCooperateClient", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
 	@ResponseBody
-	public String editAllCooperateClient(HttpServletRequest request) throws Exception{ 
+	public String editAllCooperateClient(HttpServletRequest request) throws Exception {
 		String ret = null;
 		MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
 		MultipartFile uploadFile = multipartRequest.getFile("file");
@@ -625,19 +651,58 @@ public class EditObjectController implements ApplicationContextAware {
 		int numOfRows = sheet.getLastRowNum();
 		mService = new Service();
 		boolean result = mService.clearCooperateClient();
-		if(result) {
+		if (result) {
 			for (int i = 0; i <= numOfRows; i++) {
 				Client c = new Client();
 				String cName = CommonUtils.getExcelValue(sheet.getRow(i).getCell(0));
 				c.setClientName(cName);
-				mService.editCooperateClient(c,1);
+				mService.editCooperateClient(c, 1);
 			}
 			ret = "客户清单提交成功";
-		}else {
+		} else {
 			ret = "客户清单已清除提交失败";
 		}
 		file.deleteOnExit();
 		inStream.close();
 		return ret;
 	}
+
+	/**
+	 * 编辑项目子状态
+	 * 
+	 */
+	@RequestMapping(value = "/editProjectSubState", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String editProjectSubState(HttpServletRequest request) {
+		mProjectService = new ProjectService();
+		String[] arraySubState = request.getParameterValues("subStateArr");
+		int projectType = Integer.parseInt(request.getParameter("projectType"));
+		String jsonStr = mProjectService.editProjectSubState(projectType, arraySubState);
+		return jsonStr;
+	}
+
+	/**
+	 * 编辑客户详细信息
+	 * 
+	 */
+	@RequestMapping(value = "/editClientDetailInfo", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String editClientDetailInfo(HttpServletRequest request) {
+		mService = new Service();
+		ClientDetailInfo cdi = new ClientDetailInfo();
+		cdi.setCompanyId(request.getParameter("companyId"));
+		cdi.setCompetitor(request.getParameter("competitor"));
+		cdi.setCurrentProblem(request.getParameter("currentProblem"));
+		cdi.setCurrentStateDesc(request.getParameter("currentStateDesc"));
+		cdi.setLeftProblem(request.getParameter("leftProblem"));
+		cdi.setPutPosition(request.getParameter("putPosition"));
+		cdi.setDemand(request.getParameter("demand"));
+		cdi.setSolution(request.getParameter("solution"));
+		cdi.setSchedule(Integer.parseInt(request.getParameter("schedule")));
+		cdi.setQualifications(request.getParameter("qualifications"));
+		cdi.setUpdateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
+		String jsonStr = mService.editClientDetailInfo(cdi);
+		return jsonStr;
+	}
+
 }

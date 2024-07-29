@@ -13,9 +13,9 @@ public class ProjectService {
 		return dao.createProject(p);
 	}
 
-	public String getProjectList(Project p) {
+	public String getProjectList(Project p,boolean isFmlkShare) {
 		dao = new ProjectDao();
-		return dao.getProjectList(p);
+		return dao.getProjectList(p,isFmlkShare);
 	}
 
 	public String getProjectByProjectId(String projectId) {
@@ -23,9 +23,9 @@ public class ProjectService {
 		return dao.getProjectByProjectId(projectId);
 	}
 	
-	public String deleteProject(int id) {
+	public String deleteProject(int id,String updateDate) {
 		dao = new ProjectDao();
-		return dao.deleteProject(id);
+		return dao.deleteProject(id,updateDate);
 	}
 	
 	public String getProject(int id) {
@@ -63,9 +63,9 @@ public class ProjectService {
 		return dao.getCaseTypeByTypeId(typeId);
 	}
 
-	public String deleteProjectCase(int id) {
+	public String deleteProjectCase(int id,String updateDate) {
 		dao = new ProjectDao();
-		return dao.deleteProjectCase(id);
+		return dao.deleteProjectCase(id,updateDate);
 	}
 
 	public String getProjectCaseUnPatchList(int unPatchType) {
@@ -118,5 +118,15 @@ public class ProjectService {
 	public String getProjectSubStateList(int projectState, int projectType) {
 		dao = new ProjectDao();
 		return dao.getProjectSubStateList(projectState, projectType);
+	}
+	
+	public String getProjectState(int projectState, int projectSubState, int projectType) {
+		dao = new ProjectDao();
+		return dao.getProjectState(projectState, projectSubState, projectType);
+	}
+	
+	public String editProjectSubState(int projectType,String[] arraySubState) {
+		dao = new ProjectDao();
+		return dao.editProjectSubState(projectType,arraySubState);
 	}
 }

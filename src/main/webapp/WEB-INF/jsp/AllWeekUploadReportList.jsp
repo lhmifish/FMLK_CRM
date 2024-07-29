@@ -13,9 +13,7 @@
 <meta name="format-detection" content="telephone=no" />
 <meta http-equiv="pragma" content="no-cache" />
 <meta http-equiv="cache-control" content="no-cache" />
-<title>所有周报</title>
-
-
+<title>所有日报</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/showbox.css" />
 <link rel="stylesheet" type="text/css"
@@ -24,6 +22,10 @@
 	href="${pageContext.request.contextPath}/css/xcConfirm.css" />
 <link href='http://fonts.googleapis.com/css?family=Roboto'
 	rel='stylesheet' type='text/css'>
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/jweixin-1.0.0.js"></script>
@@ -31,7 +33,11 @@
 	src="${pageContext.request.contextPath}/js/flatpickr.js"></script>
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/xcConfirm.js"></script>
-<script src="${pageContext.request.contextPath}/js/getObjectList.js"></script>
+<script
+	src="${pageContext.request.contextPath}/js/getObjectList.js?v=2020"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=2"></script>
+<script src="${pageContext.request.contextPath}/js/getObject.js?v=0"></script>
+<script src="${pageContext.request.contextPath}/js/loading.js"></script>
 <style>
 .mask-layer-loading {
 	position: fixed;
@@ -294,11 +300,11 @@ select::-ms-expand {
 	var sId;
 	var arrCompany;
 	var arrProject;
+	var requestReturn;
 
 	$(document).ready(function() {
 		sId = "${mUserId}";
-		//sId = "jia.wenjie";
-		//sId = "wang.fan";
+		//sId = "lv.zhong";
 		host = "${pageContext.request.contextPath}";
 		refreshDate(formatDate(new Date()).substring(0, 10));
 		document.getElementById("date").flatpickr({
@@ -307,177 +313,145 @@ select::-ms-expand {
 			enableTime : false,
 			onChange : function(dateObj, dateStr) {
 				refreshDate(dateStr);
-				getAllWeekUploadReportList();
+				loading();
+				setTimeout(function() {
+					getAllWeekUploadReportList();
+				}, 500);
 			}
 		});
-		getArrCompany();
+		arrCompany = {};
+		arrProject = {};
+		getArrCompany(true);
 	});
 
-	function getArrCompany() {
-		var xhr = createxmlHttpRequest();
-		xhr.open("GET", host + "/companyList?salesId=0&companyName=", true);
-		xhr.onreadystatechange = function() {
-			if (this.readyState == 4) {
-				var data = eval("(" + xhr.responseText + ")").companylist;
-				arrCompany = {};
-				for ( var i in data) {
-					arrCompany[data[i].companyId] = data[i].companyName;
-				}
-				getArrProject();
+	/* 获取客户 */
+	function getArrCompany(isFmlkShare) {
+		var params = {
+			"salesId" : 0,
+			"companyName" : "",
+			"isFmlkShare" : isFmlkShare
+		}
+		get("companyList", params, false)
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			var data = requestReturn.data.companylist;
+			for ( var i in data) {
+				arrCompany[data[i].companyId] = data[i].companyName;
 			}
-		};
-		xhr.send();
+			if(isFmlkShare){
+				isFmlkShare = false
+				getArrCompany(isFmlkShare)
+			}else{
+				loading();
+				setTimeout(function() {
+					getAllWeekUploadReportList();
+				}, 500);
+			}
+		}
 	}
 
-	function getArrProject() {
+	function getArrProject(isFmlkShare) {
 		var xhr = createxmlHttpRequest();
-		xhr.open("GET",host+ "/projectList?companyId=&projectName=&salesId=0&projectManager=0",
-						true);
+		xhr.open("GET",host + "/projectList?companyId=&projectName=&salesId=0&projectType=0&productStyle=0&isFmlkShare="
+								+ isFmlkShare, true);
 		xhr.onreadystatechange = function() {
 			if (this.readyState == 4) {
-				var str = '';
 				var data = eval("(" + xhr.responseText + ")").projectList;
-				arrProject = {};
 				for ( var i in data) {
 					arrProject[data[i].projectId] = data[i].projectName;
 				}
-				getAllWeekUploadReportList();
+				if (!isFmlkShare) {
+					//getArrProject(true)
+				} else {
+					getAllWeekUploadReportList();
+				}
 			}
 		};
 		xhr.send();
 	}
 
 	function getAllWeekUploadReportList() {
-		var today = formatDate(new Date()).substring(0, 10);
-		var xhr = createxmlHttpRequest();
-
-		xhr.open("GET", host + "/userList?date=" + today
-				+ "&dpartId=99&name=&nickName=&jobId=&isHide=true", true);
-		xhr.onreadystatechange = function() {
-			if (this.readyState == 4) {
-				var data2 = eval("(" + xhr.responseText + ")").userlist;
-				$
-						.ajax({
-							url : "${pageContext.request.contextPath}/getAllWeekUploadReportList",
-							type : 'GET',
-							cache : false,
-							data : {
-								"startDate" : startWeekStr,
-								"endDate" : endWeekStr
-							},
-							success : function(returndata) {
-								//alert(returndata);
-								var data = eval("(" + returndata + ")").weekuploadreportlist;
-								var str2 = '';
-								if (returndata.length > 0) {
-
-									for ( var j in data2) {
-										var nName = data2[j].nickName;
-
-										arrayDur = new Array();
-										for ( var i in data) {
-											if (sId == "lv.zhong"
-													|| sId == "sun.ke"
-													|| sId == "yang.huifang"
-													|| sId == "gong.zhiping"
-													|| sId == "lu.haiming"
-													|| sId == "wang.fan") {
-												if (data[i].userName == data2[j].nickName) {
-													arrayDur.push(data[i]);
-												}
-											} else {
-												if (data[i].userName == nName
-														&& nName == sId) {
-													arrayDur.push(data[i]);
-												}
-											}
-										}
-										if (arrayDur.length > 0) {
-											str2 += '<div style="width: 97%; border: 1px solid black; margin: 5px; height: auto" >'
-													+ '<p class="mes2"><strong style="font-size: 16px;">'
-													+ getUser(arrayDur[0].userName).name
-													+ '</strong></p>'
-													+ '<p class="mes" ><strong>周总结：</strong></p><p class="mes3" style="height:auto">';
-											for ( var k in arrayDur) {
-												str2 += arrayDur[k].date
-														+ '&ensp;&ensp;&ensp;'
-														+ arrayDur[k].time
-														+ '<br/>客户：'
-														+ arrCompany[arrayDur[k].client]
-														//	+ getCompany(arrayDur[k].client).companyName
-														+ '<br/>项目：'
-														//	+ getProject(arrayDur[k].crmNum).projectName
-														+ arrProject[arrayDur[k].crmNum]
-														+ '<br/>'
-														+ arrayDur[k].jobContent
-														+ '<br/><br/>';
-											}
-
-											str2 += '</p></div>';
-
-										}
-
-									}
+		var params = {
+			"date" : formatDate(new Date()).substring(0, 10),
+			"dpartId" : 99,
+			"name" : "",
+			"nickName" : "",
+			"jobId" : "",
+			"isHide" : true
+		}
+		get("userList", params, false);
+		if (requestReturn.result == "error") {
+			closeLoading();
+			alert(requestReturn.error);
+		} else {
+			var data2 = requestReturn.data.userlist;
+			params = {
+				"startDate" : startWeekStr,
+				"endDate" : endWeekStr
+			}
+			get("getSalesWeekUploadReportList", params, false);
+			if (requestReturn.result == "error") {
+				closeLoading();
+				alert(requestReturn.error);
+			} else {
+				var data = requestReturn.data.weekuploadreportlist;
+				get("getAllWeekUploadReportList", params, false);
+				if (requestReturn.result == "error") {
+					closeLoading();
+					alert(requestReturn.error);
+				}else{
+					var data3 = requestReturn.data.weekuploadreportlist;
+					$.merge(data, data3);
+					if (data.length > 0) {
+						var tUser = getUser("nickName", sId);
+						var isShowAll = jQuery.inArray(tUser.roleId, [ 9, 11, 12]) > -1;
+						//管理员，总经，副总经能看所有员工的日报
+						var isShowDepart = jQuery.inArray(tUser.roleId, [3, 4,10,13,14,19,20 ]) > -1;
+						//部门经理能部门所有员工的日报
+						var str2='';
+						for ( var j in data2) {
+							arrayDur = new Array();
+							var jUser =  getUser("uId", data2[j].UId);
+							for ( var i in data) {
+								if (isShowAll && data2[j].UId == data[i].id) {
+									arrayDur.push(data[i]);
+								} else if(isShowDepart && tUser.departmentId == jUser.departmentId && data2[j].UId == data[i].id){
+									arrayDur.push(data[i]);
+								} else if (tUser.UId==data[i].id && data2[j].UId == data[i].id) {
+									arrayDur.push(data[i])
 								}
-								$("#list").empty();
-								$("#list").append(str2);
-							},
-							error : function(XMLHttpRequest, textStatus,
-									errorThrown) {
 							}
-						});
-
+							if (arrayDur.length > 0) {
+								var mUser = getUser("uId", arrayDur[0].id);
+								str2 += '<div style="width: 97%; border: 1px solid black; margin: 5px; height: auto" >'
+										+ '<p class="mes2"><strong style="font-size: 16px;">'
+										+ mUser.name
+										+ '</strong></p>'
+										+ '<p class="mes"><strong>本周日报：</strong></p><p class="mes3" style="height:auto;margin-right:10px">';
+								for ( var k in arrayDur) {
+									str2 += '<strong>时间：</strong>'+arrayDur[k].date;
+									if(jQuery.inArray(mUser.departmentId, [ 2, 7, 8 ]) > -1 && arrCompany[arrayDur[k].client] != undefined){
+										//销售，运维，市场部显示客户行
+										str2 += '<br/><strong>客户：</strong>'+ arrCompany[arrayDur[k].client];
+									}
+									str2 += '<br/><strong>内容：</strong>' + arrayDur[k].jobContent
+											+ '<br/><br/>';
+								}
+								str2 += '</p></div>'
+								
+							}
+							$("#list").empty();
+							$("#list").append(str2);
+						}
+						closeLoading();
+					}
+				}
 			}
-		};
-		xhr.send();
-
+		} 
 	}
 
-	function editWeekUploadReport(c) {
-		window.location.href = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxfca99e2643b26241&redirect_uri=crm.lanstarnet.com%3a8082%2fdailyUploadProject%2fpage%2feditWeekUploadReport%2f"
-				+ arrayId[c]
-				+ "&response_type=code&scope=snsapi_base&agentid=1000009#wechat_redirect";
-	}
-
-	function getUser(nName) {
-		var user;
-		$.ajax({
-			url : host + "/getUserByNickName",
-			type : 'GET',
-			data : {
-				"nickName" : nName
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				user = eval("(" + returndata + ")").user[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return user;
-	}
-
-	function getCompany(mCompanyId) {
-		var company;
-		$.ajax({
-			url : host + "/getCompanyByCompanyId",
-			type : 'GET',
-			data : {
-				"companyId" : mCompanyId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				company = eval("(" + returndata + ")").company[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return company;
-	}
-
-	function getProject(mProjectId) {
+/* 	function getProject(mProjectId) {
 		var project;
 		$.ajax({
 			url : host + "/getProjectByProjectId",
@@ -494,9 +468,9 @@ select::-ms-expand {
 			}
 		});
 		return project;
-	}
+	} */
 
-	function showFloatPage(mDiv, mTitle) {
+	/* function showFloatPage(mDiv, mTitle) {
 		$('#mBody').css({
 			'position' : 'fixed'
 		});
@@ -509,7 +483,7 @@ select::-ms-expand {
 				});
 			}
 		});
-	}
+	} */
 
 	function refreshDate(d) {
 		var newDa3 = new Date(Date.parse(d));
@@ -525,16 +499,38 @@ select::-ms-expand {
 		$("#startDate").val(startWeekStr);
 		$("#endDate").val(endWeekStr);
 	}
+	
+	function loading() {
+		$('body').loading({
+			loadingWidth : 160,
+			title : '请稍等!',
+			name : 'test',
+			discription : '加载中',
+			direction : 'column',
+			type : 'origin',
+			originDivWidth : 30,
+			originDivHeight : 30,
+			originWidth : 6,
+			originHeight : 6,
+			smallLoading : false,
+			loadingMaskBg : 'rgba(0,0,0,0.2)'
+		});
+	}
+
+	function closeLoading() {
+		removeLoading('test');
+	}
 </script>
 </head>
 
 
-<body class="body-gray" style="margin: auto;" id="mBody">
+<body class="body-gray" style="margin: auto" id="mBody">
 	<div class="form">
 		<div class="top" style="width: 100%">
 			<div style="width: 100%; margin-bottom: 5px;">
 				<Strong style="margin-left: 5px">选择日期：</Strong> <input type="text"
-					id="date" style="width: 80px;" /> <%-- <label style="margin-left:10px">${mUserId}</label>  --%>
+					id="date" style="width: 80px;" />
+				<%-- <label style="margin-left:10px">${mUserId}</label>  --%>
 			</div>
 			<div style="width: 100%; margin-bottom: 5px;">
 				<Strong style="margin-left: 5px">周报日期：</Strong> <input type="text"

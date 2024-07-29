@@ -8,9 +8,13 @@
 <meta http-equiv="cache-control" content="no-cache" />
 <title>上传下载考勤数据</title>
 <link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
+<link rel="stylesheet" type="text/css"
 	href="${pageContext.request.contextPath}/css/css.css?v=1990" />
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/select4.css?v=1997" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
@@ -18,6 +22,10 @@
 	src="${pageContext.request.contextPath}/js/jquery.jqprint-0.3.js"></script>
 <script src="http://www.jq22.com/jquery/jquery-migrate-1.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=3"></script>
+<script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
+<script src="${pageContext.request.contextPath}/js/loading.js"></script>
+
 <style type="text/css">
 a:hover {
 	color: #FF00FF
@@ -37,61 +45,56 @@ html {
 	var isPermissionEdit;
 	var dayNum;
 	var userArr;
+	var host;
+	var requestReturn;
 
-	$(document)
-			.ready(
-					function() {
-						sId = "${sessionId}";
-						if (sId == null || sId == "") {
-							parent.location.href = "${pageContext.request.contextPath}/page/login";
-						} else {
-							getUserPermissionList();
-							var da = new Date();
-							var year = da.getFullYear();
-							var month = da.getMonth() + 1;
-							var date = da.getDate();
-							month = month < 10 ? "0" + month : month;
-							date = date < 10 ? "0" + date : date;
-							dayNum = new Date(year, month, 0).getDate();//当月天数
-							$("#year").val(year);
-							$("#month").val(month);
-							getDateList();
-							$("#date").val(date);
-							getAllList();
-							$("#year").select2({});
-							$("#month").select2({});
-							$("#date").select2({});
-						}
-					});
+	$(document).ready(function() {
+		sId = "${sessionId}";
+		host = "${pageContext.request.contextPath}";
+		if (sId == null || sId == "") {
+			parent.location.href = host + "/page/login";
+		} else {
+			getUserPermissionList();
+			var da = new Date();
+			var year = da.getFullYear();
+			var month = da.getMonth() + 1;
+			var date = da.getDate();
+			month = month < 10 ? "0" + month : month;
+			date = date < 10 ? "0" + date : date;
+			dayNum = new Date(year, month, 0).getDate();//当月天数
+			$("#year").val(year);
+			$("#month").val(month);
+			getDateList();
+			$("#date").val(date);
+			$("#year").select2({});
+			$("#month").select2({});
+			$("#date").select2({});
+			getAllList();
+		}
+	});
 
 	function getUserPermissionList() {
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/getUserPermissionList",
-					type : 'GET',
-					data : {
-						"nickName" : sId
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						var data = eval("(" + returndata + ")").permissionSettingList;
-						isPermissionEdit = false;
-						for ( var i in data) {
-							if (data[i].permissionId == 76) {
-								isPermissionEdit = true;
-								break;
-							}
-						}
-						if (!isPermissionEdit) {
-							window.location.href = "${pageContext.request.contextPath}/page/error";
-						} else {
-							$('#body').show();
-						}
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
+		var params = {
+			"nickName" : sId
+		}
+		get("getUserPermissionList", params, false)
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			var data = requestReturn.data.permissionSettingList;
+			isPermissionEdit = false;
+			for ( var i in data) {
+				if (data[i].permissionId == 76) {
+					isPermissionEdit = true;
+					break;
+				}
+			}
+			if (!isPermissionEdit) {
+				toErrorPage();
+			} else {
+				$('#body').show();
+			}
+		}
 	}
 
 	function changeDate() {
@@ -105,9 +108,9 @@ html {
 				break;
 			}
 		}
-		if(exist){
+		if (exist) {
 			$("#date").val(tDate);
-		}else{
+		} else {
 			$("#date").val("01");
 		}
 	}
@@ -123,150 +126,155 @@ html {
 		$("#date").append(str);
 	}
 
-	function getNameList() {
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/userList",
-					type : 'GET',
-					data : {
-						"dpartId" : 99,
-						"date" : $("#year").val() + "/" + $("#month").val()
-								+ "/1",
-						"name" : "",
-						"nickName" : "",
-						"jobId" : "",
-						"isHide" : true
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						userArr = new Array();
-						var str = '<tr style="width: 100%;"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">姓名</td></tr>';
-						var data2 = eval("(" + returndata + ")").userlist;
-						for ( var i in data2) {
-							str += '<tr style="width: 100%"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text" disabled="disabled"'
-									+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white" id="user'
-									+ data2[i].UId
-									+ '" value="'
-									+ data2[i].name + '" /></td></tr>';
-							userArr.push(data2[i].UId + "#" + data2[i].name+"#"+data2[i].nickName);
-						}
-						$("#tbName").empty();
-						$("#tbName").append(str);
+	function getUser() {
+		var user;
+		var params = {
+			"nickName" : sId
+		}
+		get("getUserByNickName", params, false)
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			user = requestReturn.data.user[0];
+		}
+		return user;
+	}
 
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
+	function getNameList() {
+		var roleId = getUser().roleId;
+		var dpartId = 99;
+		if (roleId == 3 || roleId == 4) {
+			//销售部经理&副经理
+			dpartId = 2
+		} else if (roleId == 19) {
+			//客服部经理
+			dpartId = 9
+		} else if (roleId == 14) {
+			//运维部经理
+			dpartId = 8
+		} else if (roleId == 11) {
+			$("#saveBtn").show();
+		}
+		var params = {
+			"dpartId" : dpartId,
+			"date" : $("#year").val() + "/" + $("#month").val() + "/1",
+			"name" : "",
+			"nickName" : "",
+			"jobId" : "",
+			"isHide" : true
+		}
+		get("userList", params, false)
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			userArr = new Array();
+			var str = '<tr style="width: 100%;"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">姓名</td></tr>';
+			var data2 = requestReturn.data.userlist;
+			for ( var i in data2) {
+				str += '<tr style="width: 100%"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text" disabled="disabled"'
+						+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white" id="user'
+						+ data2[i].UId
+						+ '" value="'
+						+ data2[i].name
+						+ '" /></td></tr>';
+				userArr.push(data2[i].UId + "#" + data2[i].name + "#"
+						+ data2[i].nickName);
+			}
+			$("#tbName").empty();
+			$("#tbName").append(str);
+		}
 	}
 
 	function getScheduleList(mDayOfWeek) {
-		var mDate = $("#year").val() + "/" + $("#month").val() + "/"
-				+ $("#date").val();
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/getDailyArrangementList",
-					type : 'GET',
-					data : {
-						"date" : mDate
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						//alert(returndata);
-						var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">日程</td></tr>';
-						var data2 = eval("(" + returndata + ")").dailyarrangementlist;
-						for (var i = 0; i < userArr.length; i++) {
-							var uName = userArr[i].split("#")[1];
-							var uId = userArr[i].split("#")[0];
-							var content = "";
-							for (var j = 0; j < data2.length; j++) {
-								if (data2[j].userId == uId) {
-									content += data2[j].time.substring(0, 12)
-											+ " " + data2[j].jobDescriptionP + ";"
-								}
-							}
-							if (content == "") {
-								if (mDayOfWeek == 6 || mDayOfWeek == 7) {
-									str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;border-right-style:none;height: 50px"><textarea type="text"'
-											+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;resize:none;height: 46px;" id="schedule'
-											+ uId + '">休息</textarea></td></tr>';
-								} else {
-									str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;border-right-style:none;height: 50px"><textarea type="text"'
-											+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;color:red;resize:none;height: 46px;" id="schedule'
-											+ uId + '">未发</textarea></td></tr>';
-								}
-							} else {
-								str += '<tr style="width: 100%"><td class="tdColor2" style="width: 100%;border-right-style:none;height: 50px"><textarea type="text"'
-										+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;resize:none;height: 46px;" id="schedule'
-										+ uId
-										+ '">'
-										+ content
-										+ '</textarea></td></tr>';
-							}
-						}
-						$("#tbSchedule").empty();
-						$("#tbSchedule").append(str);
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
+		var params = {
+			"date" : $("#year").val() + "/" + $("#month").val() + "/"
+					+ $("#date").val()
+		}
+		get("getDailyArrangementList", params, false);
+		if (requestReturn.result == "error") {
+			closeLoading();
+			alert(requestReturn.error);
+		} else {
+			var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">日程</td></tr>';
+			var data2 = requestReturn.data.dailyarrangementlist;
+			for (var i = 0; i < userArr.length; i++) {
+				var uName = userArr[i].split("#")[1];
+				var uId = userArr[i].split("#")[0];
+				var content = "";
+				for (var j = 0; j < data2.length; j++) {
+					if (data2[j].userId == uId) {
+						content += data2[j].time.substring(0, 12) + " "
+								+ data2[j].jobDescriptionP + ";"
 					}
-				});
+				}
+				if (content == "") {
+					if (mDayOfWeek == 6 || mDayOfWeek == 7) {
+						str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;border-right-style:none;height: 50px"><textarea type="text"'
+								+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;resize:none;height: 46px;" id="schedule'
+								+ uId + '">休息</textarea></td></tr>';
+					} else {
+						str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;border-right-style:none;height: 50px"><textarea type="text"'
+								+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;color:red;resize:none;height: 46px;" id="schedule'
+								+ uId + '">未发</textarea></td></tr>';
+					}
+				} else {
+					str += '<tr style="width: 100%"><td class="tdColor2" style="width: 100%;border-right-style:none;height: 50px"><textarea type="text"'
+							+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;resize:none;height: 46px;" id="schedule'
+							+ uId + '">' + content + '</textarea></td></tr>';
+				}
+			}
+			$("#tbSchedule").empty();
+			$("#tbSchedule").append(str);
+		}
 	}
 
 	function getDailyReportList(mDayOfWeek) {
-		var mDate = $("#year").val() + "/" + $("#month").val() + "/"
-				+ $("#date").val();
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/getAllDailyUploadReportList",
-					type : 'GET',
-					data : {
-						"date" : mDate
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						//alert(returndata);
-						var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">日报</td></tr>';
-						var data2 = eval("(" + returndata + ")").dailyuploadreportlist;
-						for (var i = 0; i < userArr.length; i++) {
-							var uName = userArr[i].split("#")[1];
-							var uId = userArr[i].split("#")[0];
-							var nickName = userArr[i].split("#")[2];
-							var content = "";
-							for (var j = 0; j < data2.length; j++) {
-								if (data2[j].userName == nickName) {
-									content = "已发";
-									break;
-								}
-							}
-							if (content == "") {
-								if (mDayOfWeek == 6 || mDayOfWeek == 7) {
-									str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
-											+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white" id="dailyReport'
-											+ uId + '"/></td></tr>';
-								} else {
-									str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
-											+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;color:red" id="dailyReport'
-											+ uId + '" value="未发" /></td></tr>';
-								}
-							} else {
-								str += '<tr style="width: 100%"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
-										+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;" id="dailyReport'
-										+ uId + '" value="已发" /></td></tr>';
-							}
-						}
-						$("#tbDailyReport").empty();
-						$("#tbDailyReport").append(str);
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
+		var params = {
+			"date" : $("#year").val() + "/" + $("#month").val() + "/"
+					+ $("#date").val()
+		}
+		get("getAllDailyUploadReportList", params, false);
+		if (requestReturn.result == "error") {
+			closeLoading();
+			alert(requestReturn.error);
+		} else {
+			var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">日报</td></tr>';
+			var data2 = requestReturn.data.dailyuploadreportlist;
+			for (var i = 0; i < userArr.length; i++) {
+				var uName = userArr[i].split("#")[1];
+				var uId = userArr[i].split("#")[0];
+				var nickName = userArr[i].split("#")[2];
+				var content = "";
+				for (var j = 0; j < data2.length; j++) {
+					if (data2[j].userName == nickName) {
+						content = "已发";
+						break;
 					}
-				});
+				}
+				if (content == "") {
+					if (mDayOfWeek == 6 || mDayOfWeek == 7) {
+						str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
+								+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white" id="dailyReport'
+								+ uId + '"/></td></tr>';
+					} else {
+						str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
+								+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;color:red" id="dailyReport'
+								+ uId + '" value="未发" /></td></tr>';
+					}
+				} else {
+					str += '<tr style="width: 100%"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
+							+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;" id="dailyReport'
+							+ uId + '" value="已发" /></td></tr>';
+				}
+			}
+			$("#tbDailyReport").empty();
+			$("#tbDailyReport").append(str);
+		}
 	}
 
 	function getWeekReportList(mDayOfWeek) {
 		//周五检查周报
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">周报</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">周报</td></tr>';
 		var startWeekStr = formatDate(new Date($("#year").val(), $("#month")
 				.val() - 1, $("#date").val() - mDayOfWeek + 1));
 		var endWeekStr = formatDate(new Date($("#year").val(), $("#month")
@@ -314,16 +322,15 @@ html {
 						},
 						error : function(XMLHttpRequest, textStatus,
 								errorThrown) {
+							closeLoading();
 						}
 					});
 		}
-	//	$("#tbWeekReport").empty();
-	//	$("#tbWeekReport").append(str);
 	}
 
 	function getNextWeekPlanList(mDayOfWeek) {
 		//周日检查下周计划
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">下周计划</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">下周计划</td></tr>';
 		var startWeekStr = formatDate(new Date($("#year").val(), $("#month")
 				.val() - 1, $("#date").val() - mDayOfWeek + 8));
 		var endWeekStr = formatDate(new Date($("#year").val(), $("#month")
@@ -376,15 +383,14 @@ html {
 						},
 						error : function(XMLHttpRequest, textStatus,
 								errorThrown) {
+							closeLoading();
 						}
 					});
 		}
-	//	$("#tbNextWeekPlan").empty();
-	//	$("#tbNextWeekPlan").append(str);
 	}
 
 	function getWeekProjectReportList(mDayOfWeek) {
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">项目报告</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">项目报告</td></tr>';
 		for (var i = 0; i < userArr.length; i++) {
 			var uId = userArr[i].split("#")[0];
 			if (mDayOfWeek == 7) {
@@ -397,67 +403,49 @@ html {
 						+ uId + '"/></td></tr>';
 			}
 		}
-	//	$("#tbProjectReport").empty();
-	//	$("#tbProjectReport").append(str);
 	}
 
 	function getSignList() {
-		var mDate = $("#year").val() + "/" + $("#month").val() + "/"
-				+ $("#date").val();
-
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">签到/签退('+mDate+')</td></tr>';
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/allCheckList",
-					type : 'GET',
-					data : {
-						"date" : mDate,
-						"department" : 0
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						//alert(returndata);
-						var data = eval("(" + returndata + ")").wechatlist;
-						for (var i = 0; i < userArr.length; i++) {
-							var uName = userArr[i].split("#")[1];
-							var uId = userArr[i].split("#")[0];
-							var content = "";
-							for (var j = 0; j < data.length; j++) {
-								if (data[j].name == uName) {
-									var details = data[j].detail.list;
-									for ( var k in details) {
-										content += details[k].checkTime
-												.substring(0, 5)
-												+ " "
-												+ details[k].address
-												+ " "
-												+ details[k].checkFlag
-												+ "；";
-									}
-									break;
-								}
-
-							}
-							str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;border-right-style:none;height: 50px;"><textarea type="text"'
-									+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;resize:none;height: 46px;" id="sign'
-									+ uId
-									+ '">'
-									+ content
-									+ '</textarea></td></tr>';
+		var params = {
+			"date" : $("#year").val() + "/" + $("#month").val() + "/"
+					+ $("#date").val(),
+			"department" : 0
+		}
+		get("allCheckList", params, false);
+		if (requestReturn.result == "error") {
+			closeLoading();
+			alert(requestReturn.error);
+		} else {
+			var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">签到/签退('
+					+ params.date + ')</td></tr>';
+			var data = requestReturn.data.wechatlist;
+			for (var i = 0; i < userArr.length; i++) {
+				var uName = userArr[i].split("#")[1];
+				var uId = userArr[i].split("#")[0];
+				var content = "";
+				for (var j = 0; j < data.length; j++) {
+					if (data[j].name == uName) {
+						var details = data[j].detail.list;
+						for ( var k in details) {
+							content += details[k].checkTime.substring(0, 5)
+									+ " " + details[k].address + " "
+									+ details[k].checkFlag + "；";
 						}
-
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
+						break;
 					}
-				});
 
-		$("#tbSign").empty();
-		$("#tbSign").append(str);
+				}
+				str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;border-right-style:none;height: 50px;"><textarea type="text"'
+						+ 'style="font-size: 12px;border:none;width:98%;text-align:center;background-color:white;resize:none;height: 46px;" id="sign'
+						+ uId + '">' + content + '</textarea></td></tr>';
+			}
+			$("#tbSign").empty();
+			$("#tbSign").append(str);
+		}
 	}
 
 	function getRemarkList() {
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">备注</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">备注</td></tr>';
 		for (var i = 0; i < userArr.length; i++) {
 			var uId = userArr[i].split("#")[0];
 			str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
@@ -469,7 +457,7 @@ html {
 	}
 
 	function getOverWorkTimeList() {
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">加班</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">加班</td></tr>';
 		for (var i = 0; i < userArr.length; i++) {
 			var uId = userArr[i].split("#")[0];
 			str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
@@ -481,7 +469,7 @@ html {
 	}
 
 	function getAdjustRestTimeList() {
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">请假</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">请假</td></tr>';
 		for (var i = 0; i < userArr.length; i++) {
 			var uId = userArr[i].split("#")[0];
 			str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
@@ -493,7 +481,7 @@ html {
 	}
 
 	function getFestivalOverWorkTimeList() {
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none">法定节日加班</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;border-right-style:none;text-align:center">法定节日加班</td></tr>';
 		for (var i = 0; i < userArr.length; i++) {
 			var uId = userArr[i].split("#")[0];
 			str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;border-right-style:none"><input type="text"'
@@ -505,7 +493,7 @@ html {
 	}
 
 	function getIsLateList() {
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;">迟到</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;text-align:center">迟到</td></tr>';
 		for (var i = 0; i < userArr.length; i++) {
 			var uId = userArr[i].split("#")[0];
 			str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;"><input type="text"'
@@ -514,10 +502,11 @@ html {
 		}
 		$("#tbIsLate").empty();
 		$("#tbIsLate").append(str);
+		closeLoading();
 	}
 
 	function getOperationList() {
-		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;">操作</td></tr>';
+		var str = '<tr style="width: 100%"><td class="tdColor" style="width: 100%; font-size: 12px; height: 50px;text-align:center">操作</td></tr>';
 		for (var i = 0; i < userArr.length; i++) {
 			var uId = userArr[i].split("#")[0];
 			str += '<tr style="width: 100%;"><td class="tdColor2" style="width: 100%;height: 50px;">'
@@ -529,31 +518,31 @@ html {
 	}
 
 	function getAllList() {
-		var newDate = new Date($("#year").val(), $("#month").val() - 1, $(
-				"#date").val());
-		var DayOfWeek = (newDate.getDay() == 0) ? 7 : newDate.getDay();
-		getNameList();
-		getScheduleList(DayOfWeek);
-		getDailyReportList(DayOfWeek);
-		getWeekReportList(DayOfWeek);
-		getNextWeekPlanList(DayOfWeek);
-		getWeekProjectReportList(DayOfWeek);
-		getSignList();
-		getRemarkList();
-		getOverWorkTimeList();
-		getAdjustRestTimeList();
-		getFestivalOverWorkTimeList();
-		getIsLateList();
-		//getOperationList();
+		loading();
+		setTimeout(function() {
+			var newDate = new Date($("#year").val(), $("#month").val() - 1, $(
+					"#date").val());
+			var DayOfWeek = (newDate.getDay() == 0) ? 7 : newDate.getDay();
+			getNameList();
+			getScheduleList(DayOfWeek);
+			getDailyReportList(DayOfWeek);
+			getSignList();
+			getRemarkList();
+			getOverWorkTimeList();
+			getAdjustRestTimeList();
+			getFestivalOverWorkTimeList();
+			getIsLateList();
+		}, 500);
 	}
-	
-	function saveAllList(){
+
+	function saveAllList() {
 		if (isPermissionEdit) {
 			var date = $("#year").val() + "/" + $("#month").val() + "/"
-			+ $("#date").val();
-			document.getElementById("delP1").innerHTML="你确定要写入 "+date+" 的考勤数据吗?";			
-			$("#banDel").show();			
-		}else{
+					+ $("#date").val();
+			document.getElementById("delP1").innerHTML = "你确定要写入 " + date
+					+ " 的考勤数据吗?";
+			$("#banDel").show();
+		} else {
 			alert("你没有权限对此操作");
 		}
 	}
@@ -572,29 +561,27 @@ html {
 		}
 		return (myyear + "/" + mymonth + "/" + myweekday);
 	}
-	
-	function createWorkAttendance(){
+
+	function createWorkAttendance() {
 		var date = $("#year").val() + "/" + $("#month").val() + "/"
-		+ $("#date").val();
-		//alert(date);
+				+ $("#date").val();
 		var isScuessUp = false;
 		//先清除
 		$
-		.ajax({
-			url : "${pageContext.request.contextPath}/deleteThisWorkAttendance",
-			type : 'POST',
-			cache : false,
-			async: false,
-			data : {
-				"date" : date
-			},
-			success : function(returndata) {
-				
-			},
-			error : function(XMLHttpRequest, textStatus,
-					errorThrown) {
-			}
-		});
+				.ajax({
+					url : "${pageContext.request.contextPath}/deleteThisWorkAttendance",
+					type : 'POST',
+					cache : false,
+					async : false,
+					data : {
+						"date" : date
+					},
+					success : function(returndata) {
+
+					},
+					error : function(XMLHttpRequest, textStatus, errorThrown) {
+					}
+				});
 		//再写入
 		for (var i = 0; i < userArr.length; i++) {
 			var mUId = userArr[i].split("#")[0];
@@ -607,60 +594,81 @@ html {
 					"#isLate" + mUId).val().trim() == "迟到") ? 1 : 0;
 			var overWorkTime = $("#overWorkTime" + mUId).val().trim();
 			var adjustRestTime = $("#adjustRestTime" + mUId).val().trim();
-			var festivalOverWorkTime = $("#festivalOverWorkTime" + mUId).val().trim();
+			var festivalOverWorkTime = $("#festivalOverWorkTime" + mUId).val()
+					.trim();
 			var patten1 = /^[0-9]+(.[0-9]{1})?$/.test(overWorkTime);
 			var patten2 = /^[0-9]+(.[0-9]{1})?$/.test(adjustRestTime);
 			var patten3 = /^[0-9]+(.[0-9]{1})?$/.test(festivalOverWorkTime);
 			if (!patten1 || !patten2 || !patten3) {
 				isScuessUp = false;
-				alert(uName+"的加班或请假输入格式不正确, 请修改后重新写入");
+				alert(uName + "的加班或请假输入格式不正确, 请修改后重新写入");
 			}
 			$
-			.ajax({
-				url : "${pageContext.request.contextPath}/createWorkAttendance",
-				type : 'POST',
-				cache : false,
-				async: false,
-				data : {
-					"date" : date,
-					"name" : uName,
-					"schedule" : schedule,
-					"dailyReport" : dailyReport,
-					"sign" : sign,
-					"remark" : remark,
-					"isLate" : isLate,
-					"overWorkTime" : overWorkTime,
-					"adjustRestTime" : adjustRestTime,
-					"festivalOverWorkTime" : festivalOverWorkTime
-				},
-				success : function(returndata) {
-					var data = eval("(" + returndata + ")").errcode;
-					if (data == 0) {
-						isScuessUp = true;
-					}else{
-						isScuessUp = false;
-						alert(uName+"的考勤写入失败");
-					}
-				},
-				error : function(XMLHttpRequest, textStatus,
-						errorThrown) {
-					    isScuessUp = false;
-				}
-				
-			});
-			if(!isScuessUp){
+					.ajax({
+						url : "${pageContext.request.contextPath}/createWorkAttendance",
+						type : 'POST',
+						cache : false,
+						async : false,
+						data : {
+							"date" : date,
+							"name" : uName,
+							"schedule" : schedule,
+							"dailyReport" : dailyReport,
+							"sign" : sign,
+							"remark" : remark,
+							"isLate" : isLate,
+							"overWorkTime" : overWorkTime,
+							"adjustRestTime" : adjustRestTime,
+							"festivalOverWorkTime" : festivalOverWorkTime
+						},
+						success : function(returndata) {
+							var data = eval("(" + returndata + ")").errcode;
+							if (data == 0) {
+								isScuessUp = true;
+							} else {
+								isScuessUp = false;
+								alert(uName + "的考勤写入失败");
+							}
+						},
+						error : function(XMLHttpRequest, textStatus,
+								errorThrown) {
+							isScuessUp = false;
+						}
+
+					});
+			if (!isScuessUp) {
 				break;
 			}
 		}
-		
-		if(isScuessUp){
+
+		if (isScuessUp) {
 			alert("所有人考勤数据写入成功");
-		}else{
+		} else {
 			alert("所有人考勤数据写入失败，请重新写入");
 		}
-		$("#banDel").hide();	
+		$("#banDel").hide();
 	}
 
+	function loading() {
+		$('body').loading({
+			loadingWidth : 240,
+			title : '请稍等!',
+			name : 'test',
+			discription : '加载中',
+			direction : 'column',
+			type : 'origin',
+			originDivWidth : 40,
+			originDivHeight : 40,
+			originWidth : 6,
+			originHeight : 6,
+			smallLoading : false,
+			loadingMaskBg : 'rgba(0,0,0,0.2)'
+		});
+	}
+
+	function closeLoading() {
+		removeLoading('test');
+	}
 </script>
 </head>
 
@@ -724,8 +732,9 @@ html {
 								<option value="01">1月</option>
 								<option value="02">2月</option>
 							</select> <a class="addA" style="width: 120px" onClick="getAllList()">查询表单</a>
-							<a class="addA" style="width: 120px; margin-left: 10px"
-								onClick="saveAllList()">写入考勤数据</a>
+							<a class="addA"
+								style="width: 120px; margin-left: 10px; display: none"
+								onClick="saveAllList()" id="saveBtn">写入考勤数据</a>
 						</div>
 					</form>
 				</div>
@@ -768,7 +777,7 @@ html {
 						</table>
 					</div>
 
-					<div class="conShow" style="width: 15%; float: left;">
+					<div class="conShow" style="width: 13%; float: left;">
 						<table id="tbRemark" style="width: 100%; overflow: auto">
 						</table>
 					</div>
@@ -783,7 +792,7 @@ html {
 						</table>
 					</div>
 
-					<div class="conShow" style="width: 4%; float: left;">
+					<div class="conShow" style="width: 6%; float: left;">
 						<table id="tbFestivalOverWorkTime"
 							style="width: 100%; overflow: auto">
 						</table>

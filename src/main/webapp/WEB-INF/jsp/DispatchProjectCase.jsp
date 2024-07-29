@@ -8,9 +8,13 @@
 <meta http-equiv="cache-control" content="no-cache" />
 <title>技术派工</title>
 <link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
+<link rel="stylesheet" type="text/css"
 	href="${pageContext.request.contextPath}/css/css.css?v=1990" />
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/select4.css?v=1997" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
@@ -18,6 +22,9 @@
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
 <script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
 <script src="${pageContext.request.contextPath}/js/getObjectList.js"></script>
+<script src="${pageContext.request.contextPath}/js/loading.js"></script>
+<script src="${pageContext.request.contextPath}/js/getObject.js?v=2"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=3"></script>
 <style type="text/css">
 a:hover {
 	color: #FF00FF
@@ -29,167 +36,82 @@ a:hover {
 	var sId;
 	var host;
 	var isPermissionView;
+	var requestReturn;
 
 	$(document).ready(function() {
 		sId = "${sessionId}";
 		host = "${pageContext.request.contextPath}";
 		checkViewPremission(26);
 	});
-	
-	
-	function initialPage(){
+
+	function initialPage() {
 		page = 1;
 		getProjectCaseList(page);
 	}
 
-
 	function getProjectCaseList(mPage) {
+		loading();
 		page = mPage;
-		$
-				.ajax({
-					url : host + "/projectCaseUnPatchList",
-					type : 'GET',
-					data : {
-						"unPatch" : 1
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						var data = eval("(" + returndata + ")").pclist;
-						var str = "";
-						var num = data.length;
-						var projectCaseArr = new Array();
-						if (num > 0) {
-							lastPage = Math.ceil(num / 10);
-							for ( var i in data) {
-								if (i >= 10 * (mPage - 1)
-										&& i <= 10 * mPage - 1) {
-									projectCaseArr.push(data[i].salesId);
-									str += '<tr style="width: 100%"><td style="width: 8%" class="tdColor2">'
-											+ getUser(data[i].salesId).name
-											+ '</td>'
-											+ '<td style="width:48%" class="tdColor2">'
-											+ getProject(data[i].projectId).projectName
-											+ '</br>'
-											+ getCompany(data[i].projectId).companyName
-											+ '</td>'
-											+ getServiceType(data[i].serviceType)
-											+ '<td style="width:6%" class="tdColor2">'
-											+ getCaseType(data[i].caseType
-													.split("#")[1]).typeName
-											+ '</td>'
-											+ '<td style="width:8%" class="tdColor2">'
-											+ data[i].serviceDate.substring(0,
-													10)
-											+ '</br>'
-											+ data[i].serviceDate.substring(11,
-													16)
-											+ '</td>'
-											+ '<td style="width:8%" class="tdColor2"><span style="color:red">技术未审核</span></td>'
-											+ '<td style="width:8%" class="tdColor2">'
-											+ data[i].createDate.substring(0,
-													10)
-											+ '</td>'
-											+ '<td style="width:8%" class="tdColor2">'
-											+ '<img name="img_edit" title="派工" style="vertical-align:middle" class="operation delban" src="../image/update.png" onclick="toEditProjectCasePage('
-											+ data[i].id
-											+ ',2)"><a name="a_edit" style="vertical-align:middle" onclick="toEditProjectCasePage('
-											+ data[i].id
-											+ ',2)">派工</a></td></tr>';
-								}
-							}
-						} else {
-							lastPage = 1;
-							str += '<tr style="height:40px;text-align: center;"><td style="color:red;width:100%;" border=0>没有你要找的派工单</td></tr>';
+		setTimeout(function() {
+			get("projectCaseUnPatchList", {"unPatch" : 1}, false)
+			if (requestReturn.result == "error") {
+				closeLoading();
+				alert(requestReturn.error);
+			} else {
+				var data = requestReturn.data.pclist;
+				var str = "";
+				var num = data.length;
+				var projectCaseArr = new Array();
+				if (num > 0) {
+					lastPage = Math.ceil(num / 10);
+					for ( var i in data) {
+						if (i >= 10 * (mPage - 1)
+								&& i <= 10 * mPage - 1) {
+							projectCaseArr.push(data[i].salesId);
+							str += '<tr style="width: 100%"><td style="width: 8%" class="tdColor2">'
+									+ getUser("uId",data[i].salesId).name
+									+ '</td>'
+									+ '<td style="width:48%" class="tdColor2">'
+									+ getProject("projectId",data[i].projectId).projectName
+									+ '</br><span style="font-size:10px">'
+									+ getCompany("projectId",data[i].projectId).companyName
+									+ '</span></td>'
+									+ getServiceType(data[i].serviceType)
+									+ '<td style="width:6%;font-size:14px" class="tdColor2">'
+									+ getCaseType("typeId",data[i].caseType
+											.split("#")[1]).typeName
+									+ '</td>'
+									+ '<td style="width:8%;font-size:14px" class="tdColor2">'
+									+ data[i].serviceDate.substring(0,
+											10)
+									+ '</br><span style="font-size:12px">'
+									+ data[i].serviceDate.substring(11,
+											16)
+									+ '</span></td>'
+									+ '<td style="width:8%" class="tdColor2"><span style="color:red">技术未审核</span></td>'
+									+ '<td style="width:8%;font-size:14px" class="tdColor2">'
+									+ data[i].createDate.substring(0,
+											10)
+									+ '</td>'
+									+ '<td style="width:8%" class="tdColor2">'
+									+ '<img name="img_edit" title="派工" style="vertical-align:middle" class="operation delban" src="../image/update.png" onclick="toEditProjectCasePage('
+									+ data[i].id
+									+ ',2)"><a name="a_edit" style="vertical-align:middle" onclick="toEditProjectCasePage('
+									+ data[i].id
+									+ ',2)">派工</a></td></tr>';
 						}
-						document.getElementById('p').innerHTML = mPage + "/"
-								+ lastPage;
-						$("#tb").empty();
-						$("#tb").append(str);
-						
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
 					}
-				});
-	}
-
-
-	function getUser(uId) {
-		var user;
-		$.ajax({
-			url : host + "/getUserById",
-			type : 'GET',
-			data : {
-				"uId" : uId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				user = eval("(" + returndata + ")").user[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
+				} else {
+					lastPage = 1;
+					str += '<tr style="height:40px;text-align: center;"><td style="color:red;width:100%;" border=0>没有你要找的派工单</td></tr>';
+				}
+				document.getElementById('p').innerHTML = mPage + "/"
+						+ lastPage;
+				$("#tb").empty();
+				$("#tb").append(str);
+				closeLoading();
 			}
-		});
-		return user;
-	}
-
-	function getProject(mProjectId) {
-		var project;
-		$
-				.ajax({
-					url : host + "/getProjectByProjectId",
-					type : 'GET',
-					data : {
-						"projectId" : mProjectId
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						project = eval("(" + returndata + ")").project[0];
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
-		return project;
-	}
-
-	function getCompany(mProjectId) {
-		var company;
-		$
-				.ajax({
-					url : host + "/getCompanyByProjectId",
-					type : 'GET',
-					data : {
-						"projectId" : mProjectId
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						company = eval("(" + returndata + ")").company[0];
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
-					}
-				});
-		return company;
-	}
-
-	function getCaseType(typeId) {
-		var type;
-		$.ajax({
-			url : host + "/getCaseTypeByTypeId",
-			type : 'GET',
-			data : {
-				"typeId" : typeId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				type = eval("(" + returndata + ")").caseType[0];
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return type;
+		}, 500);
 	}
 
 	function getServiceType(mServiceType) {
@@ -199,7 +121,6 @@ a:hover {
 			return '<td style="width:6%" class="tdColor2"><span style="color:brown">紧急</span></td>';
 		}
 	}
-
 
 	function nextPage() {
 		if (page == lastPage) {
@@ -239,6 +160,27 @@ a:hover {
 			page = lastPage;
 			getProjectCaseList(page);
 		}
+	}
+
+	function loading() {
+		$('body').loading({
+			loadingWidth : 240,
+			title : '请稍等!',
+			name : 'test',
+			discription : '加载中',
+			direction : 'column',
+			type : 'origin',
+			originDivWidth : 40,
+			originDivHeight : 40,
+			originWidth : 6,
+			originHeight : 6,
+			smallLoading : false,
+			loadingMaskBg : 'rgba(0,0,0,0.2)'
+		});
+	}
+
+	function closeLoading() {
+		removeLoading('test');
 	}
 </script>
 </head>

@@ -6,15 +6,22 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta http-equiv="pragma" content="no-cache" />
 <meta http-equiv="cache-control" content="no-cache" />
-<title>用户信息管理</title>
+<title>员工信息管理</title>
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
 <link rel="stylesheet" type="text/css"
 	href="${pageContext.request.contextPath}/css/css.css?v=1990" />
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/select4.css?v=1997" />
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=3"></script>
+<script src="${pageContext.request.contextPath}/js/getObject.js?v=7"></script>
+<script src="${pageContext.request.contextPath}/js/loading.js"></script>
 <style type="text/css">
 a:hover {
 	color: #FF00FF
@@ -35,8 +42,11 @@ html {
 	var editId;
 	var editNickName;
 	var isHide;
+	var host;
+	var requestReturn;
 
 	$(document).ready(function() {
+		host = "${pageContext.request.contextPath}";
 		$("#departmentId").select2({});
 		page = 1;
 		isHide = false;
@@ -60,26 +70,20 @@ html {
 	}
 
 	function getDepartmentList() {
-		$.ajax({
-			url : "${pageContext.request.contextPath}/departmentList",
-			type : 'GET',
-			data : {},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var str = '<option value="0">请选择...</option>';
-				var data2 = eval("(" + returndata + ")").dList;
-				for ( var i in data2) {
-					str += '<option value="'+data2[i].id+'">'
-							+ data2[i].departmentName + '</option>';
-				}
-				$("#departmentId").empty();
-				$("#departmentId").append(str);
-
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
+		var params = {}
+		get("departmentList",params,false);
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else{
+			var data2 = requestReturn.data.dList;
+			var str = '<option value="0">请选择...</option>';
+			for ( var i in data2) {
+				str += '<option value="'+data2[i].id+'">'
+						+ data2[i].departmentName + '</option>';
 			}
-		});
+			$("#departmentId").empty();
+			$("#departmentId").append(str);
+		}
 	}
 	
 	function sortJobId(a,b){
@@ -87,74 +91,69 @@ html {
 	}
 
 	function getUserList(mPage) {
-		// isHide
+		loading();
 		page = mPage;
 		var mName = $("#name").val().trim();
 		var mNickName = $("#nickName").val().trim();
 		var mJobId = $("#jobId").val().trim();
 		var mDepartmentId = $("#departmentId option:selected").val();
-		$
-				.ajax({
-					url : "${pageContext.request.contextPath}/userList",
-					type : 'GET',
-					data : {
-						"dpartId" : mDepartmentId,
-						"date" : "",
-						"name" : mName,
-						"nickName" : mNickName,
-						"jobId" : mJobId,
-						"isHide" : isHide
-					},
-					cache : false,
-					async : false,
-					success : function(returndata) {
-						var data = eval("(" + returndata + ")").userlist;
-						data.sort(sortJobId);
-						var str = "";
-						var num = data.length;
-						if (num > 0) {
-							lastPage = Math.ceil(num / 10);
-							for ( var i in data) {
-								if (i >= 10 * (mPage - 1)
-										&& i <= 10 * mPage - 1) {
-									str += '<tr style="width:100%"><td style="width:16%" class="tdColor2">'
-											+ data[i].jobId
-											+ '</td>'
-											+ '<td style="width:16%" class="tdColor2">'
-											+ data[i].nickName
-											+ '</td>'
-											+ '<td style="width:16%" class="tdColor2">'
-											+ getUser(data[i].UId)
-											+ '</td>'
-											+ '<td style="width:16%" class="tdColor2">'
-											+ getDepartment(data[i].departmentId)
-											+ '</td>'
-											+ '<td style="width:16%" class="tdColor2">'
-											+ getUserState(data[i].UId,
-													data[i].state, i,
-													data[i].nickName)
-											+ '</td>'
-											+ '<td style="width:20%" class="tdColor2">'
-											+ '<img style="vertical-align:middle" class="operation" src="../image/update.png" title="编辑用户" ><a style="vertical-align:middle" href="../page/editUser/'+ data[i].UId +'">编辑用户</a>'
-											+ '<img style="vertical-align:middle" class="operation delban" src="../image/update.png" title="修改密码" /><a style="vertical-align:middle" onclick="changePsd2('
-											+ data[i].UId
-											+ ',\''
-											+ data[i].nickName
-											+ '\')">重置密码</a></td></tr>';
-								}
-							}
-						} else {
-							lastPage = 1;
-							str += '<tr style="height:40px;text-align: center;"><td style="color:red;width:1300px;" border=0>没有你要找的用户</td></tr>';
-						}
-						document.getElementById('p').innerHTML = mPage + "/"
-								+ lastPage;
-						$("#tb").empty();
-						$("#tb").append(str);
-					},
-					error : function(XMLHttpRequest, textStatus, errorThrown) {
+		var params = {
+				"dpartId" : mDepartmentId,
+				"date" : "",
+				"name" : mName,
+				"nickName" : mNickName,
+				"jobId" : mJobId,
+				"isHide" : isHide
+		}
+		get("userList",params,false);
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+			closeLoading();
+		}else{
+			var data = requestReturn.data.userlist.sort(sortJobId);
+			var str = "";
+			var num = data.length;
+			if (num > 0) {
+				lastPage = Math.ceil(num / 10);
+				for ( var i in data) {
+					if (i >= 10 * (mPage - 1)
+							&& i <= 10 * mPage - 1) {
+						str += '<tr style="width:100%"><td style="width:16%" class="tdColor2">'
+								+ data[i].jobId
+								+ '</td>'
+								+ '<td style="width:16%" class="tdColor2">'
+								+ data[i].nickName
+								+ '</td>'
+								+ '<td style="width:16%" class="tdColor2">'
+								+ getUser("uId",data[i].UId).name
+								+ '</td>'
+								+ '<td style="width:16%" class="tdColor2">'
+								+ getDepartment(data[i].departmentId)
+								+ '</td>'
+								+ '<td style="width:16%" class="tdColor2">'
+								+ getUserState(data[i].UId,
+										data[i].state, i,
+										data[i].nickName)
+								+ '</td>'
+								+ '<td style="width:20%" class="tdColor2">'
+								+ '<img style="vertical-align:middle" class="operation" src="../image/update.png" title="编辑员工" ><a style="vertical-align:middle" href="../page/editUser/'+ data[i].UId +'">编辑员工</a>'
+								+ '<img style="vertical-align:middle" class="operation delban" src="../image/update.png" title="修改密码" /><a style="vertical-align:middle" onclick="changePsd2('
+								+ data[i].UId
+								+ ',\''
+								+ data[i].nickName
+								+ '\')">重置密码</a></td></tr>';
 					}
-				});
+				}
+			} else {
+				lastPage = 1;
+				str += '<tr style="height:40px;text-align: center;"><td style="color:red;width:1300px;" border=0>没有你要找的用户</td></tr>';
+			}
+			document.getElementById('p').innerHTML = mPage + "/"
+					+ lastPage;
+			$("#tb").empty();
+			$("#tb").append(str);
+			closeLoading();
+		}
 	}
 
 	function getUserState(mId, mState, i, mNickName) {
@@ -214,79 +213,37 @@ html {
 			alert("密码不能少于6位");
 			return;
 		}
-		var mData;
-		if (t == 1) {
-			mData = {
+		var params = {
 				"name" : "",
 				"nickName" : editNickName,
-				"psd" : "",
+				"psd" : t == 1?"":psd,
 				"email" : "",
 				"departmentId" : 0,
 				"tel" : "",
 				"id" : editId,
-				"state" : mState,
+				"state" : t == 1?mState:"",
 				"roleId" : -1
 			};
-		} else if (t == 2) {
-			mData = {
-				"name" : "",
-				"nickName" : editNickName,
-				"psd" : psd,
-				"email" : "",
-				"departmentId" : 0,
-				"tel" : "",
-				"id" : editId,
-				"state" : "",
-				"roleId" : -1
-			};
+		post("editUser",params,false)
+		if(requestReturn.result == "error"){
+			alert(requestReturn.error);
+		}else if(parseInt(requestReturn.code)==0){
+			if (t == 1) {
+				alert("更改员工状态成功");
+			} else if (t == 2) {
+				alert("修改密码成功");
+			}
+			setTimeout(function() {
+				$(".banDel").hide();
+				getUserList(1);
+			}, 500);
+		}else{
+			if (t == 1) {
+				alert("更改员工状态失败");
+			} else if (t == 2) {
+				alert("修改密码失败");
+			}
 		}
-		$.ajax({
-			url : "${pageContext.request.contextPath}/editUser",
-			type : 'POST',
-			cache : false,
-			data : mData,
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").errcode;
-				if (data == 0) {
-					if (t == 1) {
-						alert("更改用户状态成功");
-					} else if (t == 2) {
-						alert("修改密码成功");
-					}
-					setTimeout(function() {
-						$(".banDel").hide();
-						getUserList(1);
-					}, 500);
-				} else {
-					if (t == 1) {
-						alert("更改用户状态失败");
-					} else if (t == 2) {
-						alert("修改密码失败");
-					}
-				}
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-	}
-
-	function getUser(uId) {
-		var uName;
-		$.ajax({
-			url : "${pageContext.request.contextPath}/getUserById",
-			type : 'GET',
-			data : {
-				"uId" : uId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				uName = eval("(" + returndata + ")").user[0].name;
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
-		return uName;
 	}
 
 	function getDepartment(dpartId) {
@@ -318,33 +275,6 @@ html {
 		$("#banDel8").show();
 		editId = id;
 		editNickName = nickName;
-	}
-
-    function deleteUser() {
-		$.ajax({
-			url : "${pageContext.request.contextPath}/deleteUser",
-			type : 'POST',
-			data : {
-				"id" : deleteId
-			},
-			cache : false,
-			async : false,
-			success : function(returndata) {
-				var data = eval("(" + returndata + ")").errcode;
-				if (data == 0) {
-					alert("删除成功");
-					setTimeout(function() {
-						location.reload();
-					}, 500);
-
-				} else {
-					alert("删除失败");
-				}
-
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-			}
-		});
 	}
 
 	function nextPage() {
@@ -390,12 +320,33 @@ html {
 	function hideUser() {
 		if (isHide) {
 			isHide = false;
-			document.getElementById('hu').innerHTML = "隐藏已离职人员";
+			document.getElementById('hu').innerHTML = "隐藏已离职员工";
 		} else {
 			isHide = true;
-			document.getElementById('hu').innerHTML = "显示已离职人员";
+			document.getElementById('hu').innerHTML = "显示已离职员工";
 		}
 		getUserList(1);
+	}
+	
+	function loading() {
+		$('body').loading({
+			loadingWidth : 240,
+			title : '请稍等!',
+			name : 'test',
+			discription : '加载中',
+			direction : 'column',
+			type : 'origin',
+			originDivWidth : 40,
+			originDivHeight : 40,
+			originWidth : 6,
+			originHeight : 6,
+			smallLoading : false,
+			loadingMaskBg : 'rgba(0,0,0,0.2)'
+		});
+	}
+
+	function closeLoading() {
+		removeLoading('test');
 	}
 </script>
 </head>
@@ -405,7 +356,7 @@ html {
 		<div class="pageTop">
 			<div class="page">
 				<img src="../image/coin02.png" /><span><a href="#">首页</a>&nbsp;-&nbsp;<a
-					href="#">用户管理</a>&nbsp;-</span>&nbsp;用户信息管理
+					href="#">员工管理</a>&nbsp;-</span>&nbsp;员工信息管理
 			</div>
 		</div>
 
@@ -415,7 +366,7 @@ html {
 				<div class="conform">
 					<form>
 						<div class="cfD">
-							<Strong style="margin-right: 20px">查询条件：</Strong><label>用户姓名：</label><input
+							<Strong style="margin-right: 20px">查询条件：</Strong><label>员工姓名：</label><input
 								type="text" class="input3" placeholder="输入用户姓名"
 								style="margin-right: 10px; width: 100px" id="name" /><label>登入账号：</label><input
 								type="text" class="input3" placeholder="输入登入账号"
@@ -427,10 +378,10 @@ html {
 						</div>
 						<div class="cfD">
 							<a class="addA" href="../page/createUser"
-								style="margin-left: 114px">新建用户+</a> <a class="addA"
+								style="margin-left: 114px">新建员工+</a> <a class="addA"
 								onClick="getUserList(1)">搜索</a> <a id="hu" href="#"
 								style="text-decoration: underline; height: 35px; line-height: 35px; margin-left: 40px;"
-								onClick="hideUser()">隐藏已离职人员</a>
+								onClick="hideUser()">隐藏已离职员工</a>
 						</div>
 
 					</form>
@@ -441,7 +392,7 @@ html {
 						<tr style="width: 100%">
 							<td style="width: 16%" class="tdColor">员工工号</td>
 							<td style="width: 16%" class="tdColor">登入账号</td>
-							<td style="width: 16%" class="tdColor">用户姓名</td>
+							<td style="width: 16%" class="tdColor">员工姓名</td>
 							<td style="width: 16%" class="tdColor">所在部门</td>
 							<td style="width: 16%" class="tdColor">状态</td>
 							<td style="width: 20%" class="tdColor">操作</td>
@@ -475,7 +426,7 @@ html {
 			<div class="close">
 				<a><img src="../image/shanchu.png" onclick="closeConfirmBox()" /></a>
 			</div>
-			<p class="delP1">你确定要删除此条客户记录吗？</p>
+			<p class="delP1">你确定要删除此条员工记录吗？</p>
 			<p class="delP2">
 				<a href="#" class="ok yes" onclick="deleteCompany()">确定</a><a
 					class="ok no" onclick="closeConfirmBox()">取消</a>
@@ -484,15 +435,15 @@ html {
 	</div>
 	<!-- 删除弹出框  end-->
 
-	<!-- 删除弹出框 -->
+	<!-- 修改状态弹出框 -->
 	<div class="banDel" id="banDel2">
 		<div class="delete">
 			<div class="close">
 				<a><img src="../image/shanchu.png" onclick="closeConfirmBox()" /></a>
 			</div>
-			<p class="delP1">更改用户状态</p>
+			<p class="delP1">更改员工状态</p>
 			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;">用户状态：</label> <select id="userState"
+				<label style="font-size: 16px;">员工状态：</label> <select id="userState"
 					onChange="changeUserState(this.options[this.options.selectedIndex].value)"
 					style="width: 180px; height: 26px; border-bottom: 1px dashed #78639F; background: none; border-left: none; border-right: none; border-top: none; padding: 4px 2px 3px 2px; padding-left: 10px">
 					<option value="0" style="color:black">正常</option>
@@ -552,6 +503,7 @@ html {
 		</div>
 	</div>
 
+    <!-- 改密弹出框 -->
 	<div class="banDel" id="banDel8">
 		<div class="delete">
 			<div class="close">

@@ -102,7 +102,6 @@ p {
 					});
 
 	function selDate() {
-		//	alert($("#departmentSel").val());
 		getUserList($("#departmentSel").val());
 	}
 
@@ -132,7 +131,6 @@ p {
 					},
 					cache : false,
 					success : function(returndata) {
-						//	alert(returndata);
 						var str = '';
 						var str1;
 						var str2;

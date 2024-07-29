@@ -48,8 +48,13 @@ public class UserService {
 		return dao.queryUser(user);
 	}
 
-	public List<User> getUserList(String userIdStr) {
+	public List<User> getUserListByIds(String userIdStr) {
 		dao = new UserDao();
 		return dao.getUserList(userIdStr);
+	}
+	
+	public List<User> getUserListByRoleId(int roleId) {
+		dao = new UserDao();
+		return dao.getUserListByRoleId(roleId);
 	}
 }

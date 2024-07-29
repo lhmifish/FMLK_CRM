@@ -10,6 +10,7 @@
 	href="${pageContext.request.contextPath}/css/css.css?v=1990" />
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
+<script src="${pageContext.request.contextPath}/js/request.js?v=4"></script>
 <style type="text/css">
 a:link {
 	color: #000
@@ -23,6 +24,8 @@ a:hover {
 <script type="text/javascript">
 	var sId;
 	var host;
+	var requestReturn;
+	
 	$(document)
 			.ready(
 					function() {

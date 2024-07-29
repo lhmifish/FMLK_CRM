@@ -29,7 +29,7 @@ a:hover {
 .xcConfirm .popBox {
 	background-color: #ffffff;
 	width: 800px;
-	height: 560px;
+	height: 660px;
 	border-radius: 5px;
 	font-weight: bold;
 	color: #535e66;
@@ -40,11 +40,11 @@ a:hover {
 
 .xcConfirm .popBox .txtBox {
 	margin: 15px 15px;
-	height: 400px;
+	height: 500px;
 }
 
 .xcConfirm .popBox .txtBox p {
-	height: 400px;
+	height: 500px;
 	margin: 5px;
 	line-height: 16px;
 	overflow-x: hidden;
@@ -78,7 +78,6 @@ display:none;
 			cache : false,
 			async : false,
 			success : function(returndata) {
-				//alert(returndata);
 				var str = '<option value="0">请选择...</option>';
 				var data2 = eval("(" + returndata + ")").dList;
 				for ( var i in data2) {
@@ -164,7 +163,6 @@ display:none;
 			cache : false,
 			async : false,
 			success : function(returndata) {
-				//console.log(returndata)
 				var data = eval("(" + returndata + ")").rpList;
 				var companyPermissionArr = new Array();
 				var projectPermissionArr = new Array();
@@ -317,7 +315,6 @@ display:none;
 			cache : false,
 			async : false,
 			success : function(returndata) {
-				//console.log(returndata)
 				var data = eval("(" + returndata + ")").permissionSettingList;
 				for ( var i in data) {
 					var pId = data[i].permissionId;
@@ -543,7 +540,6 @@ display:none;
 					async : false,
 					success : function(returndata) {
 						var data = eval("(" + returndata + ")").userlist;
-						//alert(data.length);
 						var mDiv = '<div><table style="width: 100%">';
 						var trline = Math.ceil(data.length / 5);
 						for (var i = 0; i < trline; i++) {

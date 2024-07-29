@@ -55,7 +55,6 @@ public class GetObjectListController implements ApplicationContextAware {
 		user.setJobId(request.getParameter("jobId"));
 		boolean isHide = Boolean.parseBoolean(request.getParameter("isHide"));
 		String jsonStr = mUserService.getUserList(user, date,isHide);
-		//System.out.println(jsonStr);
 		return jsonStr;
 	}
 
@@ -71,6 +70,18 @@ public class GetObjectListController implements ApplicationContextAware {
 		return jsonStr;
 	}
 
+	/**
+	 * 获取区域列表
+	 * 
+	 */
+	@RequestMapping(value = "/fieldLevelList", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getFieldLevelList(HttpServletRequest request) {
+		service = new Service();
+		String jsonStr = service.getFieldLevelList();
+		return jsonStr;
+	}
+	
 	/**
 	 * 获取区域列表
 	 * 
@@ -93,7 +104,8 @@ public class GetObjectListController implements ApplicationContextAware {
 		mCompanyService = new CompanyService();
 		int salesId = Integer.parseInt(request.getParameter("salesId"));
 		String companyName = request.getParameter("companyName");
-		String jsonStr = mCompanyService.getCompanyList(salesId, companyName);
+		boolean isFmlkShare = Boolean.parseBoolean(request.getParameter("isFmlkShare"));
+		String jsonStr = mCompanyService.getCompanyList(salesId, companyName,isFmlkShare);
 		return jsonStr;
 	}
 
@@ -105,7 +117,8 @@ public class GetObjectListController implements ApplicationContextAware {
 	@ResponseBody
 	public String getProjectTypeList(HttpServletRequest request) {
 		service = new Service();
-		String jsonStr = service.getProjectTypeList();
+		boolean isFmlkShare = Boolean.parseBoolean(request.getParameter("isFmlkShare"));
+		String jsonStr = service.getProjectTypeList(isFmlkShare);
 		return jsonStr;
 	}
 
@@ -154,7 +167,8 @@ public class GetObjectListController implements ApplicationContextAware {
 	@ResponseBody
 	public String getProductStyleList(HttpServletRequest request) {
 		service = new Service();
-		String jsonStr = service.getProductStyleList();
+		boolean isFmlkShare = Boolean.parseBoolean(request.getParameter("isFmlkShare"));
+		String jsonStr = service.getProductStyleList(isFmlkShare);
 		return jsonStr;
 	}
 
@@ -182,8 +196,10 @@ public class GetObjectListController implements ApplicationContextAware {
 		p.setCompanyId(request.getParameter("companyId"));
 		p.setProjectName(request.getParameter("projectName"));
 		p.setSalesId(Integer.parseInt(request.getParameter("salesId")));
-		p.setProjectManager(Integer.parseInt(request.getParameter("projectManager")));
-		String jsonStr = mProjectService.getProjectList(p);
+		p.setProductStyle(request.getParameter("productStyle")+"");
+		p.setProjectType(Integer.parseInt(request.getParameter("projectType")));
+		boolean isFmlkShare = Boolean.parseBoolean(request.getParameter("isFmlkShare"));
+		String jsonStr = mProjectService.getProjectList(p,isFmlkShare);
 		return jsonStr;
 	}
 
@@ -198,12 +214,14 @@ public class GetObjectListController implements ApplicationContextAware {
 		String date1 = request.getParameter("date1");
 		String date2 = request.getParameter("date2");
 		Tender tender = new Tender();
+		tender.setProductStyle(Integer.parseInt(request.getParameter("productStyle")));
 		tender.setTenderStyle(Integer.parseInt(request.getParameter("tenderStyle")));
 		tender.setTenderResult(Integer.parseInt(request.getParameter("tenderResult")));
 		tender.setTenderCompany(request.getParameter("tenderCompany"));
-		tender.setTenderAgency(Integer.parseInt(request.getParameter("tenderAgency")));
+		//tender.setTenderAgency(Integer.parseInt(request.getParameter("tenderAgency")));
 		tender.setProjectId(request.getParameter("projectId"));
 		tender.setSaleUser(Integer.parseInt(request.getParameter("saleUser")));
+		tender.setIsFmlkShare(Boolean.parseBoolean(request.getParameter("isFmlkShare")));
 		String jsonStr = mTenderService.getTenderList(tender, date1, date2);
 		return jsonStr;
 	}
@@ -232,11 +250,11 @@ public class GetObjectListController implements ApplicationContextAware {
 	public String getContractList(HttpServletRequest request) {
 		mContractService = new ContractService();
 		Contract contract = new Contract();
-		contract.setContractNum(request.getParameter("contractNum"));
 		contract.setProjectId(request.getParameter("projectId"));
 		contract.setDateForContract(request.getParameter("dateForContract"));
-		contract.setSaleUser(Integer.parseInt(request.getParameter("saleUser")));
+		contract.setSaleUser(Integer.parseInt(request.getParameter("salesId")));
 		contract.setCompanyId(request.getParameter("companyId"));
+		contract.setIsFmlkShare(Boolean.parseBoolean(request.getParameter("isFmlkShare")));
 		String jsonStr = mContractService.getContractList(contract);
 		return jsonStr;
 	}
@@ -381,9 +399,7 @@ public class GetObjectListController implements ApplicationContextAware {
 	public String getUserPermissionListByNickName(HttpServletRequest request) {
 		service = new Service();
 		String nickName = request.getParameter("nickName");
-		//System.out.println(nickName);
 		String jsonStr = service.getUserPermissionListByNickName(nickName);
-		//System.out.println(jsonStr);
 		return jsonStr;
 		
 		
@@ -402,11 +418,12 @@ public class GetObjectListController implements ApplicationContextAware {
 		String date2 = request.getParameter("date2");
 		String jsonStr;
 		if(date2.equals("")) {
+			//按人
 			jsonStr = service.getUserWorkAttendanceList(date,nickName);
 		}else {
+			//按日期
 			jsonStr = service.getUserWorkAttendanceList(date2);
 		}
-		//System.out.println(jsonStr);
 		return jsonStr;
 	}
 	
@@ -429,7 +446,7 @@ public class GetObjectListController implements ApplicationContextAware {
 		}
 		return jsonStr;
 	}
-	
+
 	/**
 	 * 获取项目子状态列表
 	 * 
@@ -478,6 +495,22 @@ public class GetObjectListController implements ApplicationContextAware {
 	public String getClientList(HttpServletRequest request) {
 		service = new Service();
 		String jsonStr = service.getClientList();
+		return jsonStr;
+	}
+	
+	/**
+	 * 获取拜访记录列表
+	 * 
+	 */
+	@RequestMapping(value = "/visitRecordList", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getVisitRecordList(HttpServletRequest request) {
+		service = new Service();
+		String companyId = request.getParameter("companyId");
+		int userId = Integer.parseInt(request.getParameter("userId"));
+		String year = request.getParameter("year");
+		String month = request.getParameter("month");
+		String jsonStr = service.getVisitRecordList(companyId,userId,year,month);
 		return jsonStr;
 	}
 

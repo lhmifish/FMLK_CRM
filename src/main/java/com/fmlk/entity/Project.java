@@ -18,8 +18,12 @@ public class Project implements Serializable {
 	private String salesAfterUsers;//售后
 	private int projectManager;//项目经理
 	private String projectFailedReason;//项目失败原因
-	
+	private boolean isFmlkShare;//共享陪护客户
 	private int projectSubState;//项目子状态
+	private String productStyle;//产品类型
+	private String updateDate;//更新日期
+	private String startDate;//项目开始时间
+	private String endDate;//项目结束时间
 	
 	public int getId() {
 		return this.id;
@@ -140,6 +144,46 @@ public class Project implements Serializable {
 
 	public void setProjectSubState(int projectSubState) {
 		this.projectSubState = projectSubState;
+	}
+	
+	public boolean getIsFmlkShare() {
+		return this.isFmlkShare;
+	}
+
+	public void setIsFmlkShare(boolean isFmlkShare) {
+		this.isFmlkShare = isFmlkShare;
+	}
+	
+	public String getProductStyle() {
+		return this.productStyle;
+	}
+
+	public void setProductStyle(String productStyle) {
+		this.productStyle = productStyle;
+	}
+	
+	public String getUpdateDate() {
+		return this.updateDate;
+	}
+
+	public void setUpdateDate(String updateDate) {
+		this.updateDate = updateDate;
+	}
+	
+	public String getStartDate() {
+		return this.startDate;
+	}
+
+	public void setStartDate(String startDate) {
+		this.startDate = startDate;
+	}
+	
+	public String getEndDate() {
+		return this.endDate;
+	}
+
+	public void setEndDate(String endDate) {
+		this.endDate = endDate;
 	}
 }
 

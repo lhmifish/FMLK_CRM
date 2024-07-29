@@ -15,6 +15,7 @@ public class DailyUploadReport implements Serializable {
 	private String remark;// 备注
 	private int id;
 	private String time;
+	private boolean isFmlkShare;//共享陪护客户
 
 	public int getId() {
 		return this.id;
@@ -96,7 +97,6 @@ public class DailyUploadReport implements Serializable {
 		this.laterSupport = laterSupport;
 	}
 
-
 	public String getRemark() {
 		return this.remark;
 	}
@@ -104,5 +104,12 @@ public class DailyUploadReport implements Serializable {
 	public void setRemark(String remark) {
 		this.remark = remark;
 	}
+    
+	public boolean getIsFmlkShare() {
+		return this.isFmlkShare;
+	}
 
+	public void setIsFmlkShare(boolean isFmlkShare) {
+		this.isFmlkShare = isFmlkShare;
+	}
 }

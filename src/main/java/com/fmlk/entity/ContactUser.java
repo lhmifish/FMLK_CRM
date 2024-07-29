@@ -13,6 +13,8 @@ public class ContactUser implements Serializable {
 	private String department;//部门
 	private String createDate;//创建日期
 	private boolean isDelete;//已删除
+	private String updateDate;//创建日期
+	private String wechatNo;//微信号
 	
 	public int getId() {
 		return this.id;
@@ -84,6 +86,22 @@ public class ContactUser implements Serializable {
 
 	public void setIsDelete(boolean isDelete) {
 		this.isDelete = isDelete;
+	}
+	
+	public String getUpdateDate() {
+		return this.updateDate;
+	}
+
+	public void setUpdateDate(String updateDate) {
+		this.updateDate = updateDate;
+	}
+	
+	public String getWechatNo() {
+		return this.wechatNo;
+	}
+
+	public void setWechatNo(String wechatNo) {
+		this.wechatNo = wechatNo;
 	}
 	
 }

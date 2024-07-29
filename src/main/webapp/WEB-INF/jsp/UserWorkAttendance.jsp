@@ -147,7 +147,6 @@ html {
 					cache : false,
 					async : false,
 					success : function(returndata) {
-						//	alert(returndata);
 						var str = "";
 						var data = eval("(" + returndata + ")").dailylist;
 						if (data.length == 0) {

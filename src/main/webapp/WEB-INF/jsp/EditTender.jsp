@@ -16,12 +16,9 @@
 	href="${pageContext.request.contextPath}/css/calendar.css" />
 <link href='http://fonts.googleapis.com/css?family=Roboto'
 	rel='stylesheet' type='text/css'>
-
-
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
-
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/validation.js"></script>
 <script type="text/javascript"
@@ -31,8 +28,8 @@
 <script src="http://www.jq22.com/jquery/jquery-migrate-1.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/checkPermission.js"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
-<script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
-<script src="${pageContext.request.contextPath}/js/getObjectList.js"></script>
+<script src="${pageContext.request.contextPath}/js/commonUtils.js?v=200"></script>
+<script src="${pageContext.request.contextPath}/js/getObjectList.js?v=1"></script>
 <style type="text/css">
 a:hover {
 	color: #FF00FF
@@ -43,10 +40,10 @@ a:hover {
 	var sId;//sessionId
 	var tenderResult;
 	var tenderIntent;
-	//var tenderState;
 	var host;
 	var salesId;
 	var isPermissionEdit;
+	var isFmlkShare;
 
 	$(document).ready(function() {
 		id = "${mId}";//标书id
@@ -58,7 +55,7 @@ a:hover {
 	function initialPage() {
 		initDate();
 		getTenderInfo(id);
-		matchEdit("标书");
+		matchEdit("招投标");
 		$("#companyId").select2({});
 		$("#tenderAgency").select2({});
 		$("#projectId").select2({});
@@ -66,9 +63,6 @@ a:hover {
 		$("#tenderStyle").select2({});
 		$("#productStyle").select2({});
 		$("#productBrand").select2({});
-		if(isPermissionEdit){
-			$("#divEdit").show();
-		}
 	}
 
 	function getTenderInfo(tid) {
@@ -82,10 +76,11 @@ a:hover {
 			},
 			success : function(returndata) {
 				var data = eval("(" + returndata + ")").tender;
+				isFmlkShare = data[0].isFmlkShare;
 				$("#tenderNum").val(data[0].tenderNum);
-				getCompanyList("", 0, data[0].tenderCompany, 1);
+				getCompanyList("", 0, data[0].tenderCompany, 1,isFmlkShare);
 				getAgencyList(data[0].tenderAgency);
-				getProjectList(data[0].tenderCompany, data[0].projectId);
+				getProjectList(data[0].tenderCompany, data[0].projectId,isFmlkShare);
 				getSalesList(data[0].saleUser);
 				salesId = data[0].saleUser;
 				$('#dateForBuy').val(data[0].dateForBuy);
@@ -97,7 +92,7 @@ a:hover {
 				tenderIntent = data[0].tenderIntent;
 				$("input[name='field02'][value=" + tenderIntent + "]").attr(
 						"checked", true);
-				getProductStyleList(data[0].productStyle);
+				getProductStyleList(data[0].productStyle,isFmlkShare);
 				getProductBrandList(data[0].productBrand);
 				$('#enterpriseQualificationRequirment').val(
 						data[0].enterpriseQualificationRequirment);
@@ -110,6 +105,7 @@ a:hover {
 				}
 				checkTenderResult(tenderResult);
 				$("#serviceExpense").val(data[0].serviceExpense);
+				$("#tenderAmount").val(data[0].tenderAmount);
 			},
 			error : function(XMLHttpRequest, textStatus, errorThrown) {
 			}
@@ -127,13 +123,16 @@ a:hover {
 	function checkTenderResult(k) {
 		tenderResult = k;
 		if (tenderResult == 1) {
-			$("#label").show();
+			$("#labelServiceExpense").show();
+			$("#labelTenderAmount").show();
 			$("#serviceExpense").show();
+			$("#tenderAmount").show();
 			$("#info").hide();
 		} else {
-			$("#label").hide();
+			$("#labelServiceExpense").hide();
+			$("#labelTenderAmount").hide();
 			$("#serviceExpense").hide();
-			$("#serviceExpense").val("");
+			$("#tenderAmount").hide();
 			if (tenderResult == 3) {
 				$("#info").show();
 			} else {
@@ -192,34 +191,20 @@ a:hover {
 		var dateForOpen = $("#dateForOpen").val();
 		var tenderStyle = $("#tenderStyle").val();
 		var tenderExpense = $("#tenderExpense").val();
+		var tenderGuaranteeFee = $("#tenderGuaranteeFee").val();
 		var productStyle = $("#productStyle").val();
 		var productBrand = $("#productBrand").val();
 		var enterpriseQualificationRequirment = $(
 				"#enterpriseQualificationRequirment").val();
 		var technicalRequirment = $("#technicalRequirment").val();
 		var remark = $("#remark").val();
-		var serviceExpense;
+		var serviceExpense = $("#serviceExpense").val();
+		var tenderAmount = $("#tenderAmount").val();
 
 		if (tenderNum == "") {
 			alert("招标编号不能为空");
 			return;
 		}
-
-		if (tenderCompany == 0 || tenderCompany == undefined) {
-			alert("请选择招标单位");
-			return;
-		}
-
-		if (tenderAgency == 0 || tenderAgency == undefined) {
-			alert("请选择招标代理机构");
-			return;
-		}
-
-		if (projectId == 0 || projectId == undefined) {
-			alert("请选择项目名称");
-			return;
-		}
-
 		if (saleUser == 0) {
 			alert("请选择销售人员");
 			return;
@@ -236,8 +221,13 @@ a:hover {
 			return;
 		}
 
-		if (tenderStyle == 0 || tenderStyle == undefined) {
+		if (tenderStyle == 0) {
 			alert("请选择投标类型");
+			return;
+		}
+
+		if (productStyle == 0) {
+			alert("产品类别不能为空");
 			return;
 		}
 
@@ -251,35 +241,33 @@ a:hover {
 			return;
 		}
 
+		if (tenderGuaranteeFee != "" && !r.test(tenderGuaranteeFee)) {
+			alert("投标保证金有误，请重新输入");
+			return;
+		}
+		
 		if (tenderIntent == 2 && remark == "") {
 			alert("非投标原因购标请在备注中说明");
 			return;
 		}
 
-		if (productStyle == 0 || productStyle == undefined) {
-			alert("产品类别不能为空");
-			return;
-		}
-
-		if (productBrand == 0 || productBrand == undefined) {
-			alert("产品品牌不能为空");
-			return;
-		}
-
-		if (tenderResult == 0) {
-			alert("请选择投标结果");
-			return;
-		} else if (tenderResult == 1) {
-			serviceExpense = $("#serviceExpense").val();
+		if (tenderResult == 1) {
 			if (serviceExpense == "") {
 				alert("中标服务费不能为空");
 				return;
 			} else if (!r.test(serviceExpense)) {
 				alert("中标服务费用有误，请重新输入");
 				return;
+			} else if(tenderAmount == ""){
+				alert("中标金额不能为空");
+				return;
+			} else if(!r.test(tenderAmount)){
+				alert("中标金额有误，请重新输入");
+				return;
 			}
 		} else {
 			serviceExpense = 0;
+			tenderAmount = 0;
 		}
 
 		if (tenderResult == 3 && remark == "") {
@@ -312,19 +300,23 @@ a:hover {
 						"tenderResult" : tenderResult,
 						"tenderIntent" : tenderIntent,
 						"serviceExpense" : serviceExpense,
+						"tenderAmount":tenderAmount,
+						"tenderGuaranteeFee" : tenderGuaranteeFee,
 						"isUploadTender" : false
+						
 					},
 					success : function(returndata) {
 						var data = eval("(" + returndata + ")").errcode;
 						if (data == 0) {
 							alert("编辑标书成功");
 							parent.leftFrame.location.reload();
-							setTimeout(
-									function() {
-										toTenderListPage();
-									}, 500);
+							setTimeout(function() {
+								toReloadPage();
+								toBackPage();
+								toBackPage();
+							}, 500);
 						} else {
-							alert("编辑失败");
+							alert("编辑标书失败");
 						}
 
 					},
@@ -342,7 +334,8 @@ a:hover {
 		<div class="pageTop">
 			<div class="page">
 				<img src="${pageContext.request.contextPath}/image/coin02.png" /><span><a
-					href="#">首页</a>&nbsp;-&nbsp;<a href="#">招标管理</a>&nbsp;-</span>&nbsp;编辑标书信息
+					href="#">首页</a>&nbsp;-&nbsp;<a href="#">招标管理</a>&nbsp;-</span><span
+					style="margin-left: 5px" id="span_title2"></span>
 			</div>
 		</div>
 		<!-- end of  pageTop-->
@@ -350,13 +343,13 @@ a:hover {
 		<div class="page">
 			<div class="banneradd bor">
 				<div class="baTopNo">
-					<span>编辑标书信息</span>
+					<span id="span_title1"></span>
 				</div>
 				<!-- baBody-->
 				<div class="baBody">
 					<div class="bbD">
 						<label>招标编号：</label><input type="text" class="input3"
-							id="tenderNum" style="width: 700px; margin-right: 10px;" />
+							id="tenderNum" style="width: 700px; margin-right: 10px;background-color:#eee;color:black" disabled="disabled"/>
 					</div>
 
 					<div class="bbD">
@@ -432,27 +425,30 @@ a:hover {
 
 					<div class="bbD">
 						<div style="margin-top: 30px; width: 100%; margin-bottom: 30px;">
-							<Strong style="font-size: 20px;margin-left:-16px">投标结果：</Strong>
+							<Strong style="font-size: 20px;margin-left:-16px">招投标结果：</Strong>
 							<input type="radio" name="field01" id="tenderResult" value="1"
 								onclick="checkTenderResult(1)" style="margin-left: 25px;" /><label
-								style="margin-right: 100px; margin-left: 5px;">中标</label><input
+								style="margin-right: 20px; margin-left: 5px;">中标</label><input
 								type="radio" name="field01" id="tenderResult" value="2"
 								onclick="checkTenderResult(2)" /><label
-								style="margin-left: 5px; margin-right: 100px;">投标未中</label><input
+								style="margin-left: 5px; margin-right: 20px;">投标未中</label><input
 								type="radio" name="field01" id="tenderResult" value="3"
 								onclick="checkTenderResult(3)" /><label
 								style="margin-left: 5px;">未投标/弃标</label> <label
-								style="margin-left: 30px; display: none" id="label">中标服务费：  RMB</label><input
+								style="margin-left: 10px; display: none" id="labelServiceExpense">中标服务费：  ￥</label><input
 								type="text" class="input3" id="serviceExpense"
+								style="width: 90px; display: none" placeholder="0" /><label
+								style="margin-left: 10px; display: none" id="labelTenderAmount">中标金额：  ￥</label><input
+								type="text" class="input3" id="tenderAmount"
 								style="width: 90px; display: none" placeholder="0" /><Strong
 								id="info" style="margin-left: 30px; color: red; display: none">在备注中说明未投标/弃标原因</Strong>
 						</div>
 					</div>
 
-					<div class="cfD" style="margin-bottom: 30px; display: none" id="divEdit">
+					<div class="cfD" style="margin-bottom: 30px;">
 						<a class="addA" href="#" onclick="editTender()" id="operation"
-							style="margin-left: 120px; margin-top: 20px">编辑</a> <a
-							class="addA" href="#" onclick="toTenderListPage()">返回</a>
+							style="margin-left: 120px; margin-top: 20px;display: none;">编辑</a> <a
+							class="addA" href="#" onclick="toBackPage()">返回</a>
 					</div>
 
 				</div>
