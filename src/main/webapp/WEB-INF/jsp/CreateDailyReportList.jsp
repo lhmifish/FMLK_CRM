@@ -433,7 +433,7 @@ html {
 												+ details[k].address
 												+ " "
 												+ details[k].checkFlag
-												+ "\n";
+												+ "；";
 									}
 									break;
 								}
@@ -576,7 +576,7 @@ html {
 	function createWorkAttendance(){
 		var date = $("#year").val() + "/" + $("#month").val() + "/"
 		+ $("#date").val();
-		alert(date);
+		//alert(date);
 		var isScuessUp = false;
 		//先清除
 		$

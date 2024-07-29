@@ -37,13 +37,15 @@ html {
 <script type="text/javascript">
 	var sId;
 	var isPermissionView;
+	var mUrl;
 
 	$(document)
 			.ready(
 					function() {
 						sId = "${sessionId}";
+						mUrl = "${pageContext.request.contextPath}";
 						if (sId == null || sId == "") {
-							parent.location.href = "${pageContext.request.contextPath}/page/login";
+							parent.location.href = mUrl+"/page/login";
 						} else {
 							getUserPermissionList();
 							var year = new Date().getFullYear();
@@ -60,7 +62,7 @@ html {
 	function getUserPermissionList() {
 		$
 				.ajax({
-					url : "${pageContext.request.contextPath}/getUserPermissionList",
+					url : mUrl+"/getUserPermissionList",
 					type : 'GET',
 					data : {
 						"nickName" : sId
@@ -77,7 +79,7 @@ html {
 							}
 						}
 						if (!isPermissionView) {
-							window.location.href = "${pageContext.request.contextPath}/page/error";
+							window.location.href = mUrl+"/page/error";
 						} else {
 							$('#body').show();
 						}
@@ -92,7 +94,7 @@ html {
 		var nickName = sId;
 		$
 				.ajax({
-					url : "${pageContext.request.contextPath}/getUserYearUploadReportList",
+					url : mUrl+"/getUserYearUploadReportList",
 					type : 'GET',
 					data : {
 						"nickName" : nickName,
@@ -118,7 +120,6 @@ html {
 							tab_text += "</table>";
 							
 							$("#div2").append(tab_text);
-//alert(tab_text);
 							$('#table1').table2excel(
 									{
 										filename : nickName + "_" + tYear + "_"
@@ -136,7 +137,7 @@ html {
 		var date = $("#year").val() + "/" + $("#month").val();
 		$
 				.ajax({
-					url : "${pageContext.request.contextPath}/getUserWorkAttendanceList",
+					url : mUrl+"/getUserWorkAttendanceList",
 					type : 'GET',
 					data : {
 						"date" : date,
@@ -282,6 +283,12 @@ html {
 	function printTable() {
 		$("#div1").jqprint();
 	}
+	
+	function showTable(){
+		var tYear = $("#year").val();
+		var tMonth = $("#month").val();
+		window.open(mUrl+"/page/noRecordExplainPage?year="+tYear+"&month="+tMonth);  
+	}
 </script>
 </head>
 
@@ -343,7 +350,9 @@ html {
 								onClick="getUserWorkAttendanceList()">搜索</a> <a class="addA"
 								style="width: 120px" onClick="printTable()">打印表单</a> <a
 								class="addA" style="width: 120px;"
-								onClick="dlDailyUploadReport()" id="dlbtn">年度日报下载</a> <label
+								onClick="dlDailyUploadReport()" id="dlbtn">年度日报下载</a> <a
+								class="addA" style="width: 120px;"
+								onClick="showTable()" id="showbtn">缺漏打卡说明</a><label
 								id="label" style="font-size: 12px;"></label>
 						</div>
 					</form>

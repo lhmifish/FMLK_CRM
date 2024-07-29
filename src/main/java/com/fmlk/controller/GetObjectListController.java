@@ -55,7 +55,7 @@ public class GetObjectListController implements ApplicationContextAware {
 		user.setJobId(request.getParameter("jobId"));
 		boolean isHide = Boolean.parseBoolean(request.getParameter("isHide"));
 		String jsonStr = mUserService.getUserList(user, date,isHide);
-		System.out.println(jsonStr);
+		//System.out.println(jsonStr);
 		return jsonStr;
 	}
 
@@ -406,6 +406,7 @@ public class GetObjectListController implements ApplicationContextAware {
 		}else {
 			jsonStr = service.getUserWorkAttendanceList(date2);
 		}
+		//System.out.println(jsonStr);
 		return jsonStr;
 	}
 	
@@ -456,5 +457,28 @@ public class GetObjectListController implements ApplicationContextAware {
 		return jsonStr;
 	}
 	
+	/**
+	 * 获取所有在当日前未交货收款的合同说明
+	 * 
+	 */
+	@RequestMapping(value = "/getDelayContractPaymentInfoList", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getDelayContractPaymentInfoList(HttpServletRequest request) {
+		mContractService = new ContractService();
+		String jsonStr = mContractService.getDelayContractPaymentInfoList();		
+		return jsonStr;
+	}
+	
+	/**
+	 * 获取合作客户列表
+	 * 
+	 */
+	@RequestMapping(value = "/clientList", method = RequestMethod.GET, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getClientList(HttpServletRequest request) {
+		service = new Service();
+		String jsonStr = service.getClientList();
+		return jsonStr;
+	}
 
 }

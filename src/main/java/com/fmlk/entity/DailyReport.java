@@ -21,6 +21,7 @@ public class DailyReport implements Serializable {
 	private double adjustRestTime;// 调休
 	private double vacationOverWorkTime;// 非3倍工资法定假加班
 	private double festivalOverWorkTime;// 3倍工资法定假加班
+	private int roleId;//角色id
 
 	public String getDate() {
 		return this.date;
@@ -156,6 +157,14 @@ public class DailyReport implements Serializable {
 
 	public void setFestivalOverWorkTime(double festivalOverWorkTime) {
 		this.festivalOverWorkTime = festivalOverWorkTime;
+	}
+	
+	public int getRoleId() {
+		return this.roleId;
+	}
+	
+	public void setRoleId(int roleId) {
+		this.roleId = roleId;
 	}
 
 }

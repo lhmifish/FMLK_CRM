@@ -26,6 +26,10 @@ public class DBConnection {
 			String DBURL = prop.getProperty("jdbc.mysql.url");
 	        String USERNAME = prop.getProperty("jdbc.mysql.user");
 	        String PASSWORD = prop.getProperty("jdbc.mysql.password");
+			/*String DBURL = "jdbc:mysql://127.0.0.1:3306/fmlk?useAffectedRows=true";
+	        String USERNAME = "root";
+	        String PASSWORD = "Fmlk@2023";
+	        Class.forName("com.mysql.cj.jdbc.Driver");*/
 	        Connection con = DriverManager.getConnection(DBURL,USERNAME,PASSWORD);
 			return con;
 		} catch (Exception e) {
@@ -77,7 +81,6 @@ public class DBConnection {
 	}
 	
 	public static Connection getConnection3() {
-
 		try {
 			Properties prop = new Properties();
 			String path = DBConnection.class.getResource("/").getPath();
@@ -93,7 +96,23 @@ public class DBConnection {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+		return null;
+	}
+	
+	public static Connection getAccessConnection() {
+		try {
+			Properties prop = new Properties();
+			String path = DBConnection.class.getResource("/").getPath();
+			path = path.substring(1, path.indexOf("WEB-INF/classes"))+"property/jdbc.properties";
+			path = path.replaceAll("%20"," ");
+			prop.load(new FileInputStream(path));
+			Class.forName(prop.getProperty("jdbc.access.className"));
+			String DBURL = prop.getProperty("jdbc.access.url");
+	        Connection con = DriverManager.getConnection(DBURL,"","");
+			return con;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return null;
 	}
 

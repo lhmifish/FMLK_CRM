@@ -614,10 +614,15 @@ public class PageController implements ApplicationContextAware {
 		 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
 		 */
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
+		System.out.println("accessToken==");
+		System.out.println(accessToken);
 		String code = request.getParameter("code");
+		System.out.println("code==");
+		System.out.println(code);
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
 				accessToken, code);
 		com.alibaba.fastjson.JSONObject jsonObject = WeiXinEnterpriseUtils.get(url);
+		System.out.println(jsonObject.toJSONString());
 		String errcode = jsonObject.getString("errcode");
 		if (errcode.equals("0")) {
 			result = jsonObject.getString("UserId");
@@ -718,7 +723,8 @@ public class PageController implements ApplicationContextAware {
 
 	@RequestMapping(value = "/page/editContract/{id}", method = RequestMethod.GET)
 	@ResponseBody
-	public ModelAndView getEditContractPage(HttpServletRequest request, @PathVariable(value = "id") int id,HttpSession session) {
+	public ModelAndView getEditContractPage(HttpServletRequest request, @PathVariable(value = "id") int id,
+			HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
 		ModelAndView mav = new ModelAndView("EditContract");
 		mav.addObject("mId", id);
@@ -791,12 +797,43 @@ public class PageController implements ApplicationContextAware {
 		return mav;
 	}
 
+	@RequestMapping(value = "/page/FmlkProductInfo", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getFmlkProductInfoPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("FmlkProductInfo");
+		return mav;
+	}
+
 	@RequestMapping(value = "/page/sendInformation", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getSendInformationPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
 		ModelAndView mav = new ModelAndView("SendInformation");
 		mav.addObject("sessionId", uId);
+		return mav;
+	}
+
+	@RequestMapping(value = "/page/cooperateHospital", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getCooperateHospitalPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("CooperateHospital");
+		return mav;
+	}
+
+	@RequestMapping(value = "/page/editCooperateHospital", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getEditCooperateHospitalPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("EditCooperateHospital");
+		return mav;
+	}
+
+
+	@RequestMapping(value = "/page/commonContent/{type}", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getCommonContentPage(HttpServletRequest request, @PathVariable(value = "type") int type,
+			HttpSession session) {
+		ModelAndView mav = new ModelAndView("CommonContent");
+		mav.addObject("mType", type);
 		return mav;
 	}
 
@@ -862,6 +899,7 @@ public class PageController implements ApplicationContextAware {
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
 		ModelAndView mav = new ModelAndView("AllArrangementList");
+		// wechatUserId = "wang.fan";
 		mav.addObject("mUserId", wechatUserId);
 		return mav;
 	}
@@ -873,6 +911,7 @@ public class PageController implements ApplicationContextAware {
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
 		ModelAndView mav = new ModelAndView("AllWeekUploadReportList");
+		// wechatUserId = "jia.wenjie";
 		mav.addObject("mUserId", wechatUserId);
 		return mav;
 	}
@@ -887,5 +926,88 @@ public class PageController implements ApplicationContextAware {
 		mav.addObject("mUserId", wechatUserId);
 		return mav;
 	}
+
+	// 公众号-飞默利凯共享产品
+	@RequestMapping(value = "/page/wpaFmlkProductInfoOverall", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getWpaFmlkProductInfoOveralPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("WpaFmlkProductInfoOverall");
+		return mav;
+	}
+
+	// 公众号-陪护椅详情页
+	@RequestMapping(value = "/page/wpaFmlkProductYDetailPage", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getWpaFmlkProductYDetailPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("YDetail");
+		return mav;
+	}
+
+	// 公众号-陪护床详情页
+	@RequestMapping(value = "/page/wpaFmlkProductCDetailPage", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getWpaFmlkProductCDetailPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("CDetail");
+		return mav;
+	}
+
+	// 公众号-轮椅详情页
+	@RequestMapping(value = "/page/wpaFmlkProductLDetailPage", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getWpaFmlkProductLDetailPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("LDetail");
+		return mav;
+	}
+
+	// 公众号-充电宝详情页
+	@RequestMapping(value = "/page/wpaFmlkProductBDetailPage", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getWpaFmlkProductBDetailPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("BDetail");
+		return mav;
+	}
+
+	// 公众号-推车详情页
+	@RequestMapping(value = "/page/wpaFmlkProductPDetailPage", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getWpaFmlkProductPDetailPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("PDetail");
+		return mav;
+	}
+
+	// 公众号-系统平台介绍
+	@RequestMapping(value = "/page/wpaFmlkPlatformIntroducePage", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getWpaFmlkPlatformIntroducePage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("PlatformIntroduce");
+		return mav;
+	}
+
+	// 公众号-部分合作医院
+	@RequestMapping(value = "/page/wpaFmlkPartCoorperateHospitalPage", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getWpaFmlkPartCoorperateHospitalPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("PartCoorperateHospital");
+		return mav;
+	}
+	
+	// 公众号-招代理商
+		@RequestMapping(value = "/page/wpaFmlkBusinessAgentPage", method = RequestMethod.GET)
+		@ResponseBody
+		public ModelAndView getWpaFmlkBusinessAgentPage(HttpServletRequest request, HttpSession session) {
+			ModelAndView mav = new ModelAndView("BusinessAgent");
+			return mav;
+		}
+		
+		@RequestMapping(value = "/page/noRecordExplainPage", method = RequestMethod.GET)
+		@ResponseBody
+		public ModelAndView getNoRecordExplainPage(HttpServletRequest request, HttpSession session) {
+			String uId = (String) session.getAttribute("web_userid");
+			ModelAndView mav = new ModelAndView("noRecordExplain");
+			mav.addObject("sessionId", uId);
+			mav.addObject("year", request.getParameter("year"));
+			mav.addObject("month", request.getParameter("month"));
+			return mav;
+		}
 
 }

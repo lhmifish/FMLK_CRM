@@ -300,8 +300,16 @@ html {
 			return "研发部";
 		} else if (dpartId == 5) {
 			return "经理办公室";
-		} else {
+		} else if (dpartId == 6){
 			return "管理员";
+		} else if (dpartId == 7){
+			return "市场部";
+		} else if (dpartId == 8){
+			return "运维部";
+		} else if (dpartId == 9){
+			return "客服部";
+		} else {
+			return "";
 		}
 	}
 

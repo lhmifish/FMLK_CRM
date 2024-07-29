@@ -10,7 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Properties;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -44,6 +43,7 @@ public class WeChatEnterpriseUtils {
 	private static String informUserNickName = null;
 	private static String informUserNickName2 = null;
 	private static String tongJiAlertTitle = "[同济报警通知]";
+	private static String projectContractTitle = "[合同交货收款超时报警]";
 
 	public static JSONObject get(String url) {
 		JSONObject jb = null;
@@ -358,7 +358,7 @@ public class WeChatEnterpriseUtils {
 				+ pc.getServiceDate() + "\n服务内容：" + pc.getServiceContent();
 		String salesName = "";
 		String nameList = "";
-		informUserNickName = "lu.haiming|lv.zhong|wang.fan|zhu.jinglian";
+		informUserNickName = "lu.haiming|lv.zhong|wang.fan";
 		for (int i = 0; i < userList.size(); i++) {
 			if (pc.getSalesId() == userList.get(i).getUId()) {
 				salesName = userList.get(i).getName();
@@ -542,7 +542,7 @@ public class WeChatEnterpriseUtils {
 		textObject.put("url",
 				"https://www.baidu.com");
 		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("touser", "lv.shenghua|lu.haiming|qian.hao|yang.huifang|sun.ke|zhang.jian");
+		jsonObject.put("touser", "lv.shenghua|lu.haiming|qian.hao|yang.huifang|sun.ke");
 		jsonObject.put("msgtype", "textcard");
 		jsonObject.put("agentid", agentId);
 		jsonObject.put("textcard", textObject);
@@ -598,5 +598,30 @@ public class WeChatEnterpriseUtils {
 		
 		
 		return null;
+	}
+	
+	public static void projectContractInform(List<String> list){
+		String accessToken = getAccessToken();
+		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=%s", accessToken);
+		String title = projectContractTitle;
+		String content;
+		for(int i=0;i<list.size();i++) {
+			String type = list.get(i).split("#")[2].equals("1")?"收款":"交货";
+			content = "你有以下合同交货或收款时间超时未处理\n合同编号：" + list.get(i).split("#")[6] + "\n项目名称：" + list.get(i).split("#")[4] + "\n客户名称："
+					+ list.get(i).split("#")[3] + "\n合同"+type+"时间：" + list.get(i).split("#")[0]+ "\n"+type+"说明：" + list.get(i).split("#")[1];
+			informUserNickName = list.get(i).split("#")[5];	
+			content += "\n☆☆☆☆☆请尽快前往crm-合同管理处理☆☆☆☆☆";
+			JSONObject textObject = new JSONObject();
+			textObject.put("title", title);
+			textObject.put("description", content);
+			textObject.put("url",
+					"http://www.family-care.cn/page/login");
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put("touser", informUserNickName);
+			jsonObject.put("msgtype", "textcard");
+			jsonObject.put("agentid", agentId);
+			jsonObject.put("textcard", textObject);
+			JSONObject jsonContent = post(url, jsonObject);
+		}
 	}
 }

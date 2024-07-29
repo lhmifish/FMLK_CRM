@@ -250,7 +250,6 @@ a:hover {
 					var msg = eval("(" + returndata + ")").errmsg;
 					alert(msg);
 				}
-
 			},
 			error : function(XMLHttpRequest, textStatus, errorThrown) {
 			}
@@ -307,7 +306,7 @@ a:hover {
 		var timeEnd = serviceDate.split("to")[1].replace(/-/g, "/").trim();
         var timeDiff = (new Date(timeEnd).getTime()-new Date(timeStart).getTime())/(3600*1000);
         
-        alert(timeDiff);
+        //alert(timeDiff);
         
         if(timeDiff<=0){
         	alert("客户服务时间有误");
@@ -342,8 +341,6 @@ a:hover {
 		
 		serviceDate = timeStart;
 		var serviceEndDate = timeEnd;
-		
-	//	 return;
 		if (serviceContent == "") {
 			alert("请输入服务内容");
 			return;

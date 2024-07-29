@@ -1,8 +1,12 @@
 package com.fmlk.controller;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import javax.imageio.ImageIO;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -13,12 +17,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
+
+import com.fmlk.entity.Client;
 import com.fmlk.entity.User;
 import com.fmlk.service.UserService;
 import com.fmlk.util.CommonUtils;
@@ -255,6 +263,101 @@ public class CommonController implements ApplicationContextAware {
 				session.setAttribute("web_userid", user);
 			}
 			jsonObject.put("errcode", result);
+		}
+		return jsonObject.toString();
+	}
+	
+	/**
+	 * 上传客户图片
+	 * 
+	 */
+	@RequestMapping(value = "/addClientImage", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String addClientImage(HttpServletRequest request) throws Exception {
+		MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+		MultipartFile uploadFile = multipartRequest.getFile("file");
+		long fileSize = Long.parseLong(request.getParameter("fileSize"));
+		String fileName = request.getParameter("fileName");
+		String boundary = multipartRequest.getContentType().split("=")[1];		
+		// 获取accessToken
+		String accessToken = FileServerUtils.getAccessToken();
+		// 传数据
+		String transferFile = FileServerUtils.createImageFile(accessToken,uploadFile,fileSize, fileName,boundary);
+		jsonObject = new JSONObject();
+		if (transferFile.equals("")) {
+			jsonObject.put("errcode", "3");
+			jsonObject.put("errmsg", "图片上传失败");
+		} else {
+			jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", "图片上传成功");
+			jsonObject.put("info", transferFile);
+		}
+		return jsonObject.toString();
+	}
+	
+	/**
+	 * 获取客户图片列表
+	 * 
+	 */
+	@RequestMapping(value = "/getClientImageList", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getClientImageList(HttpServletRequest request) throws Exception{
+		String accessToken = FileServerUtils.getAccessToken();
+		String queryFileList = FileServerUtils.getFileImageList(accessToken);
+		jsonObject = new JSONObject();
+		if(queryFileList.equals("")) {
+	    	jsonObject.put("errcode", "3");
+			jsonObject.put("errmsg", "获取图片列表失败");
+	    }else if(queryFileList.equals("noImage")) {
+	    	jsonObject.put("errcode", "2");
+			jsonObject.put("errmsg", "图片列表不存在");
+	    }else {
+	    	jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", queryFileList);
+	    }
+		return jsonObject.toString();
+	}
+	
+	/**
+	 * 删除客户图片
+	 * 
+	 */
+	@RequestMapping(value = "/removeClientImage", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String removeClientImage(HttpServletRequest request) throws Exception{
+        String accessToken = FileServerUtils.getAccessToken();
+		String fileName = request.getParameter("fileName");
+		String deleteFileRes = FileServerUtils.deleteImage(accessToken,fileName);
+		jsonObject = new JSONObject();
+		if (deleteFileRes.equals("")) {
+			jsonObject.put("errcode", "3");
+			jsonObject.put("errmsg", "图片删除失败");
+		} else {
+			jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", "图片删除成功");
+			jsonObject.put("info", deleteFileRes);
+		}
+		return jsonObject.toString();
+	}
+	
+	/**
+	 * 获取客户图片
+	 * 
+	 */
+	@RequestMapping(value = "/getClientImageThumb", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String getClientImageThumb(HttpServletRequest request) throws Exception{
+		String accessToken = FileServerUtils.getAccessToken();
+		String nameList = request.getParameter("nameList");
+		nameList = nameList.substring(0,nameList.length()-1);
+		String urlList = FileServerUtils.getThumbImage(accessToken,nameList);
+		jsonObject = new JSONObject();
+		if(urlList.equals("")) {
+			jsonObject.put("errcode", "1");
+			jsonObject.put("errmsg", "noUrl");
+		}else {
+			jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", urlList);
 		}
 		return jsonObject.toString();
 	}

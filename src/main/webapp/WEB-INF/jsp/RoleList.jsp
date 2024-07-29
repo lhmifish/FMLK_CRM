@@ -164,6 +164,7 @@ display:none;
 			cache : false,
 			async : false,
 			success : function(returndata) {
+				//console.log(returndata)
 				var data = eval("(" + returndata + ")").rpList;
 				var companyPermissionArr = new Array();
 				var projectPermissionArr = new Array();
@@ -316,6 +317,7 @@ display:none;
 			cache : false,
 			async : false,
 			success : function(returndata) {
+				//console.log(returndata)
 				var data = eval("(" + returndata + ")").permissionSettingList;
 				for ( var i in data) {
 					var pId = data[i].permissionId;

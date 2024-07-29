@@ -37,4 +37,9 @@ public class ContractService {
 		return dao.getContractPaymentInfoList(contractNum);
 	}
 
+	public String getDelayContractPaymentInfoList() {
+		dao = new ContractDao();
+		return dao.getDelayContractPaymentInfoList();
+	}
+
 }

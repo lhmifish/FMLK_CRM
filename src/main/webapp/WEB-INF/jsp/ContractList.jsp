@@ -23,15 +23,15 @@
 	src="${pageContext.request.contextPath}/js/calendar.js"></script>
 <script src="${pageContext.request.contextPath}/js/checkPermission.js"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
-<script src="${pageContext.request.contextPath}/js/commonUtils.js?v=2022"></script>
+<script
+	src="${pageContext.request.contextPath}/js/commonUtils.js?v=2022"></script>
 <script src="${pageContext.request.contextPath}/js/getObjectList.js"></script>
 <style type="text/css">
 a:hover {
 	color: #FF00FF
 } /* 鼠标移动到链接上 */
-
-::-webkit-scrollbar{
-display:none;
+::-webkit-scrollbar {
+	display: none;
 }
 
 html {
@@ -53,15 +53,16 @@ html {
 	var chunks;
 	var sliceSize;
 	var currentChunk;
-	
+	var collectionStr;
+	var deliverStr;
+
 	$(document).ready(function() {
 		sId = "${sessionId}";
 		host = "${pageContext.request.contextPath}";
 		checkEditPremission(43, 0);
 		sliceSize = 1 * 1024 * 1024;
 	});
-	
-	
+
 	function initialPage() {
 		page = 1;
 		getCompanyList("", 0, 0, 1);
@@ -96,7 +97,7 @@ html {
 			}
 		});
 	}
-	
+
 	function getContractList(mPage) {
 		page = mPage;
 		var companyId = $("#companyId").val();
@@ -113,9 +114,9 @@ html {
 			alert("错误：第一个日期不能晚于第二个日期");
 			return;
 		}
-		date1 = (date1=="")?"none":date1;
-		date2 = (date2=="")?"none":date2;
-		
+		date1 = (date1 == "") ? "none" : date1;
+		date2 = (date2 == "") ? "none" : date2;
+
 		$
 				.ajax({
 					url : "${pageContext.request.contextPath}/getContractList",
@@ -146,7 +147,7 @@ html {
 									} else {
 										contractUploadInfo = "点击请上传";
 									}
-									
+
 									str += '<tr style="width:1300px"><td style="width:14%" class="tdColor2">'
 											+ data[i].contractNum
 											+ '</td>'
@@ -173,24 +174,25 @@ html {
 											+ data[i].saleUser
 											+ ',\''
 											+ data[i].companyId
-											+ '\')">'		
+											+ '\')">'
 											+ contractUploadInfo
 											+ '</a></td>'
 											+ '<td style="width:20%" class="tdColor2">'
 											+ data[i].dateForContract
 											+ '</td>'
 											+ '<td style="width:10%" class="tdColor2">'
-											+ '<a href="#" onclick="getPurchaseInfo(\''+ data[i].contractNum +'\')" >查看</a>'
+											+ '<a href="#" onclick="getPurchaseInfo(\''
+											+ data[i].contractNum
+											+ '\')" >查看</a>'
 											+ '</td>'
 											+ '<td style="width:8%" class="tdColor2">'
-										    + '<img title="查看" name="img_edit" class="operation" src="../image/update.png" style="vertical-align:middle" onclick="toEditContractPage('
- 											+ data[i].id
- 											+ ')"/>'
- 											+ '<a name="a_edit" style="vertical-align:middle" onclick="toEditContractPage('
- 											+ data[i].id
- 											+ ')">查看</a>'
+											+ '<img title="查看" name="img_edit" class="operation" src="../image/update.png" style="vertical-align:middle" onclick="toEditContractPage('
+											+ data[i].id
+											+ ')"/>'
+											+ '<a name="a_edit" style="vertical-align:middle" onclick="toEditContractPage('
+											+ data[i].id + ')">查看</a>'
 
-											+'</td></tr>';
+											+ '</td></tr>';
 								}
 							}
 						} else {
@@ -207,17 +209,19 @@ html {
 					}
 				});
 	}
-	
-	function getUploadInfo(t, mId, mProjectId, mContractNum, mSales,mCompanyId) {
+
+	function getUploadInfo(t, mId, mProjectId, mContractNum, mSales, mCompanyId) {
 		var state = document.getElementById("a_" + t).innerHTML;
 		if (state == "下载") {
 			downloadContarct(getProjectReport(mProjectId), mProjectId);
 		} else {
-			uploadContractWin(t, mId, mContractNum, mSales, mProjectId,mCompanyId);
+			uploadContractWin(t, mId, mContractNum, mSales, mProjectId,
+					mCompanyId);
 		}
 	}
-	
-	function uploadContractWin(t, tId, tContractNum, tSalesId, tProjectId,tCompanyId) {
+
+	function uploadContractWin(t, tId, tContractNum, tSalesId, tProjectId,
+			tCompanyId) {
 		if (!isPermissionEditArr[t % 10]) {
 			alert("你没有权限上传此合同文件");
 		} else {
@@ -230,8 +234,8 @@ html {
 					+ "#" + tId + "#" + tCompanyId;
 		}
 	}
-	
-	function addContractReport(){
+
+	function addContractReport() {
 		var myFile = document.getElementById("myfile").files[0];
 		//alert(myFile.size);
 		if (myFile != undefined) {
@@ -248,7 +252,7 @@ html {
 			alert("请选择合同文件");
 		}
 	}
-	
+
 	function doUploadFile(tFile) {
 		if (currentChunk < chunks) {
 			var formData = new FormData();
@@ -260,14 +264,15 @@ html {
 			formData.append('chunks', chunks);
 			formData.append('chunk', currentChunk);
 			formData.append('file', getSliceFile(tFile, currentChunk));
-			
+
 			formData.append('salesId', tUploadFileInfo.split("#")[1]);
 			formData.append('userId', getUserInfo(sId));
-            
-			formData.append('projectName', getProject(tUploadFileInfo.split("#")[2]).projectName);
-			formData.append('companyName', getCompany(tUploadFileInfo.split("#")[4]).companyName);
-			
-			
+
+			formData.append('projectName', getProject(tUploadFileInfo
+					.split("#")[2]).projectName);
+			formData.append('companyName', getCompany(tUploadFileInfo
+					.split("#")[4]).companyName);
+
 			var xhr = new XMLHttpRequest();
 			xhr.open("POST", host + "/addProjectReport");
 			xhr.send(formData);
@@ -290,9 +295,9 @@ html {
 			editContract(tFile);
 		}
 	}
-	
+
 	function editContract(mFile) {
-		var arrayPaymentInfo = new Array();    
+		var arrayPaymentInfo = new Array();
 		arrayPaymentInfo.push("1");
 		//alert(arrayPaymentInfo.length)
 		$.ajax({
@@ -305,13 +310,13 @@ html {
 				"companyId" : tUploadFileInfo.split("#")[4],
 				"projectId" : tUploadFileInfo.split("#")[2],
 				"saleUser" : tUploadFileInfo.split("#")[1],
-				"dateForContract" :"none-none",
+				"dateForContract" : "none-none",
 				"contractAmount" : 0,
 				"taxRate" : 0,
 				"serviceDetails" : "",
 				"paymentInfo" : arrayPaymentInfo,
-				"id":tUploadFileInfo.split("#")[3],
-				"isUploadContract":true
+				"id" : tUploadFileInfo.split("#")[3],
+				"isUploadContract" : true
 			},
 			traditional : true,
 			success : function(returndata) {
@@ -326,7 +331,7 @@ html {
 			}
 		});
 	}
-	
+
 	function saveContractReport(tFile) {
 		setTimeout(function() {
 			//保存到数据库
@@ -359,7 +364,7 @@ html {
 			});
 		}, 500);
 	}
-	
+
 	//获取分片文件
 	function getSliceFile(mFile, tChunk) {
 		var start = tChunk * sliceSize;
@@ -376,7 +381,7 @@ html {
 		cont.innerHTML = percent.toFixed(2) + '%';
 		cont.style.width = percent.toFixed(2) + '%';
 	}
-	
+
 	function getProjectReport(tProjectId) {
 		var fileName = "";
 		$.ajax({
@@ -402,8 +407,7 @@ html {
 		});
 		return fileName;
 	}
-	
-	
+
 	function downloadContarct(fileName, projectId) {
 		$.ajax({
 			url : host + "/downloadFile",
@@ -432,7 +436,7 @@ html {
 			}
 		});
 	}
-	
+
 	function changeCompany(tCompanyId) {
 		var salesId = getProjectList(tCompanyId);
 		getSaleUserList();
@@ -476,7 +480,6 @@ html {
 		return mSalesId;
 	}
 
-	
 	function getProject(mProjectId) {
 		var projectName;
 		$
@@ -535,7 +538,7 @@ html {
 		});
 		return userName;
 	}
-	
+
 	function getUserInfo(uNickName) {
 		var mUid;
 		$.ajax({
@@ -593,12 +596,12 @@ html {
 			getContractList(page);
 		}
 	}
-	
+
 	function confirmDelete(id) {
 		$(".banDel").show();
 		deleteId = id;
 	}
-    
+
 	function deleteContract() {
 		$.ajax({
 			url : "${pageContext.request.contextPath}/deleteContract",
@@ -627,28 +630,95 @@ html {
 	}
 
 	function getPurchaseInfo(cNum) {
-		alert(cNum);
-		
-		
-		/* var mHtml = '<div style="margin-top:10px;width:100%"><label><Strong>项目编号：</Strong>'
-				+ arrayProjectNum[pNum]
-				+ '</label></div><br/>'
-				+ '<div style="margin-top:10px;width:100%"><label><Strong>项目名称：</Strong>'
-				+ arrayProjectName[pNum]
-				+ '</label></div><br/>'
-				+ '<div style="margin-top:10px;width:100%"><label><Strong>是否需要采购：</Strong></label></div>'
-				+ '<input type="radio" name="field002" disabled="disabled"/>是'
-				+ '<input type="radio" name="field002" disabled="disabled" style="margin-left:100px;"/>否'
-				+ '<div style="margin-top:5px;width:100%"><label><Strong>采购明细：</Strong></label><label style="color:red">设备序列号&nbsp-&nbsp设备型号&nbsp-&nbsp设备数量&nbsp-&nbsp预估到货时间&nbsp-&nbsp实际到货时间</label></div><br/>'
-				+ '<div style="width:100%"><textarea id="purchaseDetails" style="resize: none; width: 98%; height: 92px; margin-top:5px"></textarea></div><br/>'
+	    $("#cDiv").html("");
+	    $("#dDiv").html("");	
+		$.ajax({
+					url : host + "/getContractPaymentInfoList",
+					type : 'GET',
+					cache : false,
+					async : false,
+					data : {
+						"contractNum" : cNum
+					},
+					success : function(returndata) {
+						var data = eval("(" + returndata + ")").paymentInfolist;
+						
+						collectionStr = '<p class="delP2" style="text-align: center; margin-top: 15px;">'
+						        +'<label style="font-size: 16px; color: brown;"><strong>收款信息</strong></label><br/></p>'
+						        + '<table style="width: 100%;margin-top: 15px"><tr style="width: 100%" >'
+								+ '<td style="width: 20%;border:1px solid #fff;" ><strong>合同收款日期</strong></td>'
+								+ '<td style="width: 60%;border:1px solid #fff;" ><strong>收款说明</strong></td>'
+								+ '<td style="width: 20%;border:1px solid #fff;" ><strong>收款状态</strong></td>'
+								+ '</tr>';
+						deliverStr = '<p class="delP2" style="text-align: center; margin-top: 15px;">'
+						        + '<label style="font-size: 16px; color: brown;"><strong>交货信息</strong></label><br/></p>'
+						        + '<table style="width: 100%;margin-top: 15px"><tr style="width: 100%" >'
+								+ '<td style="width: 20%;border:1px solid #fff;" ><strong>合同交货日期</strong></td>'
+								+ '<td style="width: 60%;border:1px solid #fff;" ><strong>交货说明</strong></td>'
+								+ '<td style="width: 20%;border:1px solid #fff;" ><strong>交货状态</strong></td>'
+								+ '</tr>';
 
-		swal({
-			title : '采&nbsp&nbsp购&nbsp&nbsp信&nbsp&nbsp息',
-			html : mHtml,
-			showCloseButton : true,
-			showConfirmButton : false,
-			allowOutsideClick : false,
-		}) */
+						if (data.length > 0) {
+							for (var i = 0; i < data.length; i++) {
+								var type = data[i].split("#")[3];
+								var isFinished;
+								if (data[i].split("#")[0] != "*") {
+
+									if (type == 1) {
+										//收款
+										isFinished = data[i].split("#")[4];
+										collectionStr += '<tr style="width: 100%;" >'
+												+ '<td style="width: 20%;border:1px solid #fff;font-size:10px;border-bottom:1px solid #000" >'
+												+ data[i].split("#")[0]
+												+ '</td>'
+												+ '<td style="width: 60%;border:1px solid #fff;font-size:10px;border-bottom:1px solid #000" >'
+												+ data[i].split("#")[2]
+												+ '</td>';
+										if (isFinished == 1) {
+											collectionStr += '<td style="width: 20%;border:1px solid #fff;font-size:10px;border-bottom:1px solid #000" >已收款</td></tr>';
+										} else {
+											collectionStr += '<td style="width: 20%;border:1px solid #fff;font-size:10px;color:red;border-bottom:1px solid #000" >未收款</td></tr>';
+										}
+
+									} else {
+										// 交货
+										isFinished = data[i].split("#")[4];
+										deliverStr += '<tr style="width: 100%;" >'
+												+ '<td style="width: 20%;border:1px solid #fff;font-size:10px;border-bottom:1px solid #000" >'
+												+ data[i].split("#")[0]
+												+ '</td>'
+												+ '<td style="width: 60%;border:1px solid #fff;font-size:10px;border-bottom:1px solid #000" >'
+												+ data[i].split("#")[2]
+												+ '</td>'
+										if (isFinished == 1) {
+											deliverStr += '<td style="width: 20%;border:1px solid #fff;font-size:10px;border-bottom:1px solid #000" >已交货</td></tr>';
+										} else {
+											deliverStr += '<td style="width: 20%;border:1px solid #fff;font-size:10px;color:red;border-bottom:1px solid #000" >未交货</td></tr>';
+										}
+									}
+								}
+							}
+							collectionStr += '</table>';
+							deliverStr += '</table>';
+							$("#cDiv").append(collectionStr);
+							$("#dDiv").append(deliverStr);
+							$("#banDel3").show();
+
+						} else {
+							alert("没有上传交货收款信息");
+						}
+
+						/* collectionNum = (collectionArr.length==0)?1:collectionArr.length;
+						deliveryNum = (deliveryArr.length==0)?1:deliveryArr.length;
+						
+						var isFinished  = collectionArr[0].split("#")[4] == 1 ? true
+									: false; */
+
+					},
+					error : function(XMLHttpRequest, textStatus, errorThrown) {
+					}
+				});
+
 	}
 </script>
 
@@ -688,10 +758,10 @@ html {
 						<div class="cfD">
 							<label style="margin-left: 86px;">合同实施日期：</label><input
 								type="text" id="date1" style="width: 8%" class="input3"
-								placeholder="0000/00/00"/> <span id="dd"></span><Strong
+								placeholder="0000/00/00" /> <span id="dd"></span><Strong
 								style="margin-left: 15px; margin-right: 10px">至</Strong> <input
 								type="text" id="date2" style="width: 8%" class="input3"
-								placeholder="0000/00/00"/> <span id="dd2"></span> <a
+								placeholder="0000/00/00" /> <span id="dd2"></span> <a
 								class="addA" href="#" onClick="toCreateContractPage()"
 								style="margin-left: 40px">新建合同信息+</a><a class="addA"
 								onClick="getContractList(1)">搜索</a>
@@ -734,7 +804,7 @@ html {
 
 	</div>
 
-<!-- 上传投标文件弹出框 -->
+	<!-- 上传合同文件弹出框 -->
 	<div class="banDel" id="banDel2">
 		<div class="delete" style="width: 600px">
 			<div class="close">
@@ -769,5 +839,35 @@ html {
 			</p>
 		</div>
 	</div>
+
+	<!-- 查看文件交货收款信息弹出框 -->
+	<div class="banDel" id="banDel3">
+		<div class="delete" style="width: 600px;">
+			<div class="close">
+				<a><img
+					src="${pageContext.request.contextPath}/image/shanchu.png"
+					onclick="closeConfirmBox()" /></a>
+			</div>
+
+			<div id="dDiv">
+				<p class="delP2" style="text-align: center; margin-top: 15px;">
+					<label style="font-size: 16px; color: brown;"><strong>交货信息</strong></label><br />
+				</p>
+			</div>
+
+			<div id="cDiv">
+				<p class="delP2" style="text-align: center; margin-top: 15px;">
+					<label style="font-size: 16px; color: brown;"><strong>收款信息</strong></label><br />
+				</p>
+			</div>
+
+			<p class="delP2" style="visibility: hidden">
+				<a class="addA" href="#" style="margin-left: 0px;">提交</a>
+			</p>
+
+		</div>
+
+	</div>
+
 </body>
 </html>

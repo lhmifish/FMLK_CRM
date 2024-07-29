@@ -193,6 +193,7 @@ public class DailyReportController implements ApplicationContextAware {
 		String date = request.getParameter("date");
 		int dept = Integer.parseInt(request.getParameter("department"));
 		String jsonStr = service.getAllCheckList(date, dept);
+		//System.out.println(jsonStr);
 		return jsonStr;
 	}
 

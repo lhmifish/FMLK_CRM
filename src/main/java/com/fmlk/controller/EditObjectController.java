@@ -1,9 +1,17 @@
 package com.fmlk.controller;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -11,6 +19,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+import com.fmlk.entity.Client;
 import com.fmlk.entity.Company;
 import com.fmlk.entity.Contract;
 import com.fmlk.entity.DailyReport;
@@ -30,7 +42,6 @@ import com.fmlk.service.TenderService;
 import com.fmlk.service.UserService;
 import com.fmlk.util.CommonUtils;
 import com.fmlk.util.WeChatEnterpriseUtils;
-
 import net.sf.json.JSONObject;
 
 @Controller
@@ -43,6 +54,7 @@ public class EditObjectController implements ApplicationContextAware {
 	private ContractService mContractService;
 	private UserService mUserService;
 	private Service mService;
+	
 
 	@Override
 	public void setApplicationContext(ApplicationContext arg0) throws BeansException {
@@ -209,7 +221,6 @@ public class EditObjectController implements ApplicationContextAware {
 		ct.setIsUploadContract(Boolean.parseBoolean(request.getParameter("isUploadContract")));
 		String[] paymentInfo = request.getParameterValues("paymentInfo");	
 		String jsonStr = mContractService.editContract(ct,paymentInfo);
-		System.out.println(jsonStr);
 		return jsonStr;
 	}
 
@@ -567,5 +578,66 @@ public class EditObjectController implements ApplicationContextAware {
 		String jsonStr = mService.editCompanyInfo(address,tel,mail);
 		return jsonStr;
 	}
-
+	
+	/**
+	 * 编辑合作客户
+	 * 
+	 */
+	@RequestMapping(value = "/editCooperateClient", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String editCooperateClient(HttpServletRequest request) {
+		int opt = Integer.parseInt(request.getParameter("operation"));
+		System.out.println("操作："+opt);
+		mService = new Service();
+		Client c = new Client();
+		if(opt==1) {
+			//添加
+			c.setClientName(request.getParameter("clientName"));
+			System.out.println(request.getParameter("clientName"));
+		}else {
+			//删除
+			c.setClientId(Integer.parseInt(request.getParameter("clientId")));
+			System.out.println(request.getParameter("clientId"));
+		}
+		String jsonStr = mService.editCooperateClient(c,opt);
+		return jsonStr;
+	}
+	
+	/**
+	 * 更改所有合作客户
+	 * 
+	 */
+	@RequestMapping(value = "/editAllCooperateClient", method = RequestMethod.POST, produces = "text/html;charset=UTF-8")
+	@ResponseBody
+	public String editAllCooperateClient(HttpServletRequest request) throws Exception{ 
+		String ret = null;
+		MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+		MultipartFile uploadFile = multipartRequest.getFile("file");
+		File file = File.createTempFile("temp", null);
+		if (!uploadFile.isEmpty()) {
+			uploadFile.transferTo(file);
+		}
+		FileInputStream inStream = null;
+		inStream = new FileInputStream(file);
+		Sheet sheet = null;
+		Workbook workBook = WorkbookFactory.create(inStream);
+		sheet = workBook.getSheet("Sheet0");
+		int numOfRows = sheet.getLastRowNum();
+		mService = new Service();
+		boolean result = mService.clearCooperateClient();
+		if(result) {
+			for (int i = 0; i <= numOfRows; i++) {
+				Client c = new Client();
+				String cName = CommonUtils.getExcelValue(sheet.getRow(i).getCell(0));
+				c.setClientName(cName);
+				mService.editCooperateClient(c,1);
+			}
+			ret = "客户清单提交成功";
+		}else {
+			ret = "客户清单已清除提交失败";
+		}
+		file.deleteOnExit();
+		inStream.close();
+		return ret;
+	}
 }

@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import com.fmlk.entity.Contract;
@@ -283,21 +284,19 @@ public class ContractDao {
 			}
 
 			sql += "isUploadContract = ?,";
-			
+
 			sql += "contractNum = ? where id = ?";
 
-            pre = con.prepareStatement(sql);
+			pre = con.prepareStatement(sql);
 			pre.setBoolean(1, ct.getIsUploadContract());
 			pre.setString(2, ct.getContractNum());
 			pre.setInt(3, ct.getId());
-			
+
 			int j = pre.executeUpdate();
 			if (paymentInfo.length < 2) {
 				if (j > 0) {
-					System.out.println("111");
 					jsonObject.put("errcode", "0");
 				} else {
-					System.out.println("222");
 					jsonObject.put("errcode", "1");
 				}
 			} else {
@@ -353,6 +352,51 @@ public class ContractDao {
 				int type = res.getInt("type");
 				String isFinished = res.getBoolean("isFinished") ? "1" : "0";
 				objList.add(time + "#" + actTime + "#" + desc + "#" + type + "#" + isFinished);
+			}
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", "query");
+			jsonObject.put("paymentInfolist", JSONArray.fromObject(objList));
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
+
+	public String getDelayContractPaymentInfoList() {
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.DATE, 0);
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+		String todayString = formatter.format(calendar.getTime());// 今天
+
+		try {
+			sql = "select a.time,a.description,a.type,c.companyName,d.projectName,e.nickName,a.contractNum"
+					+ " from contractpaymentinfo a,contract b,company c,project d,`user` e"
+					+ " where CAST(a.time AS date) <= CAST(? AS date) and a.isFinished = ?"
+					+ " and a.contractNum =b.contractNum and b.companyId = c.companyId and b.projectId = d.projectId"
+					+ " and b.saleUser = e.id order by a.type,a.id";
+
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setString(1, todayString);
+			pre.setBoolean(2, false);
+			res = pre.executeQuery();
+			objList = new ArrayList<String>();
+			while (res.next()) {
+				String time = res.getString("time");
+				String desc = res.getString("description");
+				int type = res.getInt("type");
+				String companyName = res.getString("companyName");
+				String projectName = res.getString("projectName");
+				String salesNickName = res.getString("nickName");		
+				String contractNum = res.getString("contractNum");		
+				objList.add(time + "#" + desc + "#" + type + "#" + companyName + "#" + projectName + "#" + salesNickName
+						+ "#" + contractNum);
 			}
 			jsonObject = new JSONObject();
 			jsonObject.put("errcode", "0");

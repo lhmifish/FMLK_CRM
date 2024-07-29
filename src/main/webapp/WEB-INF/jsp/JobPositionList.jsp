@@ -40,8 +40,8 @@ $(document).ready(function() {
 });
 
 function initialPage() {
-	page = 1;
-	getJobList(page);
+	//page = 1;
+	//getJobList(page);
 }
 
 function getJobList(mPage){
@@ -287,154 +287,10 @@ function createPosition(){
 			</div>
 		</div>
 		
-		<div class="page">
-			<!-- vip页面样式 -->
-			<div class="vip">
-			<!-- vip 表格 显示 -->
-				<div class="conShow">
-					<table border="1" style="width: 100%">
-						<tr style="width: 100%">
-							<td style="width: 15%" class="tdColor">职称</td>
-							<td style="width: 30%" class="tdColor">技能要求</td>
-							<td style="width: 15%" class="tdColor">学历要求</td>
-							<td style="width: 15%" class="tdColor">其他要求</td>
-							<td style="width: 10%" class="tdColor">级别</td>
-							<td style="width: 8%" class="tdColor">薪资</td>
-							<td style="width: 7%" class="tdColor">操作</td>
-						</tr>
-					</table>
-					<table id="tb" border="1" style="width: 100%">
-					</table>
-					<div class="paging" style="margin-top: 20px; margin-bottom: 50px;">
-					    <input type="button" class="submit" value="新建"
-							style="margin-left: 10px; width: 60px;" onclick="newPositionPage()" />
-						<input type="button" class="submit" value="上一页"
-							style="margin-left: 10px; width: 60px;" onclick="previousPage()" />
-						<input type="button" class="submit" value="下一页"
-							style="margin-left: 10px; width: 60px;" onclick="nextPage()" />
-						<span style="margin-left: 10px;">当前页：</span> <span id="p">0/0</span>
-					</div>
-				</div>
-				<!-- vip 表格 显示 end-->
-			</div>
-		</div>
-		
-		<!-- 删除弹出框 -->
-	<div class="banDel" id="banDel1">
-		<div class="delete">
-			<div class="close">
-				<a><img src="../image/shanchu.png" onclick="closeConfirmBox()" /></a>
-			</div>
-			<p class="delP1">你确定要删除这条招聘记录吗？</p>
-
-			<div class="cfD" style="margin-top: 30px">
-				<a class="addA" href="#" onclick="deletePosition()"
-					style="margin-left: 0px; margin-bottom: 30px;">确定</a> <a
-					class="addA" onclick="closeConfirmBox()">取消</a>
-			</div>
-
-		</div>
-	</div>
-	
-	<!-- 编辑弹出框 -->
-	<div class="banDel" id="banDel2">
-		<div class="delete" style="top:3%">
-			<div class="close">
-				<a><img src="../image/shanchu.png" onclick="closeConfirmBox()" /></a>
-			</div>
-			<p class="delP1">编辑人才招聘</p>
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;margin-left:30px">职称：</label> 
-				<input id="editJobTitle" type="text"
-							 style="width: 250px;height: 26px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px"></input>
-			</p>
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;">技能要求：</label> 
-				<textarea id="editTechDemand"
-							 style="rows:5;width: 250px;height: 50px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px; resize: none;"></textarea>
-			</p>
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;">学历要求：</label> 
-				<input id="editEducationDemand" type="text"
-							 style="width: 250px;height: 26px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px;"></input>
-			</p>
-			
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;">其他要求：</label> 
-				<textarea id="editOtherDemand"
-							 style="rows:5;width: 250px;height: 50px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px; resize: none;"></textarea>
-			</p>
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;margin-left:30px">级别：</label> 
-				<input id="editlevel" type="text"
-							 style="width: 250px;height: 26px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px"></input>
-			</p>
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;margin-left:30px">薪资：</label> 
-				<input id="editSalary" type="text"
-							 style="width: 250px;height: 26px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px"></input>
-			</p>
-
-			<div class="cfD" style="margin-top: 30px">
-				<a class="addA" href="#" onclick="editPosition()"
-					style="margin-left: 0px; margin-bottom: 30px;">编辑</a> <a
-					class="addA" onclick="closeConfirmBox()">取消</a>
-			</div>
-		</div>
-	</div>
-	
-	<!-- 新建弹出框 -->
-	<div class="banDel" id="banDel3">
-		<div class="delete" style="top:3%">
-			<div class="close">
-				<a><img src="../image/shanchu.png" onclick="closeConfirmBox()" /></a>
-			</div>
-			<p class="delP1">新建人才招聘</p>
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;margin-left:30px">职称：</label> 
-				<input id="mJobTitle" type="text"
-							 style="width: 250px;height: 26px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px"></input>
-			</p>
-			
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;">技能要求：</label> 
-				<textarea id="mTechDemand"
-							 style="rows:5;width: 250px;height: 50px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px; resize: none;"></textarea>
-			</p>
-			
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;">学历要求：</label> 
-				<input id="mEducationDemand" type="text"
-							 style="width: 250px;height: 26px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px;"></input>
-			</p>
-			
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;">其他要求：</label> 
-				<textarea id="mOtherDemand"
-							 style="rows:5;width: 250px;height: 50px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px; resize: none;"></textarea>
-			</p>
-			
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;margin-left:30px">级别：</label> 
-				<input id="mlevel" type="text"
-							 style="width: 250px;height: 26px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px"></input>
-			</p>
-			<p class="delP2" style="margin-top: 20px;">
-				<label style="font-size: 16px;margin-left:30px">薪资：</label> 
-				<input id="mSalary" type="text"
-							 style="width: 250px;height: 26px;border-bottom: 1px dashed #78639F;border-left: none; border-right: none; border-top: none;padding: 4px 2px 3px 2px; padding-left: 10px"></input>
-			</p>
-
-			<div class="cfD" style="margin-top: 30px">
-				<a class="addA" href="#" onclick="createPosition()"
-					style="margin-left: 0px; margin-bottom: 30px;">确定</a> <a
-					class="addA" onclick="closeConfirmBox()">取消</a>
-			</div>
-		</div>
-	</div>
-	
-	
-	
+		<div class="page" style="margin-top:20px;color:red">
+		    因网站服务端迁移，此页面不再提供更新和查看，请跳转继续操作
+		  <a href="https://www.family-care.cn/page/netWebOrganize_jobPosition">点我跳转</a>
+		</div>	
 </div>
 </body>
 </html>

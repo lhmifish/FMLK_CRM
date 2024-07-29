@@ -74,9 +74,11 @@ public class CreateObjectController implements ApplicationContextAware {
 		c.setAreaId(Integer.parseInt(request.getParameter("areaId")));
 		c.setCompanySource(request.getParameter("companySource"));
 		c.setCreateDate(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()));
+		c.setIsFmlkShare(Boolean.parseBoolean(request.getParameter("isFmlkShare")));
 		String[] arrayContact = request.getParameterValues("arrayContact");
 		String randNum = String.valueOf(Math.round((Math.random()*9+1)*100000));
 		c.setCompanyId("C"+new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())+randNum);
+		//System.out.println(request.getParameter("isFmlkShare"));
 		String jsonStr = mCompanyService.createCompany(c,arrayContact);
 		return jsonStr;
 	}

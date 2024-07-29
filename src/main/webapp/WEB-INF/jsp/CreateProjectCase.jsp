@@ -27,7 +27,7 @@
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
 <script type="text/javascript"
-	src="${pageContext.request.contextPath}/js/flatpickr_v3.js"></script>
+	src="${pageContext.request.contextPath}/js/flatpickr_v3.js?v=1999"></script>
 <script src="${pageContext.request.contextPath}/js/checkPermission.js"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
 <script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>

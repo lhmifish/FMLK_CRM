@@ -32,6 +32,7 @@ a:hover {
 	var host;
 	var isPermissionView;
 	var companyType;
+	var isFmlkShare;
 
 	$(document).ready(function() {
 		sId = "${sessionId}";
@@ -51,7 +52,7 @@ a:hover {
 		companySource = 1;
 		contactNum = 1;
 		companyType = 1;
-		
+		isFmlkShare = false;
 	}
 
 	function checkCompanySource(j) {
@@ -89,16 +90,17 @@ a:hover {
 			$("#divCompanySource").css('display', 'block');
 			$("#addBtn").css('visibility', 'visible');
 			$("#rmvBtn").css('visibility', 'hidden');
-			$("#divfieldId").css('visibility', 'visible');
+		//	$("#divfieldId").css('visibility', 'visible');
 			$("#divAbbrName").css('visibility', 'visible');
-			
+			isFmlkShare = false;
 		} else {
 			//陪护床
 			$("#divCompanySource").css('display', 'none');
 			$("#addBtn").css('visibility', 'hidden');
 			$("#rmvBtn").css('visibility', 'hidden');
-			$("#divfieldId").css('visibility', 'hidden');
+		//	$("#divfieldId").css('visibility', 'hidden');
 			$("#divAbbrName").css('visibility', 'hidden');
+			isFmlkShare = true;
 			
 			if (contactNum > 1) {
 				for (var i = contactNum; i > 1; i--) {
@@ -251,7 +253,8 @@ a:hover {
 				"address" : address,
 				"areaId" : areaId,
 				"companySource" : mCompanySource,
-				"arrayContact" : arrayContact
+				"arrayContact" : arrayContact,
+				"isFmlkShare":isFmlkShare
 			},
 			traditional : true,
 			success : function(returndata) {
@@ -293,7 +296,7 @@ a:hover {
 						style="margin-left: 50px; margin-right: 5px;" /> <label>信息</label>
 					<input type="radio" name="field03" id="companyType" value="2"
 						onclick="checkCompanyType(2)"
-						style="margin-left: 50px; margin-right: 5px;" /> <label>陪护床</label>
+						style="margin-left: 50px; margin-right: 5px;" /> <label>共享陪护</label>
 				</div>
 				<div class="baBody">
 					<div class="bbD">

@@ -2,6 +2,7 @@ package com.fmlk.service;
 
 import com.fmlk.dao.Dao;
 import com.fmlk.entity.AssignmentOrder;
+import com.fmlk.entity.Client;
 import com.fmlk.entity.Contract;
 import com.fmlk.entity.DailyArrangement;
 import com.fmlk.entity.DailyReport;
@@ -468,5 +469,25 @@ public class Service {
 	public String deleteWorkAttendance(String date) {
 		dao = new Dao();
 		return dao.deleteWorkAttendance(date);
+	}
+
+	public String getClientList() {
+		dao = new Dao();
+		return dao.getClientList();
+	}
+
+	public String editCooperateClient(Client c, int opt) {
+		dao = new Dao();
+		if(opt==1) {
+			//添加
+			return dao.checkCooperateClient(c);
+		}else {
+			return dao.deleteCooperateClient(c);
+		}
+	}
+	
+	public boolean clearCooperateClient() {
+		dao = new Dao();
+		return dao.clearCooperateClient();
 	}
 }

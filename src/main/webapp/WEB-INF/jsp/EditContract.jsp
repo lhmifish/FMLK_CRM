@@ -540,7 +540,7 @@ a:hover {
 			time3 = (time3 == "") ? "*" : time3;
 			time4 = (time4 == "") ? "*" : time4;
 			desc2 = (desc2 == "") ? "*" : desc2;
-			isFinished = $("#switch1_"+i).bootstrapSwitch('state')==true?1:0;
+			isFinished = $("#switch1_"+j).bootstrapSwitch('state')==true?1:0;
 			arrayPaymentInfo.push("2#" + time3 + "#" + time4 + "#" + desc2 + "#" + isFinished);
 		} 
 		

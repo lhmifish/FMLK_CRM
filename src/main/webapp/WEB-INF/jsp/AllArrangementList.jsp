@@ -377,7 +377,7 @@ function getThisArrangementList(){
 								
 								arrayDur = new Array();
 								for ( var i in data) {
-									if(sId=="lv.zhong" || sId=="sun.ke" || sId=="yang.huifang" || sId=="gong.zhiping"|| sId=="lu.haiming" || sId=="you.zhiliang"){
+									if(sId=="lv.zhong" || sId=="sun.ke" || sId=="yang.huifang" || sId=="gong.zhiping"|| sId=="lu.haiming" || sId=="wang.fan"){
 										if (data[i].userId == uUid) {
 											arrayDur.push(data[i]);
 										}

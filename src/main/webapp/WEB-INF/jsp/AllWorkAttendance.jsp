@@ -44,6 +44,7 @@ html {
 	var sId;
 	var queryType;
 	var isPermissionEdit;
+	var mRoleId;
 
 	$(document)
 			.ready(
@@ -52,6 +53,7 @@ html {
 						if (sId == null || sId == "") {
 							parent.location.href = "${pageContext.request.contextPath}/page/login";
 						} else {
+							mRoleId = null;
 							getUserPermissionList();
 							var year = new Date().getFullYear();
 							var month = new Date().getMonth() + 1;
@@ -60,7 +62,7 @@ html {
 							$("#month").val(month);
 							queryType = 1;
 							initDate();
-							getUserList();
+							getUserList(true);
 							getUserWorkAttendanceList();
 							$("#year").select2({});
 							$("#month").select2({});
@@ -84,7 +86,8 @@ html {
 						var data = eval("(" + returndata + ")").permissionSettingList;
 						isPermissionEdit = false;
 						for ( var i in data) {
-							if (data[i].permissionId == 74) {
+							if (data[i].permissionId == 74 ||  data[i].permissionId == 79) {
+								mRoleId = data[i].permissionId == 79?data[i].roleId:null;
 								isPermissionEdit = true;
 								break;
 							}
@@ -100,7 +103,7 @@ html {
 				});
 	}
 
-	function getUserList() {
+	function getUserList(mIsHide) {
 		$.ajax({
 			url : "${pageContext.request.contextPath}/userList",
 			type : 'GET',
@@ -110,7 +113,7 @@ html {
 				"name" : "",
 				"nickName" : "",
 				"jobId" : "",
-				"isHide" : false
+				"isHide" : mIsHide
 			},
 			cache : false,
 			async : false,
@@ -118,8 +121,22 @@ html {
 				var str = '';
 				var data2 = eval("(" + returndata + ")").userlist;
 				for ( var i in data2) {
-					str += '<option value="'+data2[i].nickName+'">'
-							+ data2[i].name + '</option>';
+					if(mRoleId == null){
+						str += '<option value="'+data2[i].nickName+'">'
+						+ data2[i].name + '</option>';
+					}else if(mRoleId==3 && data2[i].roleId>=3 && data2[i].roleId<=5){
+						str += '<option value="'+data2[i].nickName+'">'
+						+ data2[i].name + '</option>';
+					}else if(mRoleId==14 && (data2[i].roleId==14 || data2[i].roleId==17)){
+						str += '<option value="'+data2[i].nickName+'">'
+						+ data2[i].name + '</option>';
+					}else if(mRoleId==19 && (data2[i].roleId==19 || data2[i].roleId==18)){
+						str += '<option value="'+data2[i].nickName+'">'
+						+ data2[i].name + '</option>';
+					}else if(mRoleId==10 && data2[i].roleId<=2){
+						str += '<option value="'+data2[i].nickName+'">'
+						+ data2[i].name + '</option>';
+					}
 				}
 				$("#userId").empty();
 				$("#userId").append(str);
@@ -139,9 +156,8 @@ html {
 			queryType = 1;
 			date2 = $('#mmDate').val();
 		}
-
-		$
-				.ajax({
+		//alert($("#userId").val())
+		$.ajax({
 					url : "${pageContext.request.contextPath}/getUserWorkAttendanceList",
 					type : 'GET',
 					data : {
@@ -152,6 +168,7 @@ html {
 					cache : false,
 					async : false,
 					success : function(returndata) {
+						//alert(returndata);
 						var str = "";
 						var data = eval("(" + returndata + ")").dailylist;
 						if (data.length == 0) {
@@ -169,211 +186,219 @@ html {
 								var adjustRestTime = data[i].adjustRestTime;
 								var festivalOverWorkTime = data[i].festivalOverWorkTime;
 								var isLate = data[i].isLate;
+								var roleId = data[i].roleId;
+                                
+								//过滤有roleId的不可见用户
+								var isSalesManager = mRoleId==3 && roleId>=3 && roleId<=5
+								var isTechManager = mRoleId==10 && roleId<=2
+                                var isYunwei = mRoleId==14 && (roleId==17 || roleId==14)
+								var isKeFu = mRoleId==19 && (roleId==19 || roleId==18)
+								if(mRoleId==null || isSalesManager || isTechManager || isYunwei || isKeFu){
+                                	var scheduleTd = "";
+    								var dailyReportTd = "";
+    								var weekReportTd = "";
+    								var nextWeekPlanTd = "";
+    								var projectReportTd = "";
+    								var signTd = "";
+    								var remarkTd = "";
+    								var overWorkTimeTd = "";
+    								var adjustRestTimeTd = "";
+    								var festivalOverWorkTimeTd = "";
+    								var isLateTd = "";
+    								var first_column = "";
 
-								var scheduleTd = "";
-								var dailyReportTd = "";
-								var weekReportTd = "";
-								var nextWeekPlanTd = "";
-								var projectReportTd = "";
-								var signTd = "";
-								var remarkTd = "";
-								var overWorkTimeTd = "";
-								var adjustRestTimeTd = "";
-								var festivalOverWorkTimeTd = "";
-								var isLateTd = "";
-								var first_column = "";
+    								if (queryType == 1) {
+    									first_column = '<td style="width:7%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text"  id="name'
+    											+ i
+    											+ '" style="font-size: 12px;border:none;width:98%;text-align:center;background-color:#fff" '
+    											+ 'value="'
+    											+ data[i].name
+    											+ '" disabled="disabled"/></td>';
+    									$("#coloum_name").show();
+    									$("#coloum_date").hide();
+    								} else {
+    									first_column = '<td style="width:7%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text"  id="date'
+    											+ i
+    											+ '" style="font-size: 12px;border:none;width:98%;text-align:center;background-color:#fff" '
+    											+ 'value="'
+    											+ data[i].date
+    											+ '" disabled="disabled"/></td>';
+    									$("#coloum_date").show();
+    									$("#coloum_name").hide();
+    								}
 
-								if (queryType == 1) {
-									first_column = '<td style="width:7%;height: 50px;" class="tdColor2">'
-											+ '<input type="text"  id="name'
-											+ i
-											+ '" style="font-size: 12px;border:none;width:98%;text-align:center;background-color:#fff" '
-											+ 'value="'
-											+ data[i].name
-											+ '" disabled="disabled"/></td>';
-									$("#coloum_name").show();
-									$("#coloum_date").hide();
-								} else {
-									first_column = '<td style="width:7%;height: 50px;" class="tdColor2">'
-											+ '<input type="text"  id="date'
-											+ i
-											+ '" style="font-size: 12px;border:none;width:98%;text-align:center;background-color:#fff" '
-											+ 'value="'
-											+ data[i].date
-											+ '" disabled="disabled"/></td>';
-									$("#coloum_date").show();
-									$("#coloum_name").hide();
-								}
+    								if (schedule == "未发") {
+    									scheduleTd = '<td style="width:14%; height: 50px;" class="tdColor2">'
+    											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red;resize:none;height:50px;" id="schedule'
+    											+ i
+    											+ '">'
+    											+ schedule
+    											+ '</textarea></td>';
+    								} else {
+    									scheduleTd = '<td style="width:14%; height: 50px;" class="tdColor2">'
+    											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="schedule'
+    											+ i
+    											+ '">'
+    											+ schedule
+    											+ '</textarea></td>';
+    								}
 
-								if (schedule == "未发") {
-									scheduleTd = '<td style="width:14%; height: 50px;" class="tdColor2">'
-											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red;resize:none;height:50px;" id="schedule'
-											+ i
-											+ '">'
-											+ schedule
-											+ '</textarea></td>';
-								} else {
-									scheduleTd = '<td style="width:14%; height: 50px;" class="tdColor2">'
-											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="schedule'
-											+ i
-											+ '">'
-											+ schedule
-											+ '</textarea></td>';
-								}
+    								if (dailyReport == "未发") {
+    									dailyReportTd = '<td style="width:4%; height: 50px" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="dailyReport'
+    											+ i
+    											+ '" value="'
+    											+ dailyReport
+    											+ '" /></td>';
+    								} else {
+    									dailyReportTd = '<td style="width:4%; height: 50px" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="dailyReport'
+    											+ i
+    											+ '" value="'
+    											+ dailyReport
+    											+ '" /></td>';
+    								}
 
-								if (dailyReport == "未发") {
-									dailyReportTd = '<td style="width:4%; height: 50px" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="dailyReport'
-											+ i
-											+ '" value="'
-											+ dailyReport
-											+ '" /></td>';
-								} else {
-									dailyReportTd = '<td style="width:4%; height: 50px" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="dailyReport'
-											+ i
-											+ '" value="'
-											+ dailyReport
-											+ '" /></td>';
-								}
+    								if (weekReport == "未发") {
+    									weekReportTd = '<td style="width:4%;height: 50px" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="weekReport'
+    											+ i
+    											+ '" value="'
+    											+ weekReport
+    											+ '" /></td>';
+    								} else {
+    									weekReportTd = '<td style="width:4%;height: 50px" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="weekReport'
+    											+ i
+    											+ '" value="'
+    											+ weekReport
+    											+ '" /></td>';
+    								}
 
-								if (weekReport == "未发") {
-									weekReportTd = '<td style="width:4%;height: 50px" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="weekReport'
-											+ i
-											+ '" value="'
-											+ weekReport
-											+ '" /></td>';
-								} else {
-									weekReportTd = '<td style="width:4%;height: 50px" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="weekReport'
-											+ i
-											+ '" value="'
-											+ weekReport
-											+ '" /></td>';
-								}
+    								if (nextWeekPlan == "未发") {
+    									nextWeekPlanTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="nextWeekPlan'
+    											+ i
+    											+ '" value="'
+    											+ nextWeekPlan
+    											+ '" /></td>';
+    								} else {
+    									nextWeekPlanTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="nextWeekPlan'
+    											+ i
+    											+ '" value="'
+    											+ nextWeekPlan
+    											+ '" /></td>';
+    								}
 
-								if (nextWeekPlan == "未发") {
-									nextWeekPlanTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="nextWeekPlan'
-											+ i
-											+ '" value="'
-											+ nextWeekPlan
-											+ '" /></td>';
-								} else {
-									nextWeekPlanTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="nextWeekPlan'
-											+ i
-											+ '" value="'
-											+ nextWeekPlan
-											+ '" /></td>';
-								}
+    								if (projectReport == "未发") {
+    									projectReportTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="projectReport'
+    											+ i
+    											+ '" value="'
+    											+ projectReport
+    											+ '" /></td>';
+    								} else {
+    									projectReportTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="projectReport'
+    											+ i
+    											+ '" value="'
+    											+ projectReport
+    											+ '" /></td>';
+    								}
 
-								if (projectReport == "未发") {
-									projectReportTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="projectReport'
-											+ i
-											+ '" value="'
-											+ projectReport
-											+ '" /></td>';
-								} else {
-									projectReportTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center" id="projectReport'
-											+ i
-											+ '" value="'
-											+ projectReport
-											+ '" /></td>';
-								}
+    								if (new RegExp('未签到').test(sign)
+    										|| new RegExp('未签退').test(sign)) {
+    									signTd = '<td style="width:40%;height: 50px;" class="tdColor2">'
+    											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red;resize:none;height:50px;" id="sign'
+    											+ i
+    											+ '">'
+    											+ sign
+    											+ '</textarea></td>';
+    								} else {
+    									signTd = '<td style="width:40%;height: 50px;" class="tdColor2">'
+    											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="sign'
+    											+ i
+    											+ '">'
+    											+ sign
+    											+ '</textarea></td>';
+    								}
 
-								if (new RegExp('未签到').test(sign)
-										|| new RegExp('未签退').test(sign)) {
-									signTd = '<td style="width:40%;height: 50px;" class="tdColor2">'
-											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red;resize:none;height:50px;" id="sign'
-											+ i
-											+ '">'
-											+ sign
-											+ '</textarea></td>';
-								} else {
-									signTd = '<td style="width:40%;height: 50px;" class="tdColor2">'
-											+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="sign'
-											+ i
-											+ '">'
-											+ sign
-											+ '</textarea></td>';
-								}
+    								remarkTd = '<td style="width:15%;height:50px;" class="tdColor2">'
+    										+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="remark'
+    										+ i
+    										+ '">'
+    										+ remark
+    										+ '</textarea></td>';
 
-								remarkTd = '<td style="width:15%;height:50px;" class="tdColor2">'
-										+ '<textarea type="text" style="font-size: 12px;border:none;width:98%;text-align:center;resize:none;height:50px;" id="remark'
-										+ i
-										+ '">'
-										+ remark
-										+ '</textarea></td>';
+    								if (overWorkTime != 0) {
+    									overWorkTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:blue" id="overWorkTime'
+    											+ i
+    											+ '" value="'
+    											+ overWorkTime
+    											+ '" /></td>';
+    								} else {
+    									overWorkTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="overWorkTime'
+    											+ i + '"/></td>';
+    								}
 
-								if (overWorkTime != 0) {
-									overWorkTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:blue" id="overWorkTime'
-											+ i
-											+ '" value="'
-											+ overWorkTime
-											+ '" /></td>';
-								} else {
-									overWorkTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="overWorkTime'
-											+ i + '"/></td>';
-								}
+    								if (adjustRestTime != 0) {
+    									adjustRestTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="adjustRestTime'
+    											+ i
+    											+ '" value="'
+    											+ adjustRestTime
+    											+ '" /></td>';
+    								} else {
+    									adjustRestTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="adjustRestTime'
+    											+ i + '"/></td>';
+    								}
 
-								if (adjustRestTime != 0) {
-									adjustRestTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="adjustRestTime'
-											+ i
-											+ '" value="'
-											+ adjustRestTime
-											+ '" /></td>';
-								} else {
-									adjustRestTimeTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="adjustRestTime'
-											+ i + '"/></td>';
-								}
+    								if (festivalOverWorkTime != 0) {
+    									festivalOverWorkTimeTd = '<td style="width:4%;font-size: 12px; height: 50px;color:red" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:blue" id="festivalOverWorkTime'
+    											+ i
+    											+ '" value="'
+    											+ festivalOverWorkTime
+    											+ '" /></td>';
+    								} else {
+    									festivalOverWorkTimeTd = '<td style="width:4%;font-size: 12px; height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="festivalOverWorkTime'
+    											+ i + '"/></td>';
+    								}
 
-								if (festivalOverWorkTime != 0) {
-									festivalOverWorkTimeTd = '<td style="width:4%;font-size: 12px; height: 50px;color:red" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:blue" id="festivalOverWorkTime'
-											+ i
-											+ '" value="'
-											+ festivalOverWorkTime
-											+ '" /></td>';
-								} else {
-									festivalOverWorkTimeTd = '<td style="width:4%;font-size: 12px; height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="festivalOverWorkTime'
-											+ i + '"/></td>';
-								}
+    								if (isLate == 1) {
+    									isLateTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="isLate'
+    											+ i + '" value="迟到"/></td>';
+    								} else {
+    									isLateTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
+    											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="isLate'
+    											+ i + '"/></td>';
+    								}
 
-								if (isLate == 1) {
-									isLateTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;color:red" id="isLate'
-											+ i + '" value="迟到"/></td>';
-								} else {
-									isLateTd = '<td style="width:4%;height: 50px;" class="tdColor2">'
-											+ '<input type="text" style="font-size: 12px;border:none;width:98%;text-align:center;" id="isLate'
-											+ i + '"/></td>';
-								}
-
-								str += '<tr style="width:100%">'
-										+ first_column
-										+ scheduleTd
-										+ dailyReportTd
-										//	+ weekReportTd
-										//	+ nextWeekPlanTd
-										//	+ projectReportTd
-										+ signTd
-										+ remarkTd
-										+ overWorkTimeTd
-										+ adjustRestTimeTd
-										+ festivalOverWorkTimeTd
-										+ isLateTd
-										+ '<td style="width:4%;font-size: 12px; height: 50px;" class="tdColor2">'
-										+ '<img title="编辑" style="vertical-align:middle" class="operation" src="../image/update.png" onclick="editWorkAttendance('
-										+ i + ')"/></td></tr>';
+    								str += '<tr style="width:100%">'
+    										+ first_column
+    										+ scheduleTd
+    										+ dailyReportTd
+    										//	+ weekReportTd
+    										//	+ nextWeekPlanTd
+    										//	+ projectReportTd
+    										+ signTd
+    										+ remarkTd
+    										+ overWorkTimeTd
+    										+ adjustRestTimeTd
+    										+ festivalOverWorkTimeTd
+    										+ isLateTd
+    										+ '<td style="width:4%;font-size: 12px; height: 50px;" class="tdColor2">'
+    										+ '<img title="编辑" style="vertical-align:middle" class="operation" src="../image/update.png" onclick="editWorkAttendance('
+    										+ i + ')"/></td></tr>';
+                                }
 							}
 						}
 						$("#tb").empty();
@@ -567,6 +592,13 @@ html {
 			}
 		});
 	}
+	
+	function changeCheck(){
+		var isChecked = $("#dismissCheck").attr("checked");
+		getUserList(!isChecked);
+		getUserWorkAttendanceList();
+	}
+	
 </script>
 </head>
 
@@ -633,7 +665,9 @@ html {
 									<option value="12">12月</option>
 							</select></span><span id="mSpan2"><input type="text" id="mmDate"
 								style="width: 90px" class="input3"><span id="dd"
-								style="margin-left: -65px"></span></span> <a class="addA"
+								style="margin-left: -65px"></span></span>
+							<input type="checkbox" style="margin-left:20px" id="dismissCheck" onclick="changeCheck()"/><a style="margin-left:5px">包含离职人员</a>
+                            <a class="addA"
 								style="width: 120px" onClick="getUserWorkAttendanceList()">搜索</a>
 							<a class="addA" style="width: 120px" onClick="printTable()">打印表单</a>
 							<a class="addA" style="width: 120px; display: none"

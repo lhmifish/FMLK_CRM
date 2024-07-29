@@ -31,6 +31,7 @@ public class CompanyDao {
 		String companySource = c.getCompanySource();
 		String createDate = c.getCreateDate();
 		String companyId = c.getCompanyId();
+		boolean isFmlkShare = c.getIsFmlkShare();
 
 		try {
 			sql2 = "select * from company where companyName like ? and isDeleted = ? and salesId = ?";
@@ -56,7 +57,7 @@ public class CompanyDao {
 		}
 
 		try {
-			sql = "insert into company (companyName,fieldId,salesId,address,createDate,abbrCompanyName,areaId,companySource,companyId) values (?,?,?,?,?,?,?,?,?)";
+			sql = "insert into company (companyName,fieldId,salesId,address,createDate,abbrCompanyName,areaId,companySource,companyId,isFmlkShare) values (?,?,?,?,?,?,?,?,?,?)";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setString(1, companyName);
@@ -68,7 +69,7 @@ public class CompanyDao {
 			pre.setInt(7, areaId);
 			pre.setString(8, companySource);
 			pre.setString(9, companyId);
-
+			pre.setBoolean(10, isFmlkShare);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");

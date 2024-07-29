@@ -43,6 +43,7 @@ a:hover {
 
 	$(document).ready(function() {
 		sId = "${sessionId}";
+		//alert(sId);
 		host = "${pageContext.request.contextPath}";
 		checkViewPremission(32);
 	});

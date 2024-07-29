@@ -15,6 +15,7 @@ public class Company implements Serializable {
 	private String companySource;//客户来源
 	private String createDate;//创建日期
 	private boolean isDelete;//已删除
+	private boolean isFmlkShare;//共享陪护客户
 	
 	public int getId() {
 		return this.id;
@@ -102,5 +103,13 @@ public class Company implements Serializable {
 
 	public void setCompanySource(String companySource) {
 		this.companySource = companySource;
+	}
+	
+	public boolean getIsFmlkShare() {
+		return this.isFmlkShare;
+	}
+
+	public void setIsFmlkShare(boolean isFmlkShare) {
+		this.isFmlkShare = isFmlkShare;
 	}
 }

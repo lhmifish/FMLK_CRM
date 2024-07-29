@@ -298,6 +298,7 @@ select::-ms-expand {
 	$(document).ready(function() {
 		sId = "${mUserId}";
 		//sId = "jia.wenjie";
+		//sId = "wang.fan";
 		host = "${pageContext.request.contextPath}";
 		refreshDate(formatDate(new Date()).substring(0, 10));
 		document.getElementById("date").flatpickr({
@@ -379,7 +380,8 @@ select::-ms-expand {
 													|| sId == "sun.ke"
 													|| sId == "yang.huifang"
 													|| sId == "gong.zhiping"
-													|| sId == "lu.haiming") {
+													|| sId == "lu.haiming"
+													|| sId == "wang.fan") {
 												if (data[i].userName == data2[j].nickName) {
 													arrayDur.push(data[i]);
 												}
@@ -532,7 +534,7 @@ select::-ms-expand {
 		<div class="top" style="width: 100%">
 			<div style="width: 100%; margin-bottom: 5px;">
 				<Strong style="margin-left: 5px">选择日期：</Strong> <input type="text"
-					id="date" style="width: 80px;" />
+					id="date" style="width: 80px;" /> <%-- <label style="margin-left:10px">${mUserId}</label>  --%>
 			</div>
 			<div style="width: 100%; margin-bottom: 5px;">
 				<Strong style="margin-left: 5px">周报日期：</Strong> <input type="text"

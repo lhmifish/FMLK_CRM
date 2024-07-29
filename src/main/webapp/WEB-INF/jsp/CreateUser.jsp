@@ -42,6 +42,7 @@ display:none;
 		}else{
 			$("#departmentId").select2({});
 			getDepartmentList();
+			getNewUserJobId();
 		}
 		
 	});
@@ -186,6 +187,41 @@ display:none;
 			}
 		});
 	}
+	
+	function getNewUserJobId(){
+		$.ajax({
+			url : "${pageContext.request.contextPath}/userList",
+			type : 'GET',
+			data : {
+				"dpartId" : 0,
+				"date" : "",
+				"name" : "",
+				"nickName" : "",
+				"jobId" : "",
+				"isHide" : false
+			},
+			cache : false,
+			async : false,
+			success : function(returndata) {
+				var data = eval("(" + returndata + ")").userlist;
+				data.sort(sortJobId);
+				var newMax = parseInt(data[0].jobId.substring(1)) + parseInt(1)
+				var newJobId = "L"
+				for(var i=2;i>=newMax.toString().length;i--){
+					newJobId += "0"
+				}
+				newJobId += newMax.toString();
+				$("#jobId").val(newJobId);
+				
+			},
+			error : function(XMLHttpRequest, textStatus, errorThrown) {
+			}
+		});
+	}
+	
+	function sortJobId(a,b){
+		return b.jobId.substring(1)-a.jobId.substring(1);
+	}
 </script>
 
 </head>
@@ -222,7 +258,7 @@ display:none;
 
 					<div class="bbD">
 						<label>员工工号：</label><input type="text" class="input3" id="jobId"
-							style="width: 350px;" placeholder="格式：L001" /> <label
+							style="width: 350px;background-color: #eee" placeholder="格式：L001" /> <label
 							style="margin-left: 15px">电子邮箱：</label><!-- <input type="text"
 							class="input3" id="email" disabled="disabled"
 							style="width: 350px; background-color: #eee" /> --><input type="text"

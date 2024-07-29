@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Properties;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -12,10 +13,13 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.springframework.web.multipart.MultipartFile;
 import com.alibaba.fastjson.JSON;
@@ -332,6 +336,119 @@ public class FileServerUtils {
 			String url = String.format("http://" + server + "/?explorer/fileDownload&accessToken=%s&path=%s", accessToken,
 					URLEncoder.encode(filePath, "UTF-8"));
 			return url;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+	
+	public static String createImageFile(String accessToken,MultipartFile uploadFile,long fileSize, String fileName,String boundary) {
+		try {
+			Properties prop = new Properties();
+			String path = DBConnection.class.getResource("/").getPath();
+			path = path.substring(1, path.indexOf("WEB-INF/classes")) + "property/upload.properties";
+			path = path.replaceAll("%20", " ");
+			prop.load(new FileInputStream(path));
+			String server = prop.getProperty("upload.fileServer");
+			String filePath = "/LanstarNet/FileData/ClientImage/";
+			String url = String.format(
+					"http://" + server + "/?explorer/fileUpload&accessToken=%s&upload_to=%s&chunks=%s&chunk=%s&size=%s",
+					accessToken, URLEncoder.encode(filePath, "UTF-8"), 1, 1, fileSize);
+			JSONObject jb = post(url, uploadFile, fileName, boundary);
+			if (jb.getBoolean("code") && jb.getString("data").equals("upload_success")) {
+				if (jb.getString("info") == null) {
+					return "no_info";
+				} else {
+					return jb.getString("info");
+				}
+			} else {
+				return "";
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+	
+	public static String deleteImage(String accessToken,String fileName) {
+		try {
+			Properties prop = new Properties();
+			String path = DBConnection.class.getResource("/").getPath();
+			path = path.substring(1, path.indexOf("WEB-INF/classes")) + "property/upload.properties";
+			path = path.replaceAll("%20", " ");
+			prop.load(new FileInputStream(path));
+			String server = prop.getProperty("upload.fileServer");
+			String filePath = "/LanstarNet/FileData/ClientImage/";
+			JSONObject paramJb = new JSONObject();
+			paramJb.put("type", "file");
+			paramJb.put("path", filePath+fileName);
+			JSONArray jsonArray = new JSONArray();
+			jsonArray.add(paramJb);
+			String url = String.format("http://" + server + "/?explorer/pathDelete&accessToken=%s&dataArr=%s&shiftDelete=%s",accessToken,URLEncoder.encode(jsonArray.toString(), "UTF-8"),1);
+			JSONObject jb = post(url);
+			if (jb.getBoolean("code") && jb.getString("data").trim().equals("Deleted successfully!")) {
+				if (jb.getString("info") == null) {
+					return "no_info";
+				} else {
+					return jb.getString("info");
+				}
+			} else {
+				return "";
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+	
+	public static String getFileImageList(String accessToken) {
+		try {
+			Properties prop = new Properties();
+			String path = DBConnection.class.getResource("/").getPath();
+			path = path.substring(1, path.indexOf("WEB-INF/classes")) + "property/upload.properties";
+			path = path.replaceAll("%20", " ");
+			prop.load(new FileInputStream(path));
+			String server = prop.getProperty("upload.fileServer");
+			String folderPath = "/LanstarNet/FileData/ClientImage/";
+			String url = String.format("http://" + server + "/?explorer/pathList&accessToken=%s&path=%s",accessToken,URLEncoder.encode(folderPath, "UTF-8"));
+			JSONObject jb = post(url);
+			if(jb.getBoolean("code")) {
+				if(jb.getJSONObject("data").getJSONArray("fileList").size()>0) {
+					return jb.getJSONObject("data").getJSONArray("fileList").toString();
+				}else {
+					return "noImage";
+				}
+			}else {
+				return "";
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+	
+	public static String getThumbImage(String accessToken,String nameList) {
+		try {
+			Properties prop = new Properties();
+			String path = DBConnection.class.getResource("/").getPath();
+			path = path.substring(1, path.indexOf("WEB-INF/classes")) + "property/upload.properties";
+			path = path.replaceAll("%20", " ");
+			prop.load(new FileInputStream(path));
+			String server = prop.getProperty("upload.fileServer");
+			String[] arr = nameList.split("=");
+			ArrayList<String> list = new ArrayList<String>();			
+			JSONObject jb = new JSONObject();
+			for(int i=0;i<arr.length;i++) {
+				String fileName = arr[i]+".png";
+				String filePath = "/LanstarNet/FileData/ClientImage/"+fileName;
+				String url = String.format("http://" + server + "/?explorer/image&accessToken=%s&path=%s",accessToken,URLEncoder.encode(filePath, "UTF-8"));
+				list.add(url);
+			}
+			if(arr.length>0) {
+				JSONArray array= JSONArray.parseArray(JSON.toJSONString(list));
+				jb.put("imageList", array);
+			}
+			return jb.toString();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

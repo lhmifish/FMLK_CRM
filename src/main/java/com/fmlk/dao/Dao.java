@@ -17,6 +17,7 @@ import com.fmlk.entity.Area;
 import com.fmlk.entity.AssignmentOrder;
 import com.fmlk.entity.CaseType;
 import com.fmlk.entity.CheckStatistics;
+import com.fmlk.entity.Client;
 import com.fmlk.entity.ClientField;
 import com.fmlk.entity.Company;
 import com.fmlk.entity.ContactUser;
@@ -79,6 +80,7 @@ public class Dao {
 	private List<Role> rList = null;
 	private List<RolePermission> rpList = null;
 	private List<PermissionSetting> psetList = null;
+	private List<Client> clientList = null;
 
 	public boolean add(DailyReport dp) {
 		try {
@@ -658,7 +660,6 @@ public class Dao {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
 		SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		try {
-
 			sql = "select b.NICKNAME,CASE a.checkflg WHEN 'In' THEN '签到' ELSE '签退' END checkflgRes,a.address,a.checktime "
 					+ "from dbo.WX_TimeRec a ,dbo.User_WebUser b "
 					+ "where CAST(a.checktime AS date) = CAST(? AS date) " + "and a.userName=b.USERNAME "
@@ -696,7 +697,161 @@ public class Dao {
 			DBConnection.closePre(pre);
 			DBConnection.closeRes(res);
 		}
+		try {
+			boolean isNew = sdf.parse(date).compareTo(sdf.parse("2023/5/29"))>=0;
+			if(isNew) {
+				sql2 = "SELECT USERINFO.name as f_ConsumerName,iif(acc_monitor_log.state=1,'打卡出' ,'打卡进') as f_ReaderIDRes,acc_monitor_log.time as f_ReadDate "
+				+ "FROM acc_monitor_log left JOIN USERINFO ON acc_monitor_log.card_no = USERINFO.cardNo where len(acc_monitor_log.card_no)=10 and acc_monitor_log.verified = 4 "
+				+ "and format(acc_monitor_log.time,'yyyy/mm/dd')=? and NOT(USERINFO.name IS NULL) ORDER BY acc_monitor_log.time";
+				con2 = DBConnection.getAccessConnection();
+			}else {
+				sql2 = "select a.f_ConsumerName,CASE c.f_ReaderID WHEN 1 THEN '打卡进' ELSE '打卡出' END f_ReaderIDRes,c.f_ReadDate "
+						+ "from dbo.t_b_Consumer a,dbo.t_b_IDCard b,dbo.t_d_CardRecord c "
+						+ "where a.f_ConsumerID=b.f_ConsumerID and b.f_CardNO = c.f_CardNO "
+						+ "and cast(? as date)=cast(c.f_ReadDate as date)";
+				con2 = DBConnection.getConnection3();
+			}
+			pre2 = con2.prepareStatement(sql2);
+			pre2.setString(1, date);
+			res2 = pre2.executeQuery();
+			while (res2.next()) {
+				String mName = res2.getString("f_ConsumerName").trim();
+				if (!mName.equals("阿姨") && !mName.equals("吕总") && !mName.equals("保洁阿姨") && !mName.equals("吕忠") && !mName.equals("童骏")) {
+					WechatCheck wc2 = new WechatCheck();
+					wc2.setUserName(mName);
+					wc2.setCheckFlag(res2.getString("f_ReaderIDRes"));
+					wc2.setAddress("公司");
+					String dateStr = sdf2.format(res2.getTimestamp("f_ReadDate"));
+					wc2.setCheckTime(dateStr.substring(11, dateStr.length()));
+					wc2.setDate(dateStr.substring(0, 10));
+					wList.add(wc2);
+				}
+			}
+			// 按时间排序
+						Collections.sort(wList, new Comparator<WechatCheck>() {
 
+							@Override
+							public int compare(WechatCheck wc1, WechatCheck wc2) {
+								String date = wc1.getDate() + " " + wc1.getCheckTime();
+								String date2 = wc2.getDate() + " " + wc2.getCheckTime();
+								SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+								Date d1, d2;
+								int t = 0;
+								try {
+									d1 = sdf3.parse(date);
+									d2 = sdf3.parse(date2);
+									if (d1.getTime() > d2.getTime()) {
+										t = 1;
+									} else {
+										t = -1;
+									}
+								} catch (ParseException e) {
+									e.printStackTrace();
+								}
+								return t;
+							}
+
+						});
+						// 这里已获取了所有微信签到和刷门卡的记录 ，并按时间排序 
+						uList = new ArrayList<User>();
+						uList = getUserList2(date, dept);// 除去领导
+						dwList = new ArrayList<DailyWechatCheck>();
+						List<WechatCheck> wList2 = null;
+
+						for (int i = 0; i < uList.size(); i++) {
+							String name = uList.get(i).getName();// 真实姓名
+							String startTime = "", endTime = "", detail = "";
+							wList2 = new ArrayList<WechatCheck>();
+
+							for (int j = 0; j < wList.size(); j++) {
+								if (wList.get(j).getUserName().equals(name)) {
+									wList2.add(wList.get(j));
+								}
+							}
+							JSONObject jo = new JSONObject();
+							jo.put("list", JSONArray.fromObject(wList2));
+							DailyWechatCheck dwc = new DailyWechatCheck();
+							dwc.setDate(date);
+							dwc.setName(name);
+							dwc.setDetail(jo.toString());
+
+							if (wList2.size() > 0) {
+								if (wList2.size() == 1) {
+									WechatCheck object = wList2.get(0);
+									String time = object.getCheckTime();
+									int t = Integer.parseInt(time.substring(0, 2));
+
+									if (object.getCheckFlag().equals("签到") || object.getCheckFlag().equals("打卡进")) {
+										// 只有签到
+										startTime = time;
+										endTime = "未签退";
+									} else if (t >= 10) {
+										// 只有一条超过10点退出的记录
+										// 若只有一条10点前的退出记录，则不算上班
+										endTime = time;
+										startTime = "未签到";
+									}
+								} else {
+									WechatCheck object2 = new WechatCheck();
+									WechatCheck object3 = new WechatCheck();
+									for (int k = 0; k < wList2.size(); k++) {
+										object2 = new WechatCheck();
+										object2 = wList2.get(k);
+										if (object2.getCheckFlag().equals("签到") || object2.getCheckFlag().equals("打卡进")) {
+											startTime = wList2.get(k).getCheckTime();
+											break;
+										}
+									}
+
+									if (startTime.equals("")) {
+										startTime = "未签到";
+									}
+
+									for (int l = wList2.size() - 1; l >= 0; l--) {
+										object3 = new WechatCheck();
+										object3 = wList2.get(l);
+										if (object3.getCheckFlag().equals("签退") || object3.getCheckFlag().equals("打卡出")) {
+
+											if (!startTime.equals("未签到")) {
+												Date tEnd = sdf.parse(object3.getDate());
+												Date tStart = sdf.parse(object2.getDate());
+
+												if (tEnd.getTime() > tStart.getTime()) {
+													endTime = "次日" + wList2.get(l).getCheckTime();
+												} else {
+													endTime = wList2.get(l).getCheckTime();
+												}
+											} else {
+												endTime = wList2.get(l).getCheckTime();
+											}
+											break;
+										}
+									}
+
+									if (endTime.equals("")) {
+										endTime = "未签退";
+									}
+
+								}
+							}
+							dwc.setStartTime(startTime);
+							dwc.setEndTime(endTime);
+							dwList.add(dwc);
+						}
+						jsonObject = new JSONObject();
+						jsonObject.put("errcode", "0");
+						jsonObject.put("errmsg", "query");
+						jsonObject.put("wechatlist", JSONArray.fromObject(dwList));
+						return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con2);
+			DBConnection.closePre(pre2);
+			DBConnection.closeRes(res2);
+		}
+		
+		/**
 		try {
 			sql2 = "select a.f_ConsumerName,CASE c.f_ReaderID WHEN 1 THEN '打卡进' ELSE '打卡出' END f_ReaderIDRes,c.f_ReadDate "
 					+ "from dbo.t_b_Consumer a,dbo.t_b_IDCard b,dbo.t_d_CardRecord c "
@@ -744,7 +899,7 @@ public class Dao {
 				}
 
 			});
-			/** 这里已获取了所有微信签到和刷门卡的记录 ，并按时间排序 **/
+			// 这里已获取了所有微信签到和刷门卡的记录 ，并按时间排序 
 			uList = new ArrayList<User>();
 			uList = getUserList2(date, dept);// 除去领导
 			dwList = new ArrayList<DailyWechatCheck>();
@@ -844,6 +999,7 @@ public class Dao {
 			DBConnection.closePre(pre2);
 			DBConnection.closeRes(res2);
 		}
+		**/
 		return null;
 	}
 	////////////////////////////////////////////
@@ -3682,6 +3838,7 @@ public class Dao {
 			while (res.next()) {
 				PermissionSetting pset = new PermissionSetting();
 				pset.setPermissionId(res.getInt("permissionId"));
+				pset.setRoleId(res.getInt("roleId"));
 				psetList.add(pset);
 			}
 			jsonObject = new JSONObject();
@@ -3737,6 +3894,7 @@ public class Dao {
 				dr.setVacationOverWorkTime(res.getDouble("vacationOverWorkTime"));
 				dr.setFestivalOverWorkTime(res.getDouble("festivalOverWorkTime"));
 				dr.setIsLate(res.getInt("islate"));
+				dr.setRoleId(res.getInt("roleId"));
 				list.add(dr);
 			}
 			jsonObject = new JSONObject();
@@ -3863,7 +4021,7 @@ public class Dao {
 				}
 			}
 			
-			System.out.println(list.size());
+			//System.out.println(list.size());
 			
 			List<DailyReport> list1st = new ArrayList<DailyReport>(), list2nd = new ArrayList<DailyReport>();
 			List<DailyReport> list3rd = new ArrayList<DailyReport>(), list4th = new ArrayList<DailyReport>();
@@ -3874,7 +4032,7 @@ public class Dao {
 
 			for (int i = 0; i < list.size(); i++) {
 				int month = Integer.parseInt(list.get(i).getDate().substring(5, 7));
-				System.out.println("month:"+month);
+				//System.out.println("month:"+month);
 				if (month == 1) {
 					list1st.add(list.get(i));
 				} else if (month == 2) {
@@ -4067,6 +4225,8 @@ public class Dao {
 				dr.setVacationOverWorkTime(res.getDouble("vacationOverWorkTime"));
 				dr.setFestivalOverWorkTime(res.getDouble("festivalOverWorkTime"));
 				dr.setIsLate(res.getInt("islate"));
+				dr.setRoleId(res.getInt("roleId"));
+				//System.out.println("sssss  "+res.getString("name"));
 				list.add(dr);
 			}
 			jsonObject = new JSONObject();
@@ -4478,6 +4638,10 @@ public class Dao {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "1");
+			jsonObject.put("errmsg", e.getMessage());
+			return jsonObject.toString();
 		} finally {
 			DBConnection.closeCon(con);
 			DBConnection.closePre(pre);
@@ -4513,6 +4677,125 @@ public class Dao {
 		}
 	}
 
-	
+	public String getClientList() {
+		try {
+			sql = "select * from cooperateclient where isDeleted = 0";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			res = pre.executeQuery();
+			clientList = new ArrayList<Client>();
+			while (res.next()) {
+				Client c = new Client();
+				c.setClientId(res.getInt("id"));
+				c.setClientName(res.getString("clientName"));
+				clientList.add(c);
+			}
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "0");
+			jsonObject.put("errmsg", "query");
+			jsonObject.put("clientList", JSONArray.fromObject(clientList));
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+			DBConnection.closeRes(res);
+		}
+		return null;
+	}
 
+	public String checkCooperateClient(Client c) {
+		jsonObject = new JSONObject();
+		String cName = c.getClientName();
+		try {
+			sql2 = "select * from cooperateclient where clientName like ? and isDeleted = ?";
+			con2 = DBConnection.getConnection_Mysql();
+			pre2 = con2.prepareStatement(sql2);
+			pre2.setString(1, "%" + cName + "%");
+			pre2.setBoolean(2, false);
+			res2 = pre2.executeQuery();
+			if (res2.next()) {
+				// 找到了
+				jsonObject.put("errcode", "3");
+				return jsonObject.toString();
+			}else {
+				return addCooperateClient(cName);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con2);
+			DBConnection.closePre(pre2);
+			DBConnection.closeRes(res2);
+		}
+	}
+
+	public String addCooperateClient(String name) {
+		jsonObject = new JSONObject();
+		try {
+			sql2 = "insert into cooperateclient (clientName) values (?)";
+			con2 = DBConnection.getConnection_Mysql();
+			pre2 = con2.prepareStatement(sql2);
+			pre2.setString(1, name);
+			int i = pre2.executeUpdate();
+			if (i > 0) {
+				jsonObject.put("errcode", "0");
+			} else {
+				jsonObject.put("errcode", "1");
+			}
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con2);
+			DBConnection.closePre(pre2);
+		}
+	}
+	
+	public String deleteCooperateClient(Client c) {
+		jsonObject = new JSONObject();
+		try {
+			sql = "update cooperateclient set isDeleted = ? where id = ?";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			pre.setBoolean(1, true);
+			pre.setInt(2, c.getClientId());
+			int j = pre.executeUpdate();
+			if (j > 0) {
+				jsonObject.put("errcode", "0");
+			} else {
+				jsonObject.put("errcode", "1");
+			}
+			return jsonObject.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			jsonObject = new JSONObject();
+			jsonObject.put("errcode", "2");
+			return jsonObject.toString();
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+		}
+	}
+	
+	public boolean clearCooperateClient() {
+		jsonObject = new JSONObject();
+		try {
+			sql = "truncate table cooperateclient";
+			con = DBConnection.getConnection_Mysql();
+			pre = con.prepareStatement(sql);
+			int j = pre.executeUpdate();
+			return j==0?true:false;
+		} catch (Exception e) {
+			return false;
+		} finally {
+			DBConnection.closeCon(con);
+			DBConnection.closePre(pre);
+		}
+	}
 }
