@@ -239,16 +239,7 @@ html {
 									projectSalesAfterArr
 											.push(data[i].salesAfterUsers);
 									//这里新加项目经理有权更改项目状态,如果当前登入用户为该项目的项目经理
-									if (data[i].projectManager == 0) {
-										//没有项目经理
-										projectArr2.push(false);
-									} else if (getUser("uId",
-											data[i].projectManager).nickName == sId) {
-										//项目经理就是本人
-										projectArr2.push(true);
-									} else {
-										projectArr2.push(false);
-									}
+									projectArr2.push(data[i].projectManager);
 									projectTypeArr.push(data[i].id + "#"
 											+ data[i].projectType);
 									var ps;
@@ -369,20 +360,19 @@ html {
 	}
 	/* objectArr-项目销售  mProjectArr2-是否是项目经理 */
 	function matchUserPremission(objectArr, mProjectArr2) {
-		if (objectArr.length > 0 && isPermissionEdit) {
+		if(objectArr.length > 0){
 			isPermissionEditArr = new Array();
 			var myUser = getUser("nickName", sId);
 			var tId = myUser.UId;
 			var tRoleId = myUser.roleId;
+			var tDepartmentId = myUser.departmentId;
 			var arrImg = document.getElementsByName("img_edit");
 			for (var j = 0; j < arrImg.length; j++) {
-				if (objectArr[j] == tId || tRoleId == 11 || tRoleId == 3
-						|| tRoleId == 4) {
-					//管理员，销售经理，销售副经理，销售本人
+				if((objectArr[j] == tId || mProjectArr2[j] == tId || tDepartmentId==5 || tDepartmentId==6) && isPermissionEdit) {
 					isPermissionEditArr.push(true);
 					arrImg[j].setAttribute("title", "编辑");
 					document.getElementsByName("a_edit")[j].innerHTML = "编辑";
-				} else {
+				}else{
 					isPermissionEditArr.push(false);
 				}
 			}

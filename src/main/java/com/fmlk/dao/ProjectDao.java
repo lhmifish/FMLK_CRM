@@ -513,6 +513,7 @@ public class ProjectDao {
 				pc2.setSalesId(res.getInt("salesId"));
 				pc2.setServiceUsers(serviceUsers);
 				pc2.setServiceDate(res.getString("serviceDate"));
+				pc2.setServiceEndDate(res.getString("serviceEndDate"));
 				pc2.setCaseType(res.getString("caseType"));
 				pc2.setServiceType(res.getInt("serviceType"));
 				pc2.setCreateDate(res.getString("createDate"));
@@ -635,12 +636,13 @@ public class ProjectDao {
 	public String deleteProjectCase(int id, String updateDate) {
 		jsonObject = new JSONObject();
 		try {
-			sql = "update projectcase set isDeleted = ?,updateDate=? where id = ?";
+			sql = "update projectcase set isDeleted = ?,updateDate=?,cancelReason = ? where id = ?";
 			con = DBConnection.getConnection_Mysql();
 			pre = con.prepareStatement(sql);
 			pre.setBoolean(1, true);
 			pre.setString(2, updateDate);
-			pre.setInt(3, id);
+			pre.setString(3, "销售撤回派工");
+			pre.setInt(4, id);
 			int j = pre.executeUpdate();
 			if (j > 0) {
 				jsonObject.put("errcode", "0");
@@ -772,6 +774,7 @@ public class ProjectDao {
 				pc2.setRejectReason(res.getString("rejectReason"));
 				pc2.setRemark(res.getString("remark"));
 				pc2.setServiceEndDate(res.getString("serviceEndDate"));
+				pc2.setIsDelete(res.getBoolean("isDeleted"));
 				jsonObject = new JSONObject();
 				jsonObject.put("errcode", "0");
 				jsonObject.put("errmsg", "query");
@@ -814,7 +817,7 @@ public class ProjectDao {
 				pc2.setIsRejected(res.getBoolean("isRejected"));
 				pc2.setRejectReason(res.getString("rejectReason"));
 				pc2.setCasePeriod(res.getString("casePeriod"));
-
+				pc2.setIsDelete(res.getBoolean("isDeleted"));
 				String serviceEndDate = res.getString("serviceEndDate");
 				if (serviceEndDate.equals("") || serviceEndDate == null) {
 					pc2.setServiceEndDate(res.getString("serviceDate"));

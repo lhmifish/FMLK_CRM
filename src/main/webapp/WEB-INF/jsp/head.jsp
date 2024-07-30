@@ -106,7 +106,7 @@ a:hover {
 			</p>
 			<br/>
 			<p class="p2">
-			    <label style="color: brown;font-weight: bold;">version:20240729</label>
+			    <label style="color: brown;font-weight: bold;">version:20240730</label>
 				<label style="color: black;margin-left:20px;">当前时间：</label><label
 					style="color: black; font-size: 12px;" id="label"></label>
 			</p>

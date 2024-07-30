@@ -66,7 +66,9 @@
 	});
 
 	function initialPage() {
-		if (type == 1) {
+		if(type == 0){
+			$(document).attr("title", "派工已撤回");
+		}else if (type == 1) {
 			$(document).attr("title", "销售审核");
 		} else {
 			$(document).attr("title", "技术派工");
@@ -80,8 +82,13 @@
 		$("#serviceUsers").select2({
 			placeholder : "请选择..."
 		});
-		if ((type == 1 && !isPermissionCheck)
-				|| (type == 2 && !isPermissionDispatch)) {
+		if(type>0){
+			$("#checkDivTitle").show();
+			$("#checkDiv").show();
+			if((type == 1 && !isPermissionCheck) || (type == 2 && !isPermissionDispatch)){
+				$("#divBtn").hide();
+			}
+		}else{
 			$("#divBtn").hide();
 		}
 	}
@@ -94,7 +101,6 @@
 			alert(requestReturn.error);
 		} else {
 			var projectCase = requestReturn.data.projectCase[0];
-			//caseId = projectCase.caseId;
 			isChecked = projectCase.isChecked;
 			isRejected = projectCase.isRejected;
 			var mCompany = getCompany("projectId", projectCase.projectId);
@@ -127,10 +133,12 @@
 				$("#reasonDiv").show();
 			} else if (!isChecked) {
 				//未审核
-				$("#divBtn").show();
-				checkResult = 1;
-				$("input[name='field02'][value='1']").attr("checked", true);
-				$("#checkDiv").css("margin-bottom","60px");
+				if(!projectCase.isDelete){
+					$("#divBtn").show();
+					checkResult = 1;
+					$("input[name='field02'][value='1']").attr("checked", true);
+					$("#checkDiv").css("margin-bottom","60px");
+				}
 			} else {
 				//已审核
 				if (projectCase.serviceUsers != null
@@ -344,10 +352,10 @@
 					rows="3" disabled="disabled"></textarea>
 			</div>
 
-			<p style="margin-left: 5%; margin-top: 10px;">
+			<p style="margin-left: 5%; margin-top: 10px;display: none;" id="checkDivTitle">
 				<a style="color: red"> </a>审核结果
 			</p>
-			<div style="margin-left: 5%;margin-top: 10px;margin-bottom:20px" id="checkDiv">
+			<div style="margin-left: 5%;margin-top: 10px;margin-bottom:20px;display: none;" id="checkDiv">
 				<input type="radio" name="field02" id="checkResult" value="1"
 					checked="checked" onclick="selCheckResult(1)" /><label
 					style="margin-right: 50px; margin-left: 5px;">通过</label><input

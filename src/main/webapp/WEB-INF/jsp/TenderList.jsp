@@ -23,7 +23,7 @@
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/calendar.js"></script>
-<script src="${pageContext.request.contextPath}/js/checkPermission.js"></script>
+<script src="${pageContext.request.contextPath}/js/checkPermission.js?v=1"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
 <script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
 <script src="${pageContext.request.contextPath}/js/getObjectList.js?v=2011"></script>

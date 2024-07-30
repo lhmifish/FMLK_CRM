@@ -273,13 +273,11 @@ public class CreateObjectController implements ApplicationContextAware {
 		String jsonStr = mProjectService.createProjectCase(pc);
 		boolean errcode2 = ((String) new Gson().fromJson(jsonStr, Map.class).get("errcode")).equals("0");
 		if(errcode2) {
-			//获取派工id
 			String projectJSONStr = mProjectService.getProjectCaseByCaseId(pc.getCaseId());
 			errcode2 = ((String) new Gson().fromJson(projectJSONStr, Map.class).get("errcode")).equals("0");
 			if(errcode2) {
 				JSONArray myArr = new JSONObject().fromObject(projectJSONStr).getJSONArray("projectCase");
 				ProjectCase projectCase = (ProjectCase) JSONObject.toBean((JSONObject) myArr.get(0), ProjectCase.class);
-				pc.setId(projectCase.getId());
 				// 新建派工通知
 				String companyName = request.getParameter("companyName");
 				String projectName = request.getParameter("projectName");
@@ -299,7 +297,7 @@ public class CreateObjectController implements ApplicationContextAware {
 						userList = mUserService.getUserListByIds("3");
 					}
 					String accessToken = WeChatEnterpriseUtils.getAccessToken();
-					WeChatEnterpriseUtils.sendProjectCaseInform(accessToken,pc,userList, companyName, projectName,salesName,false);
+					WeChatEnterpriseUtils.sendProjectCaseInform(accessToken,projectCase,userList, companyName, projectName,salesName,0);
 				}
 			}
 		}

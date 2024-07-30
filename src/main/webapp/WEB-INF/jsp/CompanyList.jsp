@@ -129,7 +129,7 @@ html {
 								+ lastPage;
 						$("#tb").empty();
 						$("#tb").append(str);
-						matchUserPremission(companyArr, 0);
+						matchUserPremission(companyArr);
 						closeLoading(); 
 					}
 				}, 500);
@@ -213,21 +213,20 @@ html {
 	}
 
 	//客户匹配可编辑人员
-	function matchUserPremission(objectArr, i) {
-		if (objectArr.length > 0 && isPermissionEdit) {
+	function matchUserPremission(objectArr) {
+		if(objectArr.length > 0){
 			isPermissionEditArr = new Array();
 			var myUser = getUser("nickName", sId);
 			var tId = myUser.UId;
+			var tDepartmentId = myUser.departmentId;
 			var tRoleId = myUser.roleId;
 			var arrImg = document.getElementsByName("img_edit");
 			for (var j = 0; j < arrImg.length; j++) {
-				if (objectArr[j] == tId || tRoleId == 11 || tRoleId == 3
-						|| tRoleId == 4) {
-					//管理员，销售经理，销售副经理，销售本人
+				if ((objectArr[j] == tId || tRoleId == 3 || tRoleId == 4 || tDepartmentId==5 || tDepartmentId==6) && isPermissionEdit) {
 					isPermissionEditArr.push(true);
 					arrImg[j].setAttribute("title", "编辑");
 					document.getElementsByName("a_edit")[j].innerHTML = "编辑";
-				} else {
+				}else{
 					isPermissionEditArr.push(false);
 				}
 			}

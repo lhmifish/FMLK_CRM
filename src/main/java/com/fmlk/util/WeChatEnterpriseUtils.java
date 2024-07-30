@@ -37,6 +37,7 @@ public class WeChatEnterpriseUtils {
 	private static String dispatchInfoTitle = "[技术派工通知]";
 	private static String createProjectCaseInfoTitle = "[销售开派工单通知]";
 	private static String editProjectCaseInfoTitle = "[已更改]";
+	private static String cancelProjectCaseInfoTitle = "[派工已撤回]";
 	private static String unclosedProjectCaseInfoTitle = "[！！！派工超时3天未关闭警告通知！！！]";
 	private static String uploadProjectReportInfoTitle = "[上传项目报告通知]";
 	private static String agentId = null;
@@ -175,82 +176,113 @@ public class WeChatEnterpriseUtils {
 		String todayString = formatter.format(calendar.getTime());// 今天
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=%s", accessToken);
 		String title = null;
-		informUserNickName = "lv.zhong|lu.haiming|lin.lin";
-		// 审核派工通知 type 1.销审2.技审
-		String content = todayString + "\n项目名称：" + projectName + "\n客户名称：" + companyName + "\n销售：" + mSalesName
-				+ "\n服务时间："+ pc.getServiceDate() +" 至 "+pc.getServiceEndDate() + "\n服务内容：" + pc.getServiceContent() + "\n审核结果："
-				+ (checkResult != 1 ? "驳回" : "通过");
-	    if(type == 1) {
-	    	title = checkInfoTitle;
-	    }else if(type==2) {
-	    	title = dispatchInfoTitle;
-	    }
-	    for (int i = 0; i < userList.size(); i++) {
-			// 销售
-			informUserNickName += "|" + userList.get(i).getNickName();
-		}
-	   /* informUserNickName = "lu.haiming";
-	    System.out.println("通知的人=="+informUserNickName);*/
-	    JSONObject jsonContent = new JSONObject();
-		JSONObject textObject = new JSONObject();
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("msgtype", "textcard");
-		jsonObject.put("agentid", agentId);
-		
-		textObject.put("title", title);
-		content = checkResult != 1?content + "\n驳回理由：" + pc.getRejectReason():content;	
-		if(type == 2 && checkResult == 1) {
-			content += "\n服务工程师："+mServiceUsersName;
-			if(pc.getRemark() != null && !pc.getRemark().equals("")) {
-				content += "\n备注：" + pc.getRemark();
+		try {
+			Properties prop = new Properties();
+			String path = WeChatEnterpriseUtils.class.getResource("/").getPath();
+			path = path.substring(1, path.indexOf("WEB-INF/classes"))+"property/wechat.properties";
+		    path = path.replaceAll("%20"," ");
+			prop.load(new FileInputStream(path));
+			informUserNickName = prop.getProperty("wechat.informUser");
+			// 审核派工通知 type 1.销审2.技审
+			String content = todayString + "\n项目名称：" + projectName + "\n客户名称：" + companyName + "\n销售：" + mSalesName
+					+ "\n服务时间："+ pc.getServiceDate() +" 至 "+pc.getServiceEndDate() + "\n服务内容：" + pc.getServiceContent() + "\n审核结果："
+					+ (checkResult != 1 ? "驳回" : "通过");
+		    if(type == 1) {
+		    	title = checkInfoTitle;
+		    }else if(type==2) {
+		    	title = dispatchInfoTitle;
+		    }
+		    for (int i = 0; i < userList.size(); i++) {
+				// 销售
+				informUserNickName += "|" + userList.get(i).getNickName();
 			}
-			content += "\n☆☆☆请工程师合理安排好工作时间☆☆☆\n☆☆☆完成指派任务后上传项目报告☆☆☆";
-		}else if(type == 1 && checkResult == 1) {
-			content += "\n☆☆☆请尽快派工☆☆☆";
+		    //informUserNickName = "lu.haiming";
+		    //System.out.println("通知的人=="+informUserNickName);
+		    JSONObject jsonContent = new JSONObject();
+			JSONObject textObject = new JSONObject();
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put("msgtype", "textcard");
+			jsonObject.put("agentid", agentId);
+			textObject.put("title", title);
+			content = checkResult != 1?content + "\n驳回理由：" + pc.getRejectReason():content;	
+			if(type == 2 && checkResult == 1) {
+				content += "\n服务工程师："+mServiceUsersName;
+				if(pc.getRemark() != null && !pc.getRemark().equals("")) {
+					content += "\n备注：" + pc.getRemark();
+				}
+				content += "\n☆☆☆请工程师合理安排好工作时间☆☆☆\n☆☆☆完成指派任务后上传项目报告☆☆☆";
+			}else if(type == 1 && checkResult == 1) {
+				content += "\n☆☆☆请尽快派工☆☆☆";
+			}
+			textObject.put("description","<div>" + content + "</div>");
+			textObject.put("url",
+					"https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
+							+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect");
+			jsonObject.put("textcard", textObject);
+			jsonObject.put("touser", informUserNickName);
+			jsonContent = post(url, jsonObject);
+			return jsonContent.getString("errcode");
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		textObject.put("description","<div>" + content + "</div>");
-		textObject.put("url",
-				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.family-care.cn%2fpage%2feditProjectCaseMobile%2f2%2f"
-						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect");
-		jsonObject.put("textcard", textObject);
-		jsonObject.put("touser", informUserNickName);
-		jsonContent = post(url, jsonObject);
-		return jsonContent.getString("errcode");
+		return "";
 	}
 
 	// 新建派工推送消息
 	public static String sendProjectCaseInform(String accessToken, ProjectCase pc, List<User> userList,
-			String companyName, String projectName,String mSalesName,boolean isEdit) {
+			String companyName, String projectName,String mSalesName,int operation) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.add(Calendar.DATE, 0);
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy年MM月dd日");
 		String todayString = formatter.format(calendar.getTime());// 今天
 		// 审核链接
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=%s", accessToken);
-		String title = createProjectCaseInfoTitle;
-		title = isEdit?"[已重新提审]"+title:title;
-		String content = "项目名称：" + projectName + "\n客户名称：" + companyName + "\n销售：" + mSalesName+"\n服务时间：" + pc.getServiceDate()+" 至 "+pc.getServiceEndDate() + "\n服务内容："
-				+ pc.getServiceContent();
-		String informUserNickName = "lv.zhong|lu.haiming|lin.lin";
-		for (int i = 0; i < userList.size(); i++) {
-			informUserNickName += "|" + userList.get(i).getNickName();
+		String title = "";
+		try {
+			Properties prop = new Properties();
+			String path = WeChatEnterpriseUtils.class.getResource("/").getPath();
+			path = path.substring(1, path.indexOf("WEB-INF/classes"))+"property/wechat.properties";
+		    path = path.replaceAll("%20"," ");
+			prop.load(new FileInputStream(path));
+			informUserNickName = prop.getProperty("wechat.informUser");
+			int mType = 1;
+			if(operation==0) {
+				//新建
+				title = createProjectCaseInfoTitle;
+			}else if(operation==1) {
+				//编辑重审
+				title = "[已重新提审]"+createProjectCaseInfoTitle;
+			}else if(operation==2) {
+				//撤回
+				title = cancelProjectCaseInfoTitle;
+				mType = 0;
+			}
+			String content = "项目名称：" + projectName + "\n客户名称：" + companyName + "\n销售：" + mSalesName+"\n服务时间：" + pc.getServiceDate()+" 至 "+pc.getServiceEndDate() + "\n服务内容："
+					+ pc.getServiceContent();
+			String informUserNickName = "lv.zhong|lu.haiming|lin.lin";
+			for (int i = 0; i < userList.size(); i++) {
+				informUserNickName += "|" + userList.get(i).getNickName();
+			}
+			//informUserNickName = "lu.haiming";
+		    //System.out.println("通知的人=="+informUserNickName);
+			JSONObject textObject = new JSONObject();
+			textObject.put("title", title);
+			textObject.put("description",
+					"<div class=\"gray\">" + todayString + "</div><div class=\"normal\">" + content + "</div>");
+			textObject.put("url",
+					"https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.family-care.cn%2fpage%2feditProjectCaseMobile%2f"+mType+"%2f"
+							+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect");
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put("touser", informUserNickName);
+			jsonObject.put("msgtype", "textcard");
+			jsonObject.put("agentid", agentId);
+			jsonObject.put("textcard", textObject);
+			JSONObject jsonContent = post(url, jsonObject);
+			return jsonContent.getString("errcode");
+		}catch (Exception e) {
+			e.printStackTrace();
 		}
-		/*informUserNickName = "lu.haiming";
-		System.out.println("通知的人=="+informUserNickName);*/
-		JSONObject textObject = new JSONObject();
-		textObject.put("title", title);
-		textObject.put("description",
-				"<div class=\"gray\">" + todayString + "</div><div class=\"normal\">" + content + "</div>");
-		textObject.put("url",
-				"https://open.weixin.qq.com/connect/oauth2/authorize?appid=ww59df2fdaef20da86&redirect_uri=crm.family-care.cn%2fpage%2feditProjectCaseMobile%2f1%2f"
-						+ pc.getId() + "&response_type=code&scope=snsapi_base&agentid=1000003#wechat_redirect");
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("touser", informUserNickName);
-		jsonObject.put("msgtype", "textcard");
-		jsonObject.put("agentid", agentId);
-		jsonObject.put("textcard", textObject);
-		JSONObject jsonContent = post(url, jsonObject);
-		return jsonContent.getString("errcode");
+		return "";
 	}
 
 	// 超时派工推送
@@ -266,7 +298,7 @@ public class WeChatEnterpriseUtils {
 				+ pc.getServiceDate() + "\n服务内容：" + pc.getServiceContent();
 		String salesName = "";
 		String nameList = "";
-		informUserNickName = "lu.haiming|lv.zhong|wang.fan";
+		informUserNickName = "lu.haiming|lv.zhong";
 		for (int i = 0; i < userList.size(); i++) {
 			if (pc.getSalesId() == userList.get(i).getUId()) {
 				salesName = userList.get(i).getName();

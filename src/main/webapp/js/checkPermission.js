@@ -164,10 +164,11 @@ function matchUserPremission(objectArr) {
 			if (this.readyState == 4) {
 				var data = eval("(" + xhr.responseText + ")").user;
 				var tId = data[0].UId;
-				var tRoleId = data[0].roleId;
+				//var tRoleId = data[0].roleId;
+				var tDepartmentId = data[0].departmentId;
 				var arrImg = document.getElementsByName("img_edit");
 				for (var j = 0; j < arrImg.length; j++) {
-					if (objectArr[j] == tId || tRoleId == 11) {
+					if (objectArr[j] == tId || tDepartmentId == 6 || tDepartmentId == 5) {
 						isPermissionEditArr.push(true);
 						arrImg[j].setAttribute("title", "编辑");
 						document.getElementsByName("a_edit")[j].innerHTML = "编辑";

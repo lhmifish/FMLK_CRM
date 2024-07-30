@@ -14,6 +14,10 @@
 <meta http-equiv="pragma" content="no-cache" />
 <meta http-equiv="cache-control" content="no-cache" />
 <title>新建派工单</title>
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/loading.css?v=2">
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/css/animate.css">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/css/select4.css?v=1999" />
 <link rel="stylesheet"
@@ -66,19 +70,16 @@ a:hover {
 
 	function initialPage() {
 		isFmlkShare = false;
-		document
-				.getElementById("serviceDate")
-				.flatpickr(
-						{
-							defaultDate : "",
-							minuteIncrement : 30,
-							mode : "range",
-							enableTime : true,
-							dateFormat : "Y-m-d H:i",
-							time_24hr : true,
-							onChange : function(dateObj, dateStr) {
-							}
-						});
+		document.getElementById("serviceDate").flatpickr({
+			defaultDate : "",
+			minuteIncrement : 30,
+			mode : "range",
+			enableTime : true,
+			dateFormat : "Y-m-d H:i",
+			time_24hr : true,
+			onChange : function(dateObj, dateStr) {
+			}
+		});
 		getCompanyList("", 0, 0, 1, isFmlkShare);
 		getSalesList(0);
 		//派工类别
@@ -136,18 +137,18 @@ a:hover {
 		var serviceType = $("#serviceType").val();
 		var serviceContent = $("#serviceContent").val().trim();
 		var deviceInfo = $("#deviceInfo").val().trim();
-	    var companyId = $("#companyId").val()
-		
-		if(companyId==0){
+		var companyId = $("#companyId").val()
+
+		if (companyId == 0) {
 			alert("请选择客户名称");
 			return;
 		}
-	    if (projectId == null || projectId==0) {
+		if (projectId == null || projectId == 0) {
 			alert("请选择项目名称");
 			return;
 		}
-	    
-	    if (mSalesId == 0) {
+
+		if (mSalesId == 0) {
 			alert("请选择销售人员");
 			return;
 		}
@@ -158,22 +159,23 @@ a:hover {
 		if (serviceDate == "") {
 			alert("客户服务时间不能为空");
 			return;
-		}else{
-			var timeStart = serviceDate.split("to")[0].replace(/-/g, "/").trim();
+		} else {
+			var timeStart = serviceDate.split("to")[0].replace(/-/g, "/")
+					.trim();
 			var timeEnd = serviceDate.split("to")[1].replace(/-/g, "/").trim();
-			if(new Date(timeEnd).getTime() - new Date(timeStart).getTime()<=0){
+			if (new Date(timeEnd).getTime() - new Date(timeStart).getTime() <= 0) {
 				alert("客户服务时间有误,请重新选择");
 				return;
 			}
 		}
-		
+
 		if (caseType == 0) {
 			alert("请选择派工类别");
 			return;
 		} else {
 			caseType = tprojectState + "#" + caseType;
 		}
-		
+
 		if (serviceType == 0) {
 			alert("请选择服务级别");
 			return;
@@ -183,68 +185,71 @@ a:hover {
 			return;
 		}
 		var myFile = document.getElementById("myfile").files[0];
-		if(myFile != undefined){
-			 if(myFile.size > 3 * 1024 * 1024 * 1024){
-				 alert("上传附件大小不能大于3GB");
-					return;
-			 }
-			 if (!checkFileExist(myFile.name, projectId)) {
-				 loading();
-				 chunks = Math.ceil(myFile.size / sliceSize);
-					$("#progressDiv").show();
-					currentChunk = 0;
-					doUploadFile(myFile, mSalesId, projectId, contactUsersArr,
-							timeStart, caseType, serviceType, serviceContent,
-							deviceInfo,timeEnd);
-			 }else{
-				 alert("该项目有同文件名的附件已上传，请修改文件名");
-				 return;
-			 }
-		}else{
-			loading();
-			//保存派工单
-			var result = createCaseRecord(projectId, mSalesId, contactUsersArr,
-					timeStart, caseType, serviceType, serviceContent,
-					deviceInfo,timeEnd);
-			if (result) {
-				alert("提交成功");
-				parent.leftFrame.initialPage();
-				setTimeout(function() {
-					closeLoading();
-					toProjectCaseListPage(0);
-				}, 500);
+		if (myFile != undefined) {
+			if (myFile.size > 3 * 1024 * 1024 * 1024) {
+				alert("上传附件大小不能大于3GB");
+				return;
 			}
+			if (!checkFileExist(myFile.name, projectId)) {
+				loading();
+				chunks = Math.ceil(myFile.size / sliceSize);
+				$("#progressDiv").show();
+				currentChunk = 0;
+				doUploadFile(myFile, mSalesId, projectId, contactUsersArr,
+						timeStart, caseType, serviceType, serviceContent,
+						deviceInfo, timeEnd);
+			} else {
+				alert("该项目有同文件名的附件已上传，请修改文件名");
+				return;
+			}
+		} else {
+			loading();
+			setTimeout(function() {
+				//保存派工单
+				var result = createCaseRecord(projectId, mSalesId, contactUsersArr,
+						timeStart, caseType, serviceType, serviceContent,
+						deviceInfo, timeEnd);
+				if (result) {
+					alert("提交成功");
+					parent.leftFrame.initialPage();
+					setTimeout(function() {
+						closeLoading();
+						toProjectCaseListPage(0);
+					}, 500);
+				}
+			}, 500);
 		}
 	}
 
 	//检查文件服务器相同文件是否存在
 	function checkFileExist(fileName, projectId) {
 		var isExist = false;
-        var params = {
-        		"createYear" : "",
-				"projectId" : projectId,
-				"reportType" : 99	
-        }
-		get("queryUploadFile",params,false);
-        if(requestReturn.result == "error"){
-    		alert(requestReturn.error);
-    	}else{
-    		var data = requestReturn.data.fileList;
-    		for(var i = 0; i < data.length; i++){
-    			var path = data[i].path;
-				var tFileName = path.substring(path.lastIndexOf("\/") + 1,path.length);
+		var params = {
+			"createYear" : "",
+			"projectId" : projectId,
+			"reportType" : 99
+		}
+		get("queryUploadFile", params, false);
+		if (requestReturn.result == "error") {
+			alert(requestReturn.error);
+		} else {
+			var data = requestReturn.data.fileList;
+			for (var i = 0; i < data.length; i++) {
+				var path = data[i].path;
+				var tFileName = path.substring(path.lastIndexOf("\/") + 1,
+						path.length);
 				if (fileName == tFileName) {
 					isExist = true;
 					break;
 				}
-    		}
-    		return isExist;
-    	}
+			}
+			return isExist;
+		}
 	}
 
 	function doUploadFile(mFile, mUserId, mProjectId, mContactUsersArr,
 			mServiceDate, mCaseType, mServiceType, mServiceContent,
-			mDeviceInfo,mServiceEndDate) {
+			mDeviceInfo, mServiceEndDate) {
 		if (currentChunk < chunks) {
 			var formData = new FormData();
 			formData.append('reportType', 99);
@@ -257,9 +262,11 @@ a:hover {
 			formData.append('file', getSliceFile(mFile, currentChunk));
 			formData.append('salesId', mUserId);
 			formData.append('userId', mUserId);
-			formData.append('projectName', $("#projectId option:selected").text());
-			formData.append('companyName', $('#companyId option:selected').text());
-            var xhr = new XMLHttpRequest();
+			formData.append('projectName', $("#projectId option:selected")
+					.text());
+			formData.append('companyName', $('#companyId option:selected')
+					.text());
+			var xhr = new XMLHttpRequest();
 			xhr.open("POST", host + "/addProjectReport");
 			xhr.send(formData);
 			xhr.onreadystatechange = function() {
@@ -271,7 +278,8 @@ a:hover {
 						currentChunk++;
 						doUploadFile(mFile, mUserId, mProjectId,
 								mContactUsersArr, mServiceDate, mCaseType,
-								mServiceType, mServiceContent, mDeviceInfo, mServiceEndDate);
+								mServiceType, mServiceContent, mDeviceInfo,
+								mServiceEndDate);
 					} else {
 						alert("上传文件错误，错误信息：" + info);
 						closeLoading();
@@ -282,7 +290,8 @@ a:hover {
 			setTimeout(function() {
 				var result = createCaseRecord(mProjectId, mUserId,
 						mContactUsersArr, mServiceDate, mCaseType,
-						mServiceType, mServiceContent, mDeviceInfo,mServiceEndDate);
+						mServiceType, mServiceContent, mDeviceInfo,
+						mServiceEndDate);
 				if (result) {
 					saveFileRecord(mUserId, mProjectId, mFile.name);
 				}
@@ -310,58 +319,61 @@ a:hover {
 	function saveFileRecord(mUserId, mProjectId, mFileName) {
 		//保存到数据库
 		var params = {
-				"contactDate" : "",
-				"userId" : mUserId,
-				"reportDesc" : "",
-				"projectId" : mProjectId,
-				"reportType" : 99,
-				"fileName" : mFileName,
-				"caseId" : caseId	
+			"contactDate" : "",
+			"userId" : mUserId,
+			"reportDesc" : "",
+			"projectId" : mProjectId,
+			"reportType" : 99,
+			"fileName" : mFileName,
+			"caseId" : caseId
 		}
-		post("createProjectReport",params,false);
-		if(requestReturn.result == "error"){
+		post("createProjectReport", params, false);
+		if (requestReturn.result == "error") {
 			alert(requestReturn.error);
-		}else if(parseInt(requestReturn.code)==0){
+			closeLoading()
+		} else if (parseInt(requestReturn.code) == 0) {
 			alert("提交成功");
 			parent.leftFrame.initialPage();
 			setTimeout(function() {
 				closeLoading();
+				parent.leftFrame.initialPage();
 				toProjectCaseListPage(0);
 			}, 500);
-		}else{
+		} else {
 			alert("写入附件信息失败");
 			closeLoading()
 		}
 	}
 
 	function createCaseRecord(projectId, mSalesId, contactUsersArr,
-			serviceDate, caseType, serviceType, serviceContent, deviceInfo,serviceEndDate) {
+			serviceDate, caseType, serviceType, serviceContent, deviceInfo,
+			serviceEndDate) {
 		var isSuccess = false;
-		var params={
-				"projectId" : projectId,
-				"salesId" : mSalesId,
-				"arrayContact" : contactUsersArr,
-				"serviceDate" : serviceDate,
-				"caseType" : caseType,
-				"serviceType" : serviceType,
-				"serviceContent" : serviceContent,
-				"deviceInfo" : deviceInfo,
-				"companyName" : $('#companyId option:selected').text(),
-				"projectName" : $("#projectId option:selected").text(),
-				"serviceEndDate" : serviceEndDate	
+		var params = {
+			"projectId" : projectId,
+			"salesId" : mSalesId,
+			"arrayContact" : contactUsersArr,
+			"serviceDate" : serviceDate,
+			"caseType" : caseType,
+			"serviceType" : serviceType,
+			"serviceContent" : serviceContent,
+			"deviceInfo" : deviceInfo,
+			"companyName" : $('#companyId option:selected').text(),
+			"projectName" : $("#projectId option:selected").text(),
+			"serviceEndDate" : serviceEndDate
 		}
-		post("createProjectCase",params,true);
-		if(requestReturn.result == "error"){
+		post("createProjectCase", params, true);
+		if (requestReturn.result == "error") {
 			alert(requestReturn.error);
 			closeLoading();
-		}else if(parseInt(requestReturn.code)==0){
+		} else if (parseInt(requestReturn.code) == 0) {
 			caseId = requestReturn.data.caseId;
 			isSuccess = true;
-		}else if(parseInt(requestReturn.code)==3){
+		} else if (parseInt(requestReturn.code) == 3) {
 			alert("新建派工单失败,请勿重复派工");
 			closeLoading();
-		}else {
-			alert("新建派工单失败,错误编号:"+requestReturn.code);
+		} else {
+			alert("新建派工单失败,错误编号:" + requestReturn.code);
 			closeLoading();
 		}
 		return isSuccess;
@@ -401,7 +413,7 @@ a:hover {
 			$("#projectId").append(str);
 		}
 	}
-	
+
 	function loading() {
 		$('body').loading({
 			loadingWidth : 240,
@@ -475,7 +487,8 @@ a:hover {
 							id="caseType" style="width: 160px;"></select><span class="need"
 							style="margin-left: 15px">*</span><label style="margin-left: 0px">服务级别：</label><select
 							class="selCss" id="serviceType" style="width: 340px;">
-						</select><!-- <label style="margin-left: 25px">服务时长：</label>
+						</select>
+						<!-- <label style="margin-left: 25px">服务时长：</label>
 						<select
 							class="selCss" id="casePeriod" style="width: 110px;" disabled>
 						</select>
@@ -509,7 +522,8 @@ a:hover {
 							style="width: 776px; resize: none; height: 80px;"></textarea>
 					</div>
 
-					<div class="cfD" style="margin-bottom: 30px; margin-top: 30px" id="operation">
+					<div class="cfD" style="margin-bottom: 30px; margin-top: 30px"
+						id="operation">
 						<a class="addA" href="#" onclick="createProjectCase()"
 							style="margin-left: 100px">提审</a> <a class="addA" href="#"
 							onclick="toIndexPage()">关闭</a>

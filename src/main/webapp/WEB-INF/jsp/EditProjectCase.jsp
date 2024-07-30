@@ -395,23 +395,25 @@ a:hover {
 		} else {
 			//无附件,保存派工单
 			loading();
-			var result = editCaseRecord(mSalesId, contactUsersArr, timeStart,
-					caseType, serviceType, serviceContent, deviceInfo,
-					rejectReason, serviceUsersArr,remark,timeEnd);
-			if (result) {
-				if (type == 0) {
-					alert("派工单已重新提审");
-				} else if (type == 1) {
-					alert("派工单已审核");
-				} else {
-					alert("派工审核已完成");
+			setTimeout(function() {
+				var result = editCaseRecord(mSalesId, contactUsersArr, timeStart,
+						caseType, serviceType, serviceContent, deviceInfo,
+						rejectReason, serviceUsersArr,remark,timeEnd);
+				if (result) {
+					if (type == 0) {
+						alert("派工单已重新提审");
+					} else if (type == 1) {
+						alert("派工单已审核");
+					} else {
+						alert("派工审核已完成");
+					}
+					parent.leftFrame.initialPage();
+					setTimeout(function() {
+						closeLoading();
+						toPage();
+					}, 500);
 				}
-				parent.leftFrame.initialPage();
-				setTimeout(function() {
-					closeLoading();
-					toPage();
-				}, 500);
-			}
+			}, 500);
 		}
 	}
 

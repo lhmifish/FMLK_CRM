@@ -25,7 +25,7 @@
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/calendar.js"></script>
 <script
-	src="${pageContext.request.contextPath}/js/checkPermission.js?v=2"></script>
+	src="${pageContext.request.contextPath}/js/checkPermission.js?v=3"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
 <script
 	src="${pageContext.request.contextPath}/js/commonUtils.js?v=2022"></script>

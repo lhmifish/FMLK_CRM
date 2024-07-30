@@ -18,7 +18,7 @@
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/js/jquery-3.2.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/select3.js"></script>
-<script src="${pageContext.request.contextPath}/js/checkPermission.js"></script>
+<script src="${pageContext.request.contextPath}/js/checkPermission.js?v=3"></script>
 <script src="${pageContext.request.contextPath}/js/changePsd.js"></script>
 <script src="${pageContext.request.contextPath}/js/commonUtils.js"></script>
 <script src="${pageContext.request.contextPath}/js/getObjectList.js"></script>
@@ -101,15 +101,16 @@ html {
 								if (i >= 10 * (mPage - 1)
 										&& i <= 10 * mPage - 1) {
 									projectCaseArr.push(data[i].salesId);
+									var mUser = getUser("uId", data[i].salesId);
+									var mProject = getProject("projectId",data[i].projectId);
+									var mCompany = getCompany("projectId",data[i].projectId);
 									str += '<tr style="width: 100%;"><td style="width: 5%;font-size:14px" class="tdColor2">'
-											+ getUser("uId", data[i].salesId).name
+											+ mUser.name
 											+ '</td>'
-											+ '<td style="width:30%" class="tdColor2">'
-											+ getProject("projectId",
-													data[i].projectId).projectName
+											+ '<td style="width:28%" class="tdColor2">'
+											+ mProject.projectName
 											+ '</br><span style="font-size:10px">'
-											+ getCompany("projectId",
-													data[i].projectId).companyName
+											+ mCompany.companyName
 											+ '</span></td>'
 											+ getServiceType(data[i].serviceType)
 											+ '<td style="width:6%;font-size:14px" class="tdColor2">'
@@ -129,19 +130,20 @@ html {
 											+ '</td>'
 											+ getIsChecked(data[i].isChecked,
 													data[i].serviceUsers,
-													data[i].isRejected,data[i].rejectReason)
+													data[i].isRejected,
+													data[i].rejectReason)
 											+ getCaseState(data[i].caseState,
 													data[i].id, i,
-													data[i].salesId,data[i].isChecked,data[i].cancelReason,data[i].rejectReason)
+													data[i].salesId,
+													data[i].isChecked,
+													data[i].cancelReason,
+													data[i].rejectReason)
 											+ '<td style="width:8%;font-size:14px" class="tdColor2">'
 											+ data[i].createDate.substring(0,
 													10)
-											+ '</td><td style="width:8%" class="tdColor2">'
-											+ '<img name="img_edit" title="查看" style="vertical-align:middle" class="operation delban" src="../image/update.png" onclick="toEditProjectCasePage('
-											+ data[i].id
-											+ ',0)"><a name="a_edit" style="vertical-align:middle" onclick="toEditProjectCasePage('
-											+ data[i].id
-											+ ',0)">查看</a></td></tr>';
+											+ '</td>'
+											+ getOperationTd(data[i].isChecked,
+													data[i].id,data[i].salesId,mProject.projectName,mCompany.companyName) + '</tr>';
 								}
 							}
 						} else {
@@ -178,27 +180,28 @@ html {
 		return tServiceUsers;
 	}
 
-	function getIsChecked(mIsChecked, mServiceUsers, mIsRejected,mRejectReason) {
+	function getIsChecked(mIsChecked, mServiceUsers, mIsRejected, mRejectReason) {
 		var isCheckedSales;
 		var isCheckedTech;
 
 		if (!mIsChecked) {
 			isCheckedSales = '<span style="color:brown;font-size:14px">销售未审核</span>';
 			isCheckedTech = '<span style="color:brown;font-size:14px">技术未审核</span>'
-		} else if(mRejectReason != ""){
-			if(mRejectReason.indexOf("@")>-1 && mRejectReason.split("@")[1]==2){
+		} else if (mRejectReason != "") {
+			if (mRejectReason.indexOf("@") > -1
+					&& mRejectReason.split("@")[1] == 2) {
 				isCheckedSales = '<span style="font-size:14px">销售已通过</span>';
 				isCheckedTech = '<span style="font-size:14px;color:green;">技术已驳回</span>';
-			}else{
+			} else {
 				isCheckedSales = '<span style="font-size:14px;color:green;">销售已驳回</span>';
 				isCheckedTech = '<span style="color:brown;font-size:14px">技术未审核</span>'
 			}
-		} else{
+		} else {
 			isCheckedSales = '<span style="font-size:14px">销售已通过</span>';
 			//未被驳回
-			if(mServiceUsers != ""){
+			if (mServiceUsers != "") {
 				isCheckedTech = '<span style="font-size:14px">技术已派工</span>';
-			}else{
+			} else {
 				isCheckedTech = '<span style="color:brown;font-size:14px">技术未审核</span>';
 			}
 		}
@@ -206,7 +209,8 @@ html {
 				+ "</br>" + isCheckedTech + '</td>';
 	}
 
-	function getCaseState(mCaseState, mId, i, tSalesId,tIsChecked,tCancelReason,tRejectReason) {
+	function getCaseState(mCaseState, mId, i, tSalesId, tIsChecked,
+			tCancelReason, tRejectReason) {
 		// 0.待审批 1.处理中 2.已超时 3.已取消 4.超时完成    5.正常完成
 		var str;
 		var color;
@@ -216,9 +220,7 @@ html {
 		if (mCaseState == 0) {
 			color = "brown";
 			text = "待审核";
-			if(tIsChecked){
-				permitChangeState = false;
-			}
+			permitChangeState = false;
 		} else if (mCaseState == 1) {
 			color = "blue";
 			text = "处理中";
@@ -241,20 +243,24 @@ html {
 			color = "green";
 			text = "被驳回";
 		}
-		if(mCaseState == 3 && tCancelReason != ""){
-			str = '<td style="width:10%" class="tdColor2" title="取消理由：' + tCancelReason +'"><div><span style="margin-left:8px;color:'+ color +'">'
-			+ text + '</span>';
-		}else if(mCaseState == 6){
-			if(tRejectReason.indexOf("@") != -1){
+		if (mCaseState == 3 && tCancelReason != "") {
+			str = '<td style="width:8%" class="tdColor2" title="取消理由：'
+					+ tCancelReason
+					+ '"><div><span style="margin-left:8px;color:'+ color +'">'
+					+ text + '</span>';
+		} else if (mCaseState == 6) {
+			if (tRejectReason.indexOf("@") != -1) {
 				tRejectReason = tRejectReason.split("@")[0];
 			}
-			str = '<td style="width:10%" class="tdColor2" title="驳回理由：' + tRejectReason +'"><div><span style="margin-left:8px;color:'+ color +'">'
-			+ text + '</span>';
-		}else{
-			str = '<td style="width:10%" class="tdColor2"><div><span style="margin-left:8px;color:'+ color +'">'
-			+ text + '</span>';
+			str = '<td style="width:8%" class="tdColor2" title="驳回理由：'
+					+ tRejectReason
+					+ '"><div><span style="margin-left:8px;color:'+ color +'">'
+					+ text + '</span>';
+		} else {
+			str = '<td style="width:8%" class="tdColor2"><div><span style="margin-left:8px;color:'+ color +'">'
+					+ text + '</span>';
 		}
-		
+
 		if (permitChangeState) {
 			str += '<img src="../image/coinL1.png" title="更改派工单状态" style="width:14px;float:right;margin-right:5px"  onclick="selectCaseState('
 					+ i
@@ -264,7 +270,7 @@ html {
 					+ mCaseState
 					+ '\''
 					+ ')"></div></td>';
-		}else{
+		} else {
 			str += '<img src="../image/coinL1.png" style="width:14px;float:right;margin-right:5px;visibility:hidden"></div></td>';
 		}
 		return str;
@@ -278,20 +284,20 @@ html {
 			var str = ""
 			$("#caseState").css("color", "green");
 			editId = id;
-			if(tCaseState == 0 || tCaseState == 6){
+			if (tCaseState == 0 || tCaseState == 6) {
 				str += '<option value="3" style="color: green">取消派工</option>';
-			}else if (tCaseState == 1) {
+			} else if (tCaseState == 1) {
 				str += '<option value="3" style="color: green">取消派工</option>';
 				str += '<option value="5" style="color: green">正常完成</option>';
-			}else if(tCaseState == 2){
+			} else if (tCaseState == 2) {
 				str += '<option value="3" style="color: green">取消派工</option>';
 				str += '<option value="4" style="color: green">超时完成</option>';
 			}
 			$("#caseState").empty();
 			$("#caseState").append(str);
-			if($("#caseState").val()==3){
+			if ($("#caseState").val() == 3) {
 				$("#cancelReason").show();
-			}else{
+			} else {
 				$("#cancelReason").hide();
 			}
 			$("#banDel2").show();
@@ -363,9 +369,9 @@ html {
 			$("#caseState").css("color", "green");
 		} */
 		$("#cancelReason").val("");
-		if(selCaseState==3){
+		if (selCaseState == 3) {
 			$("#cancelReasonView").show();
-		}else{
+		} else {
 			$("#cancelReasonView").hide();
 		}
 	}
@@ -373,26 +379,26 @@ html {
 	function editProjectCase() {
 		var caseState = $("#caseState option:selected").val();
 		var cancelReason = $("#cancelReason").val();
-		if(caseState==3 && cancelReason==""){
+		if (caseState == 3 && cancelReason == "") {
 			alert("请填写取消理由");
 			return;
 		}
 		var params = {
-				"id" : editId,
-				"caseState" : caseState	,
-				"cancelReason":cancelReason
+			"id" : editId,
+			"caseState" : caseState,
+			"cancelReason" : cancelReason
 		}
-		post("editProjectCase",params,false);
-		if(requestReturn.result == "error"){
+		post("editProjectCase", params, false);
+		if (requestReturn.result == "error") {
 			alert(requestReturn.error);
-		}else if(parseInt(requestReturn.code)==0){
+		} else if (parseInt(requestReturn.code) == 0) {
 			alert("更改派工状态成功");
 			setTimeout(function() {
 				closeConfirmBox();
 				getProjectCaseList(page);
 				parent.leftFrame.location.reload();
 			}, 500);
-		}else {
+		} else {
 			alert("更改派工状态失败");
 		}
 	}
@@ -416,6 +422,56 @@ html {
 
 	function closeLoading() {
 		removeLoading('test');
+	}
+
+	function getOperationTd(mIsChecked, pcId,mSalesId,mProjectName,mCompanyName) {
+		var str = ""
+		if (mIsChecked) {
+			str = '<td style="width:12%" class="tdColor2">'
+					+ '<img name="img_edit" title="查看" style="vertical-align:middle" class="operation delban" src="../image/update.png" onclick="toEditProjectCasePage('
+					+ pcId
+					+ ',0)"><a name="a_edit" style="vertical-align:middle" onclick="toEditProjectCasePage('
+					+ pcId + ',0)">查看</a></td>';
+		} else {
+			str = '<td style="width:12%;height:100%;" class="tdColor2">'
+					+ '<div style="display:flex;flex-direction:row;height:40px;">'
+					+ '<div style="width:49.7%;height:100%;display:flex;flex-direction:row;align-items:center;justify-content:center">'
+					+ '<img name="img_edit" title="查看" style="vertical-align:middle" class="operation delban" src="../image/update.png" onclick="toEditProjectCasePage('
+					+ pcId + ',0)"><a name="a_edit" style="vertical-align:middle" onclick="toEditProjectCasePage('
+					+ pcId + ',0)">查看</a></div><div style="width:0.6%;background-color:#dcdbdb;height:100%;"></div>'
+					+ '<div style="width:49.7%;height:100%;display:flex;flex-direction:row;align-items:center;justify-content:center">'
+					+ '<img title="撤回" style="vertical-align:middle" class="operation delban" src="../image/delete.png" onclick="cancelProjectCase('
+					+ pcId + ','+mSalesId+',\''+mProjectName+'\',\''+mCompanyName+'\')"><a style="vertical-align:middle" onclick="cancelProjectCase('
+					+ pcId + ','+mSalesId+',\''+mProjectName+'\',\''+mCompanyName+'\')">撤回</a>' + '</div></div></div></td>';
+		}
+		return str;
+	}
+	
+	function cancelProjectCase(projectCaseId,mSalesId,mProjectName,mCompanyName){
+		var tUser = getUser("nickName",sId);
+		if(tUser.UId != mSalesId && tUser.departmentId != 6 && tUser.departmentId != 5){
+			alert("你无权撤回派工单");
+			return;
+		}else{
+			var params = {
+					"id":projectCaseId,
+					"salesId":mSalesId,
+					"projectName":mProjectName,
+					"companyName":mCompanyName
+			};
+			post("deleteProjectCase",params,true);
+			if(requestReturn.result == "error"){
+				alert(requestReturn.error);
+			}else if(parseInt(requestReturn.code)==0){
+				alert("派工已撤回");
+				parent.leftFrame.initialPage();
+				getProjectCaseList(1);
+			}else{
+				alert("派工撤回失败:"+ requestReturn.code);
+			}
+		}
+		
+		
 	}
 </script>
 </head>
@@ -458,15 +514,15 @@ html {
 					<table border="1" style="width: 100%">
 						<tr style="width: 100%">
 							<td style="width: 5%" class="tdColor">销售</td>
-							<td style="width: 30%" class="tdColor">项目名称 / 客户名称</td>
+							<td style="width: 28%" class="tdColor">项目名称 / 客户名称</td>
 							<td style="width: 5%" class="tdColor">优先级</td>
 							<td style="width: 6%" class="tdColor">派工类别</td>
 							<td style="width: 8%" class="tdColor">服务开始时间</td>
 							<td style="width: 12%" class="tdColor">服务工程师</td>
 							<td style="width: 8%" class="tdColor">审核状态</td>
-							<td style="width: 10%" class="tdColor">派工状态</td>
+							<td style="width: 8%" class="tdColor">派工状态</td>
 							<td style="width: 8%" class="tdColor">申请时间</td>
-							<td style="width: 8%" class="tdColor">操作</td>
+							<td style="width: 12%" class="tdColor">操作</td>
 						</tr>
 					</table>
 					<table id="tb" border="1" style="width: 100%">
@@ -505,7 +561,9 @@ html {
 				</select>
 			</p>
 			<p class="delP2" style="margin-top: 20px;" id="cancelReasonView">
-			    <textarea style="font-size: 16px;width:240px;height:100px;resize:none;padding:10px" placeholder="请填写取消理由" id="cancelReason"></textarea>
+				<textarea
+					style="font-size: 16px; width: 240px; height: 100px; resize: none; padding: 10px"
+					placeholder="请填写取消理由" id="cancelReason"></textarea>
 			</p>
 			<div class="cfD" style="margin-top: 30px">
 				<a class="addA" href="#" onclick="editProjectCase()"

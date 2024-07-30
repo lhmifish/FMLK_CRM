@@ -288,8 +288,39 @@ public class EditObjectController implements ApplicationContextAware {
 	public String deleteProjectCase(HttpServletRequest request) {
 		mProjectService = new ProjectService();
 		int id = Integer.parseInt(request.getParameter("id"));
+		int salesId = Integer.parseInt(request.getParameter("salesId"));
 		String updateDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
 		String jsonStr = mProjectService.deleteProjectCase(id, updateDate);
+		boolean errcode2 = ((String) new Gson().fromJson(jsonStr, Map.class).get("errcode")).equals("0");
+		if(errcode2) {
+			//获取派工id
+			String projectJSONStr = mProjectService.getProjectCase(id);
+			errcode2 = ((String) new Gson().fromJson(projectJSONStr, Map.class).get("errcode")).equals("0");
+			if(errcode2) {
+				JSONArray myArr = new JSONObject().fromObject(projectJSONStr).getJSONArray("projectCase");
+				ProjectCase projectCase = (ProjectCase) JSONObject.toBean((JSONObject) myArr.get(0), ProjectCase.class);
+				String projectName = request.getParameter("projectName");
+				String companyName = request.getParameter("companyName");
+				mUserService = new UserService();
+				List<User> userList = new ArrayList<User>();
+				String userJsonStr = mUserService.getUserById(salesId);
+				String salesName = "";
+				errcode2 = ((String) new Gson().fromJson(userJsonStr, Map.class).get("errcode")).equals("0");
+				if(errcode2) {
+					myArr = new JSONObject().fromObject(userJsonStr).getJSONArray("user");
+					User mUser = (User) JSONObject.toBean((JSONObject) myArr.get(0), User.class);
+					salesName = mUser.getName();
+					//通知到销售部经理和销售本人
+					if(mUser.getRoleId() != 3) {
+						userList = mUserService.getUserListByIds(salesId + ",3");
+					}else {
+						userList = mUserService.getUserListByIds("3");
+					}
+					String accessToken = WeChatEnterpriseUtils.getAccessToken();
+					WeChatEnterpriseUtils.sendProjectCaseInform(accessToken,projectCase,userList, companyName, projectName,salesName,2);
+				}
+			}
+		}
 		return jsonStr;
 	}
 
@@ -378,7 +409,7 @@ public class EditObjectController implements ApplicationContextAware {
 						projectName, salesName, serviceUsersName);
 			} else {
 				WeChatEnterpriseUtils.sendProjectCaseInform(accessToken, pc, userList, companyName, projectName,
-						salesName, true);
+						salesName, 1);
 			}
 		}
 		return jsonStr;
