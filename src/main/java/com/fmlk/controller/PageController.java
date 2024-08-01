@@ -81,7 +81,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getCreateCompanyPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CreateCompany");
+		ModelAndView mav = new ModelAndView("company/CreateCompany");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -90,7 +90,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getCompanyListPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CompanyList");
+		ModelAndView mav = new ModelAndView("company/CompanyList");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -100,7 +100,7 @@ public class PageController implements ApplicationContextAware {
 	public ModelAndView getEditCompanyPage(HttpServletRequest request, @PathVariable(value = "companyId") int id,
 			HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("EditCompany");
+		ModelAndView mav = new ModelAndView("company/EditCompany");
 		mav.addObject("mId", id);
 		mav.addObject("sessionId", uId);
 		return mav;
@@ -108,10 +108,31 @@ public class PageController implements ApplicationContextAware {
 
 	@RequestMapping(value = "/page/companyRecord", method = RequestMethod.GET)
 	@ResponseBody
-	public ModelAndView getConfirmCompanyPage(HttpServletRequest request, HttpSession session) {
+	public ModelAndView getCompanyRecordPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CompanyRecord");
+		ModelAndView mav = new ModelAndView("company/CompanyRecord");
 		mav.addObject("sessionId", uId);
+		return mav;
+	}
+
+	// 企业号-添加客户拜访记录
+	@RequestMapping(value = "/page/createVisitRecord", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView createVisitRecordPage(HttpServletRequest request) {
+		String result = null;
+		String accessToken = WeChatEnterpriseUtils.getSalesAccessToken();
+		String code = request.getParameter("code");
+		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
+				accessToken, code);
+		com.alibaba.fastjson.JSONObject jsonObject = WeiXinEnterpriseUtils.get(url);
+		String errcode = jsonObject.getString("errcode");
+		if (errcode.equals("0")) {
+			result = jsonObject.getString("UserId");
+		} else {
+			result = null;
+		}
+		ModelAndView mav = new ModelAndView("company/CreateVisitRecord");
+		mav.addObject("mUserId", result);
 		return mav;
 	}
 
@@ -121,7 +142,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getCreateProjectPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CreateProject");
+		ModelAndView mav = new ModelAndView("project/CreateProject");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -130,7 +151,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getProjectListPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("ProjectList");
+		ModelAndView mav = new ModelAndView("project/ProjectList");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -140,17 +161,8 @@ public class PageController implements ApplicationContextAware {
 	public ModelAndView getEditProjectPage(HttpServletRequest request, @PathVariable(value = "projectId") int id,
 			HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("EditProject");
+		ModelAndView mav = new ModelAndView("project/EditProject");
 		mav.addObject("mId", id);
-		mav.addObject("sessionId", uId);
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/confirmProject", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getConfirmProjectPage(HttpServletRequest request, HttpSession session) {
-		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("ConfirmProject");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -161,7 +173,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getCreateProjectCasePage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CreateProjectCase");
+		ModelAndView mav = new ModelAndView("projectCase/CreateProjectCase");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -170,7 +182,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getProjectCaseListPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("ProjectCaseList");
+		ModelAndView mav = new ModelAndView("projectCase/ProjectCaseList");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -184,7 +196,7 @@ public class PageController implements ApplicationContextAware {
 		if (uId != null && !uId.equals("")) {
 			mav.addObject("sessionId", uId);
 		} else {
-            String accessToken = WeChatEnterpriseUtils.getAccessToken();
+			String accessToken = WeChatEnterpriseUtils.getAccessToken();
 			String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
 			mav.addObject("sessionId", wechatUserId);
 		}
@@ -196,7 +208,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getCheckProjectCasePage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CheckProjectCase");
+		ModelAndView mav = new ModelAndView("projectCase/CheckProjectCase");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -205,7 +217,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getDispatchProjectCasePage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("DispatchProjectCase");
+		ModelAndView mav = new ModelAndView("projectCase/DispatchProjectCase");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -215,7 +227,7 @@ public class PageController implements ApplicationContextAware {
 	public ModelAndView getEditProjectCasePage(HttpServletRequest request, @PathVariable(value = "id") int id,
 			@PathVariable(value = "type") int type, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("EditProjectCase");
+		ModelAndView mav = new ModelAndView("projectCase/EditProjectCase");
 		mav.addObject("mId", id);
 		mav.addObject("mType", type);
 		if (uId != null && !uId.equals("")) {
@@ -227,13 +239,13 @@ public class PageController implements ApplicationContextAware {
 		}
 		return mav;
 	}
-	
+
 	@RequestMapping(value = "/page/editProjectCaseMobile/{type}/{id}", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getEditProjectCaseMobilePage(HttpServletRequest request, @PathVariable(value = "id") int id,
 			@PathVariable(value = "type") int type, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("MobileEditProjectCase");
+		ModelAndView mav = new ModelAndView("projectCase/MobileEditProjectCase");
 		mav.addObject("mId", id);
 		mav.addObject("mType", type);
 		if (uId != null && !uId.equals("")) {
@@ -243,15 +255,6 @@ public class PageController implements ApplicationContextAware {
 			String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
 			mav.addObject("sessionId", wechatUserId);
 		}
-		return mav;
-	}
-	
-	@RequestMapping(value = "/page/editProjectState", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getEditProjectStatePage(HttpServletRequest request, HttpSession session) {
-		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("EditProjectState");
-		mav.addObject("sessionId", uId);
 		return mav;
 	}
 
@@ -261,7 +264,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getCreateTenderPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CreateTender");
+		ModelAndView mav = new ModelAndView("tender/CreateTender");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -270,16 +273,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getTenderListPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("TenderList");
-		mav.addObject("sessionId", uId);
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/confirmTender", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getConfirmTenderPage(HttpServletRequest request, HttpSession session) {
-		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("ConfirmTender");
+		ModelAndView mav = new ModelAndView("tender/TenderList");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -289,7 +283,7 @@ public class PageController implements ApplicationContextAware {
 	public ModelAndView getEditTenderPage(HttpServletRequest request, @PathVariable(value = "id") int id,
 			HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("EditTender");
+		ModelAndView mav = new ModelAndView("tender/EditTender");
 		mav.addObject("mId", id);
 		mav.addObject("sessionId", uId);
 		return mav;
@@ -301,7 +295,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getCreateContractPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CreateContract");
+		ModelAndView mav = new ModelAndView("contract/CreateContract");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -310,7 +304,82 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getContractListPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("ContractList");
+		ModelAndView mav = new ModelAndView("contract/ContractList");
+		mav.addObject("sessionId", uId);
+		return mav;
+	}
+
+	@RequestMapping(value = "/page/editContract/{id}", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getEditContractPage(HttpServletRequest request, @PathVariable(value = "id") int id,
+			HttpSession session) {
+		String uId = (String) session.getAttribute("web_userid");
+		ModelAndView mav = new ModelAndView("contract/EditContract");
+		mav.addObject("mId", id);
+		mav.addObject("sessionId", uId);
+		return mav;
+	}
+
+	/*********** user *************/
+
+	@RequestMapping(value = "/page/createUser", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getCreateUserPage(HttpServletRequest request, HttpSession session) {
+		String uId = (String) session.getAttribute("web_userid");
+		ModelAndView mav = new ModelAndView("user/CreateUser");
+		mav.addObject("sessionId", uId);
+		return mav;
+	}
+
+	@RequestMapping(value = "/page/userList", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getUserListPage(HttpServletRequest request) {
+		ModelAndView mav = new ModelAndView("user/UserList");
+		return mav;
+	}
+
+	@RequestMapping(value = "/page/editUser/{uId}", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getEditUserPage(HttpServletRequest request, @PathVariable(value = "uId") int id) {
+		ModelAndView mav = new ModelAndView("user/EditUser");
+		mav.addObject("mId", id);
+		return mav;
+	}
+
+	/*********** system *************/
+
+	@RequestMapping(value = "/page/roleList", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getRoleListPage(HttpServletRequest request, HttpSession session) {
+		String uId = (String) session.getAttribute("web_userid");
+		ModelAndView mav = new ModelAndView("system/RoleList");
+		mav.addObject("sessionId", uId);
+		return mav;
+	}
+
+	@RequestMapping(value = "/page/companyBasicInfo", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getCompanyBasicInfoPage(HttpServletRequest request, HttpSession session) {
+		String uId = (String) session.getAttribute("web_userid");
+		ModelAndView mav = new ModelAndView("system/CompanyBasicInfo");
+		mav.addObject("sessionId", uId);
+		return mav;
+	}
+
+	@RequestMapping(value = "/page/editProjectState", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getEditProjectStatePage(HttpServletRequest request, HttpSession session) {
+		String uId = (String) session.getAttribute("web_userid");
+		ModelAndView mav = new ModelAndView("system/EditProjectState");
+		mav.addObject("sessionId", uId);
+		return mav;
+	}
+
+	@RequestMapping(value = "/page/sendInformation", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getSendInformationPage(HttpServletRequest request, HttpSession session) {
+		String uId = (String) session.getAttribute("web_userid");
+		ModelAndView mav = new ModelAndView("system/SendInformation");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -320,16 +389,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getUserWorkAttendanceListPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("UserWorkAttendance");
-		mav.addObject("sessionId", uId);
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/allWorkAttendanceList", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getAllWorkAttendanceListPage(HttpServletRequest request, HttpSession session) {
-		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("AllWorkAttendance");
+		ModelAndView mav = new ModelAndView("workAttendance/UserWorkAttendance");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -338,7 +398,16 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getUserMonthReportListPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("UserMonthReportList");
+		ModelAndView mav = new ModelAndView("workAttendance/UserMonthReportList");
+		mav.addObject("sessionId", uId);
+		return mav;
+	}
+
+	@RequestMapping(value = "/page/allWorkAttendanceList", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getAllWorkAttendanceListPage(HttpServletRequest request, HttpSession session) {
+		String uId = (String) session.getAttribute("web_userid");
+		ModelAndView mav = new ModelAndView("workAttendance/AllWorkAttendance");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -347,7 +416,7 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getAllMonthReportListPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("AllMonthReportList");
+		ModelAndView mav = new ModelAndView("workAttendance/AllMonthReportList");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
@@ -356,20 +425,90 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getCreateDailyReportListPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CreateDailyReportList");
+		ModelAndView mav = new ModelAndView("workAttendance/CreateDailyReportList");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
+
+	/*********** dailyReport *************/
 
 	@RequestMapping(value = "/page/createCrmDailyReport", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getCreateCrmDailyReportPage(HttpServletRequest request, HttpSession session) {
 		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CreateCrmDailyReport");
+		ModelAndView mav = new ModelAndView("dailyReport/CreateCrmDailyReport");
 		mav.addObject("sessionId", uId);
 		return mav;
 	}
 
+	// 企业号-周计划
+	@RequestMapping(value = "/page/createWeekJob", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getWeekJobPage(HttpServletRequest request) {
+		String accessToken = WeChatEnterpriseUtils.getAccessToken();
+		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
+		ModelAndView mav = new ModelAndView("dailyReport/WeekJob");
+		mav.addObject("mUserId", wechatUserId);
+		return mav;
+	}
+
+	// 企业号-日报
+	@RequestMapping(value = "/page/dailyUploadReport", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getDailyUploadReportPage(HttpServletRequest request) {
+		String result = null;
+		String accessToken = WeChatEnterpriseUtils.getAccessToken();
+		String code = request.getParameter("code");
+		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
+				accessToken, code);
+		com.alibaba.fastjson.JSONObject jsonObject = WeiXinEnterpriseUtils.get(url);
+		String errcode = jsonObject.getString("errcode");
+		if (errcode.equals("0")) {
+			result = jsonObject.getString("UserId");
+		} else {
+			result = null;
+		}
+		ModelAndView mav = new ModelAndView("dailyReport/DailyUploadReport");
+		mav.addObject("mUserId", result);
+		return mav;
+	}
+
+	// 企业号-获取所有日程
+	@RequestMapping(value = "/page/allArrangementList", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getAllWeekArrangementListPage(HttpServletRequest request) {
+		String accessToken = WeChatEnterpriseUtils.getAccessToken();
+		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
+		ModelAndView mav = new ModelAndView("dailyReport/AllArrangementList");
+		mav.addObject("mUserId", wechatUserId);
+		return mav;
+	}
+
+	// 企业号-获取所有周报
+	@RequestMapping(value = "/page/allWeekUploadReportList", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getAllWeekUploadReportListPage(HttpServletRequest request) {
+		String accessToken = WeChatEnterpriseUtils.getAccessToken();
+		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
+		ModelAndView mav = new ModelAndView("dailyReport/AllWeekUploadReportList");
+		mav.addObject("mUserId", wechatUserId);
+		return mav;
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	@RequestMapping(value = "/page/createCrmArrangement", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getCreateCrmArrangementPage(HttpServletRequest request, HttpSession session) {
@@ -383,11 +522,6 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getDailyArrangementPage(HttpServletRequest request) {
 		String result = null;
-		/*
-		 * String accessToken =
-		 * WeiXinEnterpriseUtils.getAccessToken("wxfca99e2643b26241",
-		 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
-		 */
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String code = request.getParameter("code");
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
@@ -406,29 +540,12 @@ public class PageController implements ApplicationContextAware {
 
 	/****************************************/
 
-	/*
-	 * @RequestMapping(value = "/page/getMonthReport", method = RequestMethod.GET)
-	 * 
-	 * @ResponseBody public ModelAndView getMonthReportPage(HttpServletRequest
-	 * request) { ModelAndView mav = new ModelAndView("MonthReport"); return mav; }
-	 */
-
 	@RequestMapping(value = "/page/getList", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getListPage(HttpServletRequest request) {
 		ModelAndView mav = new ModelAndView("DailyList");
 		return mav;
 	}
-
-	/*
-	 * @RequestMapping(value = "/page/getUserList/{userName}/", method =
-	 * RequestMethod.GET)
-	 * 
-	 * @ResponseBody public ModelAndView getUserListPage1(HttpServletRequest
-	 * request, @PathVariable(value = "userName") String userName) { ModelAndView
-	 * mav = new ModelAndView("UserDailyList"); mav.addObject("mUser", userName);
-	 * return mav; }
-	 */
 
 	@RequestMapping(value = "/page/getWechatList", method = RequestMethod.GET)
 	@ResponseBody
@@ -451,25 +568,11 @@ public class PageController implements ApplicationContextAware {
 		return mav;
 	}
 
-	/*
-	 * @RequestMapping(value = "/page/getUserWechatList", method =
-	 * RequestMethod.GET)
-	 * 
-	 * @ResponseBody public ModelAndView getUserWechatListPage(HttpServletRequest
-	 * request) { ModelAndView mav = new ModelAndView("UserWechatCheckDailyList");
-	 * return mav; }
-	 */
-
 	@RequestMapping(value = "/page/getWechatInfo", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getWechatInfo(HttpServletRequest request) {
 
 		String result = null;
-		/*
-		 * String accessToken =
-		 * WeiXinEnterpriseUtils.getAccessToken("wxfca99e2643b26241",
-		 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
-		 */
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String code = request.getParameter("code");
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
@@ -483,20 +586,6 @@ public class PageController implements ApplicationContextAware {
 		}
 		ModelAndView mav = new ModelAndView("GetWechatInfo");
 		mav.addObject("mUserId", result);
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/weekPlanDetails", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getWeekPlanDetailsPage(HttpServletRequest request) {
-		ModelAndView mav = new ModelAndView("WeekPlanDetails");
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/homePage", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getHomePage(HttpServletRequest request) {
-		ModelAndView mav = new ModelAndView("HomePage");
 		return mav;
 	}
 
@@ -573,11 +662,6 @@ public class PageController implements ApplicationContextAware {
 	public ModelAndView getWeekUploadReportPage(HttpServletRequest request) {
 
 		String result = null;
-		/*
-		 * String accessToken =
-		 * WeiXinEnterpriseUtils.getAccessToken("wxfca99e2643b26241",
-		 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
-		 */
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String code = request.getParameter("code");
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
@@ -598,11 +682,6 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getDailyUploadReportListPage(HttpServletRequest request) {
 		String result = null;
-		/*
-		 * String accessToken =
-		 * WeiXinEnterpriseUtils.getAccessToken("wxfca99e2643b26241",
-		 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
-		 */
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String code = request.getParameter("code");
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
@@ -623,11 +702,6 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getEditDailyUploadReportPage(HttpServletRequest request, @PathVariable(value = "id") int id) {
 		String result = null;
-		/*
-		 * String accessToken =
-		 * WeiXinEnterpriseUtils.getAccessToken("wxfca99e2643b26241",
-		 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
-		 */
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String code = request.getParameter("code");
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
@@ -656,11 +730,6 @@ public class PageController implements ApplicationContextAware {
 	@ResponseBody
 	public ModelAndView getEditArrangementPage(HttpServletRequest request, @PathVariable(value = "id") int id) {
 		String result = null;
-		/*
-		 * String accessToken =
-		 * WeiXinEnterpriseUtils.getAccessToken("wxfca99e2643b26241",
-		 * "Ki7b7dlx5TE2tAgpZ8mm0hXRJNGnA_wEkM2TSRkkXC4");
-		 */
 		String accessToken = WeChatEnterpriseUtils.getAccessToken();
 		String code = request.getParameter("code");
 		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
@@ -699,64 +768,6 @@ public class PageController implements ApplicationContextAware {
 		return mav;
 	}
 
-	@RequestMapping(value = "/page/workTimeAdjust", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getWorkTimeAdjustPage(HttpServletRequest request) {
-		ModelAndView mav = new ModelAndView("WorkTimeAdjust");
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/editContract/{id}", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getEditContractPage(HttpServletRequest request, @PathVariable(value = "id") int id,
-			HttpSession session) {
-		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("EditContract");
-		mav.addObject("mId", id);
-		mav.addObject("sessionId", uId);
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/confirmContract", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getConfirmContractPage(HttpServletRequest request) {
-		ModelAndView mav = new ModelAndView("ConfirmContract");
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/createUser", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getCreateUserPage(HttpServletRequest request, HttpSession session) {
-		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CreateUser");
-		mav.addObject("sessionId", uId);
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/userList", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getUserListPage(HttpServletRequest request) {
-		ModelAndView mav = new ModelAndView("UserList");
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/editUser/{uId}", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getEditUserPage(HttpServletRequest request, @PathVariable(value = "uId") int id) {
-		ModelAndView mav = new ModelAndView("EditUser");
-		mav.addObject("mId", id);
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/roleList", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getRoleListPage(HttpServletRequest request, HttpSession session) {
-		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("RoleList");
-		mav.addObject("sessionId", uId);
-		return mav;
-	}
-
 	@RequestMapping(value = "/page/netWebOrganize_jobPosition", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getNetWebOrganizePage(HttpServletRequest request, HttpSession session) {
@@ -766,35 +777,10 @@ public class PageController implements ApplicationContextAware {
 		return mav;
 	}
 
-	@RequestMapping(value = "/page/companyBasicInfo", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getCompanyBasicInfoPage(HttpServletRequest request, HttpSession session) {
-		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("CompanyBasicInfo");
-		mav.addObject("sessionId", uId);
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/privacyPolicy", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getPrivacyPolicyPage(HttpServletRequest request, HttpSession session) {
-		ModelAndView mav = new ModelAndView("PrivacyPolicy");
-		return mav;
-	}
-
 	@RequestMapping(value = "/page/FmlkProductInfo", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getFmlkProductInfoPage(HttpServletRequest request, HttpSession session) {
 		ModelAndView mav = new ModelAndView("FmlkProductInfo");
-		return mav;
-	}
-
-	@RequestMapping(value = "/page/sendInformation", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getSendInformationPage(HttpServletRequest request, HttpSession session) {
-		String uId = (String) session.getAttribute("web_userid");
-		ModelAndView mav = new ModelAndView("SendInformation");
-		mav.addObject("sessionId", uId);
 		return mav;
 	}
 
@@ -812,45 +798,12 @@ public class PageController implements ApplicationContextAware {
 		return mav;
 	}
 
-
 	@RequestMapping(value = "/page/commonContent/{type}", method = RequestMethod.GET)
 	@ResponseBody
 	public ModelAndView getCommonContentPage(HttpServletRequest request, @PathVariable(value = "type") int type,
 			HttpSession session) {
 		ModelAndView mav = new ModelAndView("CommonContent");
 		mav.addObject("mType", type);
-		return mav;
-	}
-
-	// 企业号-周计划
-	@RequestMapping(value = "/page/createWeekJob", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getWeekJobPage(HttpServletRequest request) {
-		String accessToken = WeChatEnterpriseUtils.getAccessToken();
-		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
-		ModelAndView mav = new ModelAndView("WeekJob");
-		mav.addObject("mUserId", wechatUserId);
-		return mav;
-	}
-
-	// 企业号-日报
-	@RequestMapping(value = "/page/dailyUploadReport", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getDailyUploadReportPage(HttpServletRequest request) {
-		String result = null;
-		String accessToken = WeChatEnterpriseUtils.getAccessToken();
-		String code = request.getParameter("code");
-		String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
-				accessToken, code);
-		com.alibaba.fastjson.JSONObject jsonObject = WeiXinEnterpriseUtils.get(url);
-		String errcode = jsonObject.getString("errcode");
-		if (errcode.equals("0")) {
-			result = jsonObject.getString("UserId");
-		} else {
-			result = null;
-		}
-		ModelAndView mav = new ModelAndView("DailyUploadReport");
-		mav.addObject("mUserId", result);
 		return mav;
 	}
 
@@ -872,28 +825,6 @@ public class PageController implements ApplicationContextAware {
 			@PathVariable(value = "uId") String uId) {
 		ModelAndView mav = new ModelAndView("UserArrangementList");
 		mav.addObject("mUserId", uId);
-		return mav;
-	}
-
-	// 企业号-获取所有日程
-	@RequestMapping(value = "/page/allArrangementList", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getAllWeekArrangementListPage(HttpServletRequest request) {
-		String accessToken = WeChatEnterpriseUtils.getAccessToken();
-		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
-		ModelAndView mav = new ModelAndView("AllArrangementList");
-		mav.addObject("mUserId", wechatUserId);
-		return mav;
-	}
-
-	// 企业号-获取所有周报
-	@RequestMapping(value = "/page/allWeekUploadReportList", method = RequestMethod.GET)
-	@ResponseBody
-	public ModelAndView getAllWeekUploadReportListPage(HttpServletRequest request) {
-		String accessToken = WeChatEnterpriseUtils.getAccessToken();
-		String wechatUserId = WeChatEnterpriseUtils.getWechatUserId(accessToken, request.getParameter("code"));
-		ModelAndView mav = new ModelAndView("AllWeekUploadReportList");
-		mav.addObject("mUserId", wechatUserId);
 		return mav;
 	}
 
@@ -971,45 +902,24 @@ public class PageController implements ApplicationContextAware {
 		ModelAndView mav = new ModelAndView("PartCoorperateHospital");
 		return mav;
 	}
-	
+
 	// 公众号-招代理商
-		@RequestMapping(value = "/page/wpaFmlkBusinessAgentPage", method = RequestMethod.GET)
-		@ResponseBody
-		public ModelAndView getWpaFmlkBusinessAgentPage(HttpServletRequest request, HttpSession session) {
-			ModelAndView mav = new ModelAndView("BusinessAgent");
-			return mav;
-		}
-		
-		@RequestMapping(value = "/page/noRecordExplainPage", method = RequestMethod.GET)
-		@ResponseBody
-		public ModelAndView getNoRecordExplainPage(HttpServletRequest request, HttpSession session) {
-			String uId = (String) session.getAttribute("web_userid");
-			ModelAndView mav = new ModelAndView("noRecordExplain");
-			mav.addObject("sessionId", uId);
-			mav.addObject("year", request.getParameter("year"));
-			mav.addObject("month", request.getParameter("month"));
-			return mav;
-		}
-		
-		// 企业号-添加客户拜访记录
-		@RequestMapping(value = "/page/createVisitRecord", method = RequestMethod.GET)
-		@ResponseBody
-		public ModelAndView createVisitRecordPage(HttpServletRequest request) {
-			String result = null;
-			String accessToken = WeChatEnterpriseUtils.getSalesAccessToken();
-			String code = request.getParameter("code");
-			String url = String.format("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s",
-					accessToken, code);
-			com.alibaba.fastjson.JSONObject jsonObject = WeiXinEnterpriseUtils.get(url);
-			String errcode = jsonObject.getString("errcode");
-			if (errcode.equals("0")) {
-				result = jsonObject.getString("UserId");
-			} else {
-				result = null;
-			}
-			ModelAndView mav = new ModelAndView("CreateVisitRecord");
-			mav.addObject("mUserId", result);
-			return mav;
-		}
+	@RequestMapping(value = "/page/wpaFmlkBusinessAgentPage", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getWpaFmlkBusinessAgentPage(HttpServletRequest request, HttpSession session) {
+		ModelAndView mav = new ModelAndView("BusinessAgent");
+		return mav;
+	}
+
+	@RequestMapping(value = "/page/noRecordExplainPage", method = RequestMethod.GET)
+	@ResponseBody
+	public ModelAndView getNoRecordExplainPage(HttpServletRequest request, HttpSession session) {
+		String uId = (String) session.getAttribute("web_userid");
+		ModelAndView mav = new ModelAndView("noRecordExplain");
+		mav.addObject("sessionId", uId);
+		mav.addObject("year", request.getParameter("year"));
+		mav.addObject("month", request.getParameter("month"));
+		return mav;
+	}
 
 }

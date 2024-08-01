@@ -173,12 +173,6 @@ a:hover {
 						href="../page/tenderList" target="rightFrame" id="p4_2">招投标信息管理</a><img
 						class="icon5" src="../image/coin21.png" />
 				</dd>
-				<!-- <dd>
-					<img class="coin11" src="../image/coin111.png" /><img
-						class="coin22" src="../image/coin222.png" /><a class="cks"
-						href="../page/confirmTender" target="rightFrame">标书信息审核</a><img
-						class="icon5" src="../image/coin21.png" />
-				</dd> -->
 			</dl>
 			<dl class="system_log" id="line_contract" style="display: none">
 				<dt>
@@ -200,38 +194,6 @@ a:hover {
 						href="../page/contractList" target="rightFrame" class="cks">合同信息管理</a><img
 						class="icon5" src="../image/coin21.png" />
 				</dd>
-				<!-- <dd>
-					<img class="coin11" src="../image/coin111.png" /><img
-						class="coin22" src="../image/coin222.png" /><a
-						href="../page/confirmContract" target="rightFrame" class="cks">合同审核</a><img
-						class="icon11" src="../image/coin19.png" /><img class="icon12"
-						src="../image/coin20.png" />
-				</dd>
-
-				<dd id="1" style="display: none;">
-					<img class="coin333" src="../image/coin111.png" /><img
-						class="coin444" src="../image/coin222.png" /><a
-						href="../page/confirmContract" target="rightFrame" class="cks"
-						style="margin-left: 30px">采购审核</a><img class="icon5"
-						src="../image/coin21.png" />
-				</dd>
-
-				<dd>
-					<img class="coin333" src="../image/coin111.png" /><img
-						class="coin444" src="../image/coin222.png" /><a
-						href="../page/confirmContract" target="rightFrame" class="cks"
-						style="margin-left: 30px">技术审核</a><img class="icon5"
-						src="../image/coin21.png" />
-				</dd>
-
-				<dd>
-					<img class="coin333" src="../image/coin111.png" /><img
-						class="coin444" src="../image/coin222.png" /><a
-						href="../page/confirmContract" target="rightFrame" class="cks"
-						style="margin-left: 30px">商务审核</a><img class="icon5"
-						src="../image/coin21.png" />
-				</dd> -->
-
 			</dl>
 			<dl class="system_log" id="line_user" style="display: none">
 				<dt>
@@ -266,12 +228,6 @@ a:hover {
 						href="../page/roleList" target="rightFrame" class="cks">角色管理</a><img
 						class="icon5" src="../image/coin21.png" />
 				</dd>
-				<!-- <dd>
-					<img class="coin11" src="../image/coin111.png" /><img
-						class="coin22" src="../image/coin222.png" /><a
-						href="../page/netWebOrganize_jobPosition" target="rightFrame" class="cks">人才招聘管理</a><img
-						class="icon5" src="../image/coin21.png" />
-				</dd> -->
 				<dd>
 					<img class="coin11" src="../image/coin111.png" /><img
 						class="coin22" src="../image/coin222.png" /><a
@@ -283,6 +239,13 @@ a:hover {
 						class="coin22" src="../image/coin222.png" /><a
 						href="../page/editProjectState" target="rightFrame" class="cks">项目进度管理</a><img
 						class="icon5" src="../image/coin21.png" />
+				</dd>
+				<dd>
+					<img class="coin11" src="../image/coin111.png" /><img
+						class="coin22" src="../image/coin222.png" /><a
+						href="../page/sendInformation" target="rightFrame"
+						class="cks">发送通知</a><img class="icon5"
+						src="../image/coin21.png" />
 				</dd>
 			</dl>
 
@@ -323,13 +286,6 @@ a:hover {
 						class="coin22" src="../image/coin222.png" /><a
 						href="../page/createDailyReportList" target="rightFrame"
 						class="cks">上传下载考勤数据</a><img class="icon5"
-						src="../image/coin21.png" />
-				</dd>
-				<dd>
-					<img class="coin11" src="../image/coin111.png" /><img
-						class="coin22" src="../image/coin222.png" /><a
-						href="../page/sendInformation" target="rightFrame"
-						class="cks">发送通知</a><img class="icon5"
 						src="../image/coin21.png" />
 				</dd>
 				<dd>
